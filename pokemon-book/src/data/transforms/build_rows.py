@@ -2,11 +2,15 @@
 """Emit src/data/rows.json (the BookDocument) for the Pokémon book (stdlib only).
 
 rows.json is generated: edit this file and re-run it rather than hand-editing
-the JSON. Run build_canonical.py first if canonical columns changed.
+the JSON. The exception is rows with "createdBy": "user": they are read back from
+the existing rows.json and kept verbatim (including fractional `order`, which
+places them between generated rows). Run build_canonical.py first if canonical
+columns changed.
 
 Usage (from the book root):  python3 src/data/transforms/build_rows.py
 """
 
+import copy
 import json
 from pathlib import Path
 
@@ -61,6 +65,14 @@ This book compares **base stats** (HP, Attack, Defense, Sp. Atk, Sp. Def, Speed,
 5. **Types have a physical/special identity.** Fighting, Ground, and Rock lean on Attack; Psychic, Fairy, and Electric lean on Sp. Atk.
 6. **Bulk and speed are traded off.** Defense and Speed are uncorrelated (r = −0.01), the weakest link between any two stats.
 7. **Mega Evolution is a flat +100** (49 of 50; Mega Alakazam is +90), spent on offense and never on HP.
+"""),
+    md("md-analyst-followups", """
+### Answers to the analyst's follow-ups
+
+The book now carries the **team-building pool** as a column (`in_team_pool`: non-legendary, total ≥ 500; 134 species). The full charts are in *Types → Speed tiers* and *Types → Does dual typing buy stats?*.
+
+- **Speed ≥ 100 by type.** Electric has the highest share of fast species overall (33%), then Flying (26%) and Psychic (23%). Rock (5%), Fairy (6%), and Steel (7%) are the slowest. **Inside the team pool the picture changes:** Flying and Fire lead with 8 fast species each, and Electric drops to 1 (Jolteon); most fast Electrics sit just under 500. Steel and Fairy have none.
+- **Dual typing mostly buys coverage, not stats.** Dual-types average +24 total among non-legendaries, and the gap appears in every generation. But dual-types are simply more common higher up the total scale (39% of species under 300 vs 57% at 500+). Within the same total band the gap shrinks to 2–10 points. **Inside the team pool it is zero** (530 vs 529).
 """),
     comp("comp-total-dist",
         chart("chart-total-hist", "Base stat total distribution", "Species (base forms) per 20-point bin, split by legendary status",
@@ -198,6 +210,76 @@ The total says how strong a type is; the split says *how*. **Attack − Sp. Atk*
                   {"mark": "Bar", "dataKey": "mean_speed", "name": "Speed", "colorIndex": 4}],
                "xLabel": "Mean base stat", "categoryWidth": 72, "height": 520, "decimals": 1},
               {"y": "type", "x": "mean_defense", "color": "stat"}),
+    ),
+    md("md-speed-tiers", """
+### Speed tiers
+
+Speed tiers are **<60, 60–79, 80–99, and 100+**. On the left is each type's mix of all species, sorted by its 100+ share. On the right is the **team-building pool** (non-legendary, total ≥ 500; 134 species), counting only the fast ones.
+
+Electric, Flying, and Psychic are the fast types overall. Rock is the slowest: 78% of Rock species are under 60. Electric's fast species mostly fall *just short* of the pool, though (Raichu 485, Electrode 480, Electabuzz 490, Zebstrika 497) or are legendary (Zapdos, Raikou, Thundurus). Only Jolteon makes it. **In the pool, Flying and Fire supply the most fast options** (Charizard, Aerodactyl, Crobat, Noivern; Rapidash, Infernape, Volcarona).
+"""),
+    comp("comp-speed-tiers",
+        chart("chart-speed-tier-mix", "Speed tier mix by type", "Base forms, both type slots; share of each type's species",
+              {"filter": BASE_ANY, "groupBy": ["type"],
+               "aggregate": [{"fn": "mean", "column": "speed_lt60", "as": "tier_lt60", "label": "<60"},
+                             {"fn": "mean", "column": "speed_60_79", "as": "tier_60_79", "label": "60–79"},
+                             {"fn": "mean", "column": "speed_80_99", "as": "tier_80_99", "label": "80–99"},
+                             {"fn": "mean", "column": "speed_100plus", "as": "tier_100plus", "label": "100+"}],
+               "orderBy": [{"column": "tier_100plus", "direction": "desc"}]},
+              {"chart": "BarChart", "layout": "vertical", "xKey": "type", "series": [
+                  {"mark": "Bar", "dataKey": "tier_lt60", "name": "<60", "stackId": "tier", "colorIndex": 7},
+                  {"mark": "Bar", "dataKey": "tier_60_79", "name": "60–79", "stackId": "tier", "colorIndex": 6},
+                  {"mark": "Bar", "dataKey": "tier_80_99", "name": "80–99", "stackId": "tier", "colorIndex": 0},
+                  {"mark": "Bar", "dataKey": "tier_100plus", "name": "100+", "stackId": "tier", "colorIndex": 1}],
+               "xLabel": "Share of the type's species", "categoryWidth": 72, "height": 560, "valueFormat": "percent", "yDomain": [0, 1]},
+              {"y": "type", "x": "tier_100plus", "color": "speed_tier", "stack": True},
+              "Sorted by the 100+ share. Bars sum to 100% per type.", flex=3),
+        chart("chart-pool-fast-by-type", "Fast options in the team pool", "Non-legendary, total ≥ 500, Speed ≥ 100; both type slots",
+              {"filter": BASE_ANY + [{"column": "in_team_pool", "op": "eq", "value": True}, {"column": "speed", "op": "gte", "value": 100}],
+               "groupBy": ["type"], "aggregate": [{"fn": "count", "as": "species", "label": "Species"}],
+               "orderBy": [{"column": "species", "direction": "desc"}]},
+              {"chart": "BarChart", "layout": "vertical", "xKey": "type", "series": [{"mark": "Bar", "dataKey": "species", "name": "Fast pool species", "colorIndex": 1}],
+               "xLabel": "Species", "categoryWidth": 72, "height": 560},
+              {"y": "type", "x": "species"},
+              "34 of the 134 pool species have Speed ≥ 100. Steel and Fairy have none.", flex=2),
+    ),
+    md("md-dual-typing", """
+### Does dual typing buy stats?
+
+**Mostly no: it buys coverage.** The raw gap is real. Among non-legendaries, dual-types average **417 vs 393** for mono-types, and dual-types are ahead in every generation. But the gap is largely *composition*: the dual-type share rises from 39% of species under 300 to 57% at 500+. Many lines gain a second type as they evolve, so dual-types skew toward evolved, higher-total species.
+
+Compare like with like and the gap mostly disappears. Within each total band it is only 2–10 points, and **inside the team pool it is zero** (530 vs 529). There, dual-types trade a little HP (−8) for Defense (+6) and Speed (+6).
+
+Without evolution-stage data this is a proxy argument. Total band stands in for stage.
+"""),
+    comp("comp-dual",
+        chart("chart-dual-by-gen", "Mono vs dual-type mean total, by generation", "Non-legendary base forms",
+              {"filter": BASE + [NONLEG], "groupBy": ["generation"],
+               "aggregate": [{"fn": "mean", "column": "total_mono", "as": "mean_mono", "label": "Mono-type"},
+                             {"fn": "mean", "column": "total_dual", "as": "mean_dual", "label": "Dual-type"}]},
+              {"chart": "BarChart", "xKey": "generation", "series": [
+                  {"mark": "Bar", "dataKey": "mean_mono", "name": "Mono-type", "colorIndex": 7},
+                  {"mark": "Bar", "dataKey": "mean_dual", "name": "Dual-type", "colorIndex": 0}],
+               "yLabel": "Mean base stat total", "yDomain": [300, 460], "decimals": 1},
+              {"x": "generation", "y": "mean_dual", "color": "typing"},
+              "Y axis starts at 300."),
+        chart("chart-dual-by-band", "Mono vs dual-type, within total bands", "Non-legendary base forms; mean total inside each band",
+              {"filter": BASE + [NONLEG], "groupBy": ["total_band"],
+               "aggregate": [{"fn": "mean", "column": "total_mono", "as": "mean_mono", "label": "Mono-type"},
+                             {"fn": "mean", "column": "total_dual", "as": "mean_dual", "label": "Dual-type"}]},
+              {"chart": "BarChart", "xKey": "total_band", "series": [
+                  {"mark": "Bar", "dataKey": "mean_mono", "name": "Mono-type", "colorIndex": 7},
+                  {"mark": "Bar", "dataKey": "mean_dual", "name": "Dual-type", "colorIndex": 0}],
+               "yLabel": "Mean base stat total", "decimals": 1},
+              {"x": "total_band", "y": "mean_dual", "color": "typing"},
+              "Bars nearly match inside every band; 500+ is the team pool."),
+        chart("chart-dual-share-by-band", "Dual-type share by total band", "Non-legendary base forms",
+              {"filter": BASE + [NONLEG], "groupBy": ["total_band"],
+               "aggregate": [{"fn": "mean", "column": "is_dual_type", "as": "dual_share", "label": "Dual-type share"}]},
+              {"chart": "BarChart", "xKey": "total_band", "series": [{"mark": "Bar", "dataKey": "dual_share", "name": "Dual-type share", "colorIndex": 0}],
+               "yLabel": "Share of species", "valueFormat": "percent", "yDomain": [0, 0.7]},
+              {"x": "total_band", "y": "dual_share"},
+              "This composition shift drives the raw gap."),
     ),
 ])
 
@@ -409,17 +491,72 @@ Six histograms of the 721 base forms, with the **same X axis (0–260) and Y axi
     comp("comp-hist-2", stat_hist("sp_atk", "Sp. Atk", 3), stat_hist("sp_def", "Sp. Def", 4), stat_hist("speed", "Speed", 5)),
 ])
 
+DEEP_DIVE = [overview, legendary, types, gens, stats, archetypes]
+_blocks = {b["id"]: b for t in DEEP_DIVE for r in t["rows"] for b in r.get("components", [])}
+
+
+def reuse(block_id, **overrides):
+    """Same chart (identical inlined query) under a new id, for the Summary tab."""
+    b = copy.deepcopy(_blocks[block_id])
+    recharts = {**b["recharts"], **overrides.pop("recharts", {})}
+    return {**b, "id": f"{block_id}-summary", "recharts": recharts, **overrides}
+
+
+summary = tab("summary", "Summary", [
+    md("md-summary", """
+## Pokémon base stats: summary
+
+What separates strong Pokémon from weak ones, across 721 species from generations 1–6? Each chart uses one row per species (the base form). The other tabs are the **deep dive**.
+
+1. **Legendary is a stat tier.** Legendaries average **620** total vs **404**, and none is below 580.
+2. **Types differ in strength and style.** Dragon ranks highest (499) partly because a quarter of Dragons are legendary; Steel leads among non-legendaries (450), and Bug is last (366). Fighting, Ground, and Rock hit physically; Psychic, Fairy, and Electric hit specially.
+3. **There is no steady power creep.** Gen 4 is the strongest generation and Gen 3 the weakest.
+4. **Stats come in archetypes.** 61 glass cannons (high offense, low bulk, and usually fast) and 41 tanks (bulky, slow). Glass cannons cluster in Ghost, Dark, Fighting, and Psychic; tanks in Rock and Steel.
+5. **For team-building** (non-legendary, total ≥ 500; 134 species), Flying and Fire supply the most fast (≥100 Speed) options. **Dual typing buys coverage, not stats:** inside that pool, dual- and mono-types have the same average total.
+"""),
+    comp("comp-summary-1",
+        reuse("chart-total-hist", flex=3),
+        reuse("chart-gen-total", flex=2, notes="Non-legendary strength peaks in Gen 4; legendaries stay around 605–634."),
+    ),
+    comp("comp-summary-2",
+        reuse("chart-type-total", recharts={"height": 480}, notes="Removing legendaries drops Dragon from 499 to 444; Steel leads non-legendaries."),
+        reuse("chart-arch-scatter", recharts={"height": 480}),
+    ),
+    md("md-summary-next", """
+**Caveats.** Stats ignore abilities and movepools (Slaking's 670 comes with Truant). The source's legendary flag is inconsistent for mythicals.
+
+**Deep dive:** *Overview* · *Legendary status* · *Types* (incl. speed tiers and dual typing) · *Generations* · *Stats & Megas* · *Archetypes*.
+"""),
+])
+
+
+def user_rows_by_tab():
+    """Rows a person added to rows.json (createdBy: user) survive regeneration, order included."""
+    path = Path(__file__).resolve().parents[1] / "rows.json"
+    if not path.exists():
+        return {}
+    kept = {}
+    for t in json.loads(path.read_text(encoding="utf-8"))["tabs"]:
+        rows = [r for r in t["rows"] if r.get("createdBy") == "user"]
+        if rows:
+            kept[t["id"]] = rows
+    return kept
+
+
 book = {
     "title": "Pokémon base stats",
     "experimentId": "Gen 1–6 · 721 species",
     "description": "How base stats differ across types, generations, and legendary status.",
     "generatedAt": "2026-11-15T00:00:00.000Z",
-    "defaultTabId": "overview",
+    "defaultTabId": "summary",
     "tabs": [],
 }
-for i, t in enumerate([overview, legendary, types, gens, stats, archetypes]):
-    t["order"] = i
-    book["tabs"].append({"id": t["id"], "label": t["label"], "order": i, "rows": t["rows"]})
+kept = user_rows_by_tab()
+for i, t in enumerate([summary, *DEEP_DIVE]):
+    rows = t["rows"] + kept.pop(t["id"], [])
+    book["tabs"].append({"id": t["id"], "label": t["label"], "order": i, "rows": rows})
+if kept:
+    raise SystemExit(f"user rows belong to tabs that no longer exist: {sorted(kept)}; move them before regenerating")
 
 with open(Path(__file__).resolve().parents[1] / "rows.json", "w", encoding="utf-8") as f:
     json.dump(book, f, ensure_ascii=False, indent=2)

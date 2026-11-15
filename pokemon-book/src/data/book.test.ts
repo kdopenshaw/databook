@@ -13,11 +13,32 @@ const BASE = [
 ];
 
 describe('book structure', () => {
-  it('has unique tab, row, and chart ids with contiguous order', () => {
+  it('has unique tab, row, and chart ids and unique row orders per tab', () => {
     const ids = [...book.tabs.map((t) => t.id), ...book.tabs.flatMap((t) => t.rows.map((r) => r.id)), ...blocks.map((b) => b.id)];
     expect(new Set(ids).size).toBe(ids.length);
-    for (const t of book.tabs) expect(t.rows.map((r) => r.order)).toEqual(t.rows.map((_, i) => i));
+    for (const t of book.tabs) {
+      const orders = t.rows.map((r) => r.order);
+      expect(orders.every((o) => Number.isFinite(o))).toBe(true);
+      expect(new Set(orders).size).toBe(orders.length);
+      const skill = t.rows.filter((r) => r.createdBy === 'skill').map((r) => r.order);
+      expect(skill).toEqual(skill.map((_, i) => i));
+    }
     expect(book.tabs.some((t) => t.id === book.defaultTabId)).toBe(true);
+  });
+
+  it('keeps the analyst-authored Overview note after regeneration', () => {
+    const overview = book.tabs.find((t) => t.id === 'overview')!;
+    const note = overview.rows.find((r) => r.id === 'md-analyst-take');
+    expect(note).toMatchObject({ type: 'markdown', createdBy: 'user', order: 1.5 });
+    expect(note && note.type === 'markdown' ? note.body : '').toContain("Analyst's take (Keith)");
+  });
+
+  it('Summary is the default tab and holds 3–4 charts', () => {
+    expect(book.defaultTabId).toBe('summary');
+    const summary = book.tabs.find((t) => t.id === 'summary')!;
+    const n = summary.rows.flatMap((r) => (r.type === 'component' ? r.components : [])).length;
+    expect(n).toBeGreaterThanOrEqual(3);
+    expect(n).toBeLessThanOrEqual(4);
   });
 
   it('keeps component rows to at most 3 charts', () => {

@@ -3,12 +3,355 @@
   "experimentId": "Gen 1–6 · 721 species",
   "description": "How base stats differ across types, generations, and legendary status.",
   "generatedAt": "2026-11-15T00:00:00.000Z",
-  "defaultTabId": "overview",
+  "defaultTabId": "summary",
   "tabs": [
+    {
+      "id": "summary",
+      "label": "Summary",
+      "order": 0,
+      "rows": [
+        {
+          "id": "md-summary",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "## Pokémon base stats: summary\n\nWhat separates strong Pokémon from weak ones, across 721 species from generations 1–6? Each chart uses one row per species (the base form). The other tabs are the **deep dive**.\n\n1. **Legendary is a stat tier.** Legendaries average **620** total vs **404**, and none is below 580.\n2. **Types differ in strength and style.** Dragon ranks highest (499) partly because a quarter of Dragons are legendary; Steel leads among non-legendaries (450), and Bug is last (366). Fighting, Ground, and Rock hit physically; Psychic, Fairy, and Electric hit specially.\n3. **There is no steady power creep.** Gen 4 is the strongest generation and Gen 3 the weakest.\n4. **Stats come in archetypes.** 61 glass cannons (high offense, low bulk, and usually fast) and 41 tanks (bulky, slow). Glass cannons cluster in Ghost, Dark, Fighting, and Psychic; tanks in Rock and Steel.\n5. **For team-building** (non-legendary, total ≥ 500; 134 species), Flying and Fire supply the most fast (≥100 Speed) options. **Dual typing buys coverage, not stats:** inside that pool, dual- and mono-types have the same average total.",
+          "order": 0
+        },
+        {
+          "id": "comp-summary-1",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-total-hist-summary",
+              "title": "Base stat total distribution",
+              "subtitle": "Species (base forms) per 20-point bin, split by legendary status",
+              "query": {
+                "label": "Base stat total distribution",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "bin": [
+                  {
+                    "column": "total",
+                    "step": 20,
+                    "as": "total_bin"
+                  }
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "column": "total_nonlegendary",
+                    "as": "non_legendary",
+                    "label": "Non-legendary species"
+                  },
+                  {
+                    "fn": "count",
+                    "column": "total_legendary",
+                    "as": "legendary",
+                    "label": "Legendary species"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "total_bin",
+                "y": "non_legendary",
+                "color": "status",
+                "stack": true
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "total_bin",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "non_legendary",
+                    "name": "Non-legendary",
+                    "stackId": "status"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "legendary",
+                    "name": "Legendary",
+                    "stackId": "status"
+                  }
+                ],
+                "xLabel": "Base stat total (bin start)",
+                "yLabel": "Species",
+                "barCategoryGap": 1
+              },
+              "flex": 3,
+              "notes": "Legendaries start at 580; the non-legendary tail above 580 is mostly pseudo-legendaries and mythicals."
+            },
+            {
+              "id": "chart-gen-total-summary",
+              "title": "Base stat total by generation",
+              "subtitle": "Base forms; mean (and non-legendary median) per generation; Y axis starts at 300",
+              "query": {
+                "label": "Base stat total by generation",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "generation"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total_legendary",
+                    "as": "mean_leg",
+                    "label": "Legendary mean"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "total_nonlegendary",
+                    "as": "mean_nonleg",
+                    "label": "Non-legendary mean"
+                  },
+                  {
+                    "fn": "median",
+                    "column": "total_nonlegendary",
+                    "as": "median_nonleg",
+                    "label": "Non-legendary median"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation",
+                "y": "mean_nonleg",
+                "color": "series"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "LineChart",
+                "xKey": "generation",
+                "series": [
+                  {
+                    "mark": "Line",
+                    "dataKey": "mean_nonleg",
+                    "name": "Non-legendary mean",
+                    "dot": true,
+                    "type": "linear"
+                  },
+                  {
+                    "mark": "Line",
+                    "dataKey": "median_nonleg",
+                    "name": "Non-legendary median",
+                    "dot": true,
+                    "type": "linear",
+                    "strokeDasharray": "4 3",
+                    "colorIndex": 0
+                  },
+                  {
+                    "mark": "Line",
+                    "dataKey": "mean_leg",
+                    "name": "Legendary mean",
+                    "dot": true,
+                    "type": "linear",
+                    "colorIndex": 1
+                  }
+                ],
+                "yLabel": "Base stat total",
+                "yDomain": [
+                  300,
+                  700
+                ],
+                "decimals": 1
+              },
+              "flex": 2,
+              "notes": "Non-legendary strength peaks in Gen 4; legendaries stay around 605–634."
+            }
+          ],
+          "order": 1
+        },
+        {
+          "id": "comp-summary-2",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-type-total-summary",
+              "title": "Mean base stat total by type",
+              "subtitle": "Base forms, both type slots; sorted by the all-species mean",
+              "query": {
+                "label": "Mean base stat total by type",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total",
+                    "as": "mean_total",
+                    "label": "All species"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "total_nonlegendary",
+                    "as": "mean_total_nonleg",
+                    "label": "Non-legendary only"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "mean_total",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "y": "type",
+                "x": "mean_total",
+                "color": "population"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_total",
+                    "name": "All species"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_total_nonleg",
+                    "name": "Non-legendary only"
+                  }
+                ],
+                "xLabel": "Mean base stat total",
+                "categoryWidth": 72,
+                "height": 480,
+                "decimals": 1
+              },
+              "flex": 1,
+              "notes": "Removing legendaries drops Dragon from 499 to 444; Steel leads non-legendaries."
+            },
+            {
+              "id": "chart-arch-scatter-summary",
+              "title": "Offense vs bulk, by archetype",
+              "subtitle": "Base forms (721 species); hover for name",
+              "query": {
+                "label": "Offense vs bulk, by archetype",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "offense",
+                "y": "bulk",
+                "color": "archetype"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "ScatterChart",
+                "xKey": "offense",
+                "series": [
+                  {
+                    "mark": "Scatter",
+                    "dataKey": "bulk",
+                    "name": "Species"
+                  }
+                ],
+                "colorBy": {
+                  "key": "archetype",
+                  "levels": [
+                    {
+                      "value": "Neither",
+                      "colorIndex": 7
+                    },
+                    {
+                      "value": "Glass cannon",
+                      "colorIndex": 5
+                    },
+                    {
+                      "value": "Tank",
+                      "colorIndex": 2
+                    }
+                  ]
+                },
+                "showLegend": true,
+                "height": 480,
+                "xLabel": "Offense = max(Attack, Sp. Atk)",
+                "yLabel": "Bulk = mean(HP, Def, Sp. Def)",
+                "tooltipKeys": [
+                  "name",
+                  "archetype",
+                  "offense",
+                  "bulk",
+                  "speed"
+                ]
+              },
+              "flex": 1,
+              "notes": "Shuckle (bulk 160, offense 10) is the extreme tank at the top left; Deoxys, Aegislash (Blade), and Rampardos are the most extreme glass cannons on the right."
+            }
+          ],
+          "order": 2
+        },
+        {
+          "id": "md-summary-next",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "**Caveats.** Stats ignore abilities and movepools (Slaking's 670 comes with Truant). The source's legendary flag is inconsistent for mythicals.\n\n**Deep dive:** *Overview* · *Legendary status* · *Types* (incl. speed tiers and dual typing) · *Generations* · *Stats & Megas* · *Archetypes*.",
+          "order": 3
+        }
+      ]
+    },
     {
       "id": "overview",
       "label": "Overview",
-      "order": 0,
+      "order": 1,
       "rows": [
         {
           "id": "md-question",
@@ -23,6 +366,13 @@
           "createdBy": "skill",
           "body": "### Headline findings\n\n1. **Legendary is a stat tier, not just a label.** Base-form legendaries average **620** total vs **404** for everyone else. *No* base-form legendary is below 580, and only 15 non-legendaries reach it.\n2. **The non-legendary distribution has two humps** (around 300–349 and 450–499): unevolved vs fully evolved Pokémon.\n3. **Gen 4 is the strongest generation** (non-legendary mean 424, median 453). There is no steady power creep: Gen 3 is the weakest (385).\n4. **Dragon tops the type ranking (499), but partly through legendaries.** A quarter of Dragon species are legendary. Among non-legendaries, Steel (450) edges past Dragon (444). Bug is last (366).\n5. **Types have a physical/special identity.** Fighting, Ground, and Rock lean on Attack; Psychic, Fairy, and Electric lean on Sp. Atk.\n6. **Bulk and speed are traded off.** Defense and Speed are uncorrelated (r = −0.01), the weakest link between any two stats.\n7. **Mega Evolution is a flat +100** (49 of 50; Mega Alakazam is +90), spent on offense and never on HP.",
           "order": 1
+        },
+        {
+          "id": "md-analyst-followups",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "### Answers to the analyst's follow-ups\n\nThe book now carries the **team-building pool** as a column (`in_team_pool`: non-legendary, total ≥ 500; 134 species). The full charts are in *Types → Speed tiers* and *Types → Does dual typing buy stats?*.\n\n- **Speed ≥ 100 by type.** Electric has the highest share of fast species overall (33%), then Flying (26%) and Psychic (23%). Rock (5%), Fairy (6%), and Steel (7%) are the slowest. **Inside the team pool the picture changes:** Flying and Fire lead with 8 fast species each, and Electric drops to 1 (Jolteon); most fast Electrics sit just under 500. Steel and Fairy have none.\n- **Dual typing mostly buys coverage, not stats.** Dual-types average +24 total among non-legendaries, and the gap appears in every generation. But dual-types are simply more common higher up the total scale (39% of species under 300 vs 57% at 500+). Within the same total band the gap shrinks to 2–10 points. **Inside the team pool it is zero** (530 vs 529).",
+          "order": 2
         },
         {
           "id": "comp-total-dist",
@@ -172,14 +522,14 @@
               "flex": 1
             }
           ],
-          "order": 2
+          "order": 3
         },
         {
           "id": "md-caveats",
           "type": "markdown",
           "createdBy": "skill",
           "body": "### Caveats\n\n- **The `Legendary` flag is inconsistent for mythicals.** Mew, Celebi, Manaphy, Genesect, Keldeo, and Meloetta are `False`; Jirachi, Darkrai, Victini, Arceus, and Hoopa are `True`. The book keeps the source flag, so a few \"non-legendary 600s\" are mythicals.\n- Stats are fixed game-design values, not samples. Differences are descriptive, and there is no sampling error to test.\n- Only generations 1–6 are covered.\n\nProfiling notes, the column contract, and the transform are in `src/data/understanding.md` and `src/data/transforms/`.",
-          "order": 3
+          "order": 4
         },
         {
           "id": "md-analyst-take",
@@ -193,7 +543,7 @@
     {
       "id": "legendary",
       "label": "Legendary status",
-      "order": 1,
+      "order": 2,
       "rows": [
         {
           "id": "md-leg-intro",
@@ -518,7 +868,7 @@
     {
       "id": "types",
       "label": "Types",
-      "order": 2,
+      "order": 3,
       "rows": [
         {
           "id": "md-types-intro",
@@ -895,13 +1245,429 @@
             }
           ],
           "order": 4
+        },
+        {
+          "id": "md-speed-tiers",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "### Speed tiers\n\nSpeed tiers are **<60, 60–79, 80–99, and 100+**. On the left is each type's mix of all species, sorted by its 100+ share. On the right is the **team-building pool** (non-legendary, total ≥ 500; 134 species), counting only the fast ones.\n\nElectric, Flying, and Psychic are the fast types overall. Rock is the slowest: 78% of Rock species are under 60. Electric's fast species mostly fall *just short* of the pool, though (Raichu 485, Electrode 480, Electabuzz 490, Zebstrika 497) or are legendary (Zapdos, Raikou, Thundurus). Only Jolteon makes it. **In the pool, Flying and Fire supply the most fast options** (Charizard, Aerodactyl, Crobat, Noivern; Rapidash, Infernape, Volcarona).",
+          "order": 5
+        },
+        {
+          "id": "comp-speed-tiers",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-speed-tier-mix",
+              "title": "Speed tier mix by type",
+              "subtitle": "Base forms, both type slots; share of each type's species",
+              "query": {
+                "label": "Speed tier mix by type",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "speed_lt60",
+                    "as": "tier_lt60",
+                    "label": "<60"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "speed_60_79",
+                    "as": "tier_60_79",
+                    "label": "60–79"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "speed_80_99",
+                    "as": "tier_80_99",
+                    "label": "80–99"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "speed_100plus",
+                    "as": "tier_100plus",
+                    "label": "100+"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "tier_100plus",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "y": "type",
+                "x": "tier_100plus",
+                "color": "speed_tier",
+                "stack": true
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "tier_lt60",
+                    "name": "<60",
+                    "stackId": "tier",
+                    "colorIndex": 7
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "tier_60_79",
+                    "name": "60–79",
+                    "stackId": "tier",
+                    "colorIndex": 6
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "tier_80_99",
+                    "name": "80–99",
+                    "stackId": "tier",
+                    "colorIndex": 0
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "tier_100plus",
+                    "name": "100+",
+                    "stackId": "tier",
+                    "colorIndex": 1
+                  }
+                ],
+                "xLabel": "Share of the type's species",
+                "categoryWidth": 72,
+                "height": 560,
+                "valueFormat": "percent",
+                "yDomain": [
+                  0,
+                  1
+                ]
+              },
+              "flex": 3,
+              "notes": "Sorted by the 100+ share. Bars sum to 100% per type."
+            },
+            {
+              "id": "chart-pool-fast-by-type",
+              "title": "Fast options in the team pool",
+              "subtitle": "Non-legendary, total ≥ 500, Speed ≥ 100; both type slots",
+              "query": {
+                "label": "Fast options in the team pool",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "in_team_pool",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "speed",
+                    "op": "gte",
+                    "value": 100
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "species",
+                    "label": "Species"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "species",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "y": "type",
+                "x": "species"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "species",
+                    "name": "Fast pool species",
+                    "colorIndex": 1
+                  }
+                ],
+                "xLabel": "Species",
+                "categoryWidth": 72,
+                "height": 560
+              },
+              "flex": 2,
+              "notes": "34 of the 134 pool species have Speed ≥ 100. Steel and Fairy have none."
+            }
+          ],
+          "order": 6
+        },
+        {
+          "id": "md-dual-typing",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "### Does dual typing buy stats?\n\n**Mostly no: it buys coverage.** The raw gap is real. Among non-legendaries, dual-types average **417 vs 393** for mono-types, and dual-types are ahead in every generation. But the gap is largely *composition*: the dual-type share rises from 39% of species under 300 to 57% at 500+. Many lines gain a second type as they evolve, so dual-types skew toward evolved, higher-total species.\n\nCompare like with like and the gap mostly disappears. Within each total band it is only 2–10 points, and **inside the team pool it is zero** (530 vs 529). There, dual-types trade a little HP (−8) for Defense (+6) and Speed (+6).\n\nWithout evolution-stage data this is a proxy argument. Total band stands in for stage.",
+          "order": 7
+        },
+        {
+          "id": "comp-dual",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-dual-by-gen",
+              "title": "Mono vs dual-type mean total, by generation",
+              "subtitle": "Non-legendary base forms",
+              "query": {
+                "label": "Mono vs dual-type mean total, by generation",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "generation"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total_mono",
+                    "as": "mean_mono",
+                    "label": "Mono-type"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "total_dual",
+                    "as": "mean_dual",
+                    "label": "Dual-type"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation",
+                "y": "mean_dual",
+                "color": "typing"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "generation",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_mono",
+                    "name": "Mono-type",
+                    "colorIndex": 7
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_dual",
+                    "name": "Dual-type",
+                    "colorIndex": 0
+                  }
+                ],
+                "yLabel": "Mean base stat total",
+                "yDomain": [
+                  300,
+                  460
+                ],
+                "decimals": 1
+              },
+              "flex": 1,
+              "notes": "Y axis starts at 300."
+            },
+            {
+              "id": "chart-dual-by-band",
+              "title": "Mono vs dual-type, within total bands",
+              "subtitle": "Non-legendary base forms; mean total inside each band",
+              "query": {
+                "label": "Mono vs dual-type, within total bands",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "total_band"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total_mono",
+                    "as": "mean_mono",
+                    "label": "Mono-type"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "total_dual",
+                    "as": "mean_dual",
+                    "label": "Dual-type"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "total_band",
+                "y": "mean_dual",
+                "color": "typing"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "total_band",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_mono",
+                    "name": "Mono-type",
+                    "colorIndex": 7
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_dual",
+                    "name": "Dual-type",
+                    "colorIndex": 0
+                  }
+                ],
+                "yLabel": "Mean base stat total",
+                "decimals": 1
+              },
+              "flex": 1,
+              "notes": "Bars nearly match inside every band; 500+ is the team pool."
+            },
+            {
+              "id": "chart-dual-share-by-band",
+              "title": "Dual-type share by total band",
+              "subtitle": "Non-legendary base forms",
+              "query": {
+                "label": "Dual-type share by total band",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "total_band"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "is_dual_type",
+                    "as": "dual_share",
+                    "label": "Dual-type share"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "total_band",
+                "y": "dual_share"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "total_band",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "dual_share",
+                    "name": "Dual-type share",
+                    "colorIndex": 0
+                  }
+                ],
+                "yLabel": "Share of species",
+                "valueFormat": "percent",
+                "yDomain": [
+                  0,
+                  0.7
+                ]
+              },
+              "flex": 1,
+              "notes": "This composition shift drives the raw gap."
+            }
+          ],
+          "order": 8
         }
       ]
     },
     {
       "id": "generations",
       "label": "Generations",
-      "order": 3,
+      "order": 4,
       "rows": [
         {
           "id": "md-gen-intro",
@@ -1223,7 +1989,7 @@
     {
       "id": "stats",
       "label": "Stats & Megas",
-      "order": 4,
+      "order": 5,
       "rows": [
         {
           "id": "md-stats-intro",
@@ -1592,7 +2358,7 @@
     {
       "id": "archetypes",
       "label": "Archetypes",
-      "order": 5,
+      "order": 6,
       "rows": [
         {
           "id": "md-arch-intro",
