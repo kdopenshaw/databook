@@ -60,6 +60,13 @@
           "body": "## Summary\n\n**Pages:** Overview (this tab) \u00b7 Deep dive (types, generations, legendary, distributions, archetypes).\n\n1. **Legendary gap** \u2014 ~620 vs ~404 mean BST (primary forms).\n2. **Types** \u2014 both-slot cut restores Flying participation; Bug still weakest on mean BST among non-legendaries.\n3. **Generations** \u2014 Gen 4 strongest non-legendary mean; Gen 3 weakest.\n4. **Archetypes** \u2014 glass cannons (high offense vs bulk) vs tanks (high bulk vs offense/speed); z-scores on the primary-form pool.\n\nCaveats and grain: `src/data/understanding.md`."
         },
         {
+          "id": "md-analyst-speed-tiers",
+          "type": "markdown",
+          "order": 0.5,
+          "createdBy": "user",
+          "body": "> **Analyst note:** On the next pass, add a **speed-tier** cut for the team-building pool (non-legendary, total \u2265 500): share in &lt;60 / 60\u201379 / 80\u201399 / 100+. Prefer a multi-chart row or a clear share chart \u2014 keep bar axes at 0."
+        },
+        {
           "id": "comp-summary-refs",
           "type": "component",
           "order": 1,
