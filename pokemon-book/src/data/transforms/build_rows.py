@@ -13,16 +13,20 @@ ROWS_PATH = BOOK_ROOT / "src" / "data" / "rows.json"
 # Allow importing sibling merge semantics via a tiny inline port (Python).
 # Runtime merge lives in mergeUserRows.ts — mirror: preserve createdBy:user rows.
 
+# Canonical row kinds — default charts exclude long-form stat slices.
+TYPE_SLOT_ROWS = [{"column": "record_kind", "op": "eq", "value": "type_slot"}]
+
 # Per-species (no double-count): primary form + primary type slot.
 SPECIES = [
     {"column": "is_primary_form", "op": "eq", "value": True},
     {"column": "type_slot", "op": "eq", "value": "Primary"},
+    *TYPE_SLOT_ROWS,
 ]
 SPECIES_NONLEG = SPECIES + [{"column": "legendary", "op": "eq", "value": False}]
 SPECIES_LEG = SPECIES + [{"column": "legendary", "op": "eq", "value": True}]
 
 # Type participation: primary forms, both type slots (dual-types counted twice).
-TYPE_ANY = [{"column": "is_primary_form", "op": "eq", "value": True}]
+TYPE_ANY = [{"column": "is_primary_form", "op": "eq", "value": True}, *TYPE_SLOT_ROWS]
 TYPE_ANY_NONLEG = TYPE_ANY + [{"column": "legendary", "op": "eq", "value": False}]
 
 # Team-building pool: primary form + primary slot + in_team_pool (implies non-leg, BST≥500).
@@ -51,6 +55,16 @@ POOL_SHARE_DOMAIN = [0, 0.4]
 POOL_COUNT_DOMAIN = [0, 50]
 POOL_BST_DOMAIN = [0, 700]
 POOL_IN_SHARE = [0, 0.5]
+
+# Grass · Fire · Water final evolutions per generation (primary-form names in CSV).
+STARTER_FINALS_BY_GEN: dict[int, tuple[str, str, str]] = {
+    1: ("Venusaur", "Charizard", "Blastoise"),
+    2: ("Meganium", "Typhlosion", "Feraligatr"),
+    3: ("Sceptile", "Blaziken", "Swampert"),
+    4: ("Torterra", "Infernape", "Empoleon"),
+    5: ("Serperior", "Emboar", "Samurott"),
+    6: ("Chesnaught", "Delphox", "Greninja"),
+}
 
 
 def merge_user_rows(previous: dict | None, nxt: dict) -> dict:
@@ -330,6 +344,37 @@ def comp(row_id: str, order: float, components: list, *, wrap: bool = True) -> d
         "layout": {"gap": 16, "align": "stretch", "wrap": wrap},
         "components": components,
     }
+
+
+def starter_final_stat_bars(
+    chart_id: str,
+    species_name: str,
+    *,
+    color_index: int,
+) -> dict:
+    return bar_h(
+        chart_id,
+        species_name,
+        x_key="stat_label",
+        data_key="stat_value",
+        name="Base stat",
+        subtitle="Primary form · record_kind=base_stat · shared scaleGroup starter-final-stats",
+        notes="Six base stats on a 0–130 axis — siblings share yDomain across all starter finals.",
+        y_domain=STAT_DOMAIN,
+        scale_group="starter-final-stats",
+        category_width=72,
+        height=360,
+        color_index=color_index,
+        decimals=0,
+        y_label="Base stat",
+        query={
+            "filter": [
+                {"column": "record_kind", "op": "eq", "value": "base_stat"},
+                {"column": "name", "op": "eq", "value": species_name},
+            ],
+            "orderBy": [{"column": "stat_rank", "direction": "asc"}],
+        },
+    )
 
 
 def ref_block(chart_id: str, ref: str, title: str | None = None, subtitle: str | None = None) -> dict:
@@ -1688,6 +1733,30 @@ Primary-form species only. Mean BST moves modestly across gens — bars start at
         comp("comp-gen-stats", 5, [gen_atk, gen_spa, gen_spd]),
     ]
 
+    starter_rows = [
+        md(
+            "md-starters",
+            0,
+            """## Starter final evolutions (Gen 1–6)
+
+**Population:** the 18 traditional starter **final** lines — primary CSV rows for Venusaur through Greninja (no Mega/alternate formes). Canonical adds **long-form** `record_kind=base_stat` rows (six stats per final) so each panel charts raw stat magnitudes without inventing pivot columns.
+
+**Scales:** all 18 stat panels share `scaleGroup: starter-final-stats` with `yDomain: [0, 130]` so Grass/Fire/Water finals within a generation compare honestly.""",
+        ),
+    ]
+    starter_color = (0, 1, 5)  # Grass / Fire / Water palette slots
+    for gen in range(1, 7):
+        grass, fire, water = STARTER_FINALS_BY_GEN[gen]
+        charts = [
+            starter_final_stat_bars(f"chart-starter-g{gen}-grass", grass, color_index=starter_color[0]),
+            starter_final_stat_bars(f"chart-starter-g{gen}-fire", fire, color_index=starter_color[1]),
+            starter_final_stat_bars(f"chart-starter-g{gen}-water", water, color_index=starter_color[2]),
+        ]
+        starter_rows.append(
+            md(f"md-starter-g{gen}", float(gen), f"### Generation {gen} — {grass} · {fire} · {water}"),
+        )
+        starter_rows.append(comp(f"comp-starter-g{gen}", gen + 0.1, charts))
+
     leg_rows = [
         md(
             "md-leg",
@@ -1755,6 +1824,8 @@ Histograms over primary forms. Stat panels share `scaleGroup: stat-hist` with id
                 "Both-slot type charts use column `type`; they intentionally double-count dual-types.",
                 "Type-1-only panels undercount types that appear mainly as Type 2 — prefer both-slot for identity.",
                 "Team-pool speed shares use sum(pool_share_unit) by speed_tier (axis at 0); counts on a separate row.",
+                "Default filters include record_kind=type_slot — long-form base_stat rows are for starter-final panels only.",
+                "Starter-final stat panels share scaleGroup starter-final-stats with yDomain [0, 130].",
                 "Prefer share / count_if / sum_if / mean_if for rates and conditional totals.",
                 "Do not chart near-flat bands as trends without acknowledging flatness.",
                 "mergeUserRows preserves createdBy:user rows (e.g. md-analyst-speed-tiers) across regen.",
@@ -1774,6 +1845,7 @@ Histograms over primary forms. Stat panels share `scaleGroup: stat-hist` with id
                 "tabIds": [
                     "types",
                     "generations",
+                    "starters",
                     "legendary",
                     "archetypes",
                     "team-pool",
@@ -1785,10 +1857,11 @@ Histograms over primary forms. Stat panels share `scaleGroup: stat-hist` with id
             {"id": "summary", "label": "Summary", "order": 0, "rows": summary_rows},
             {"id": "types", "label": "By type", "order": 1, "rows": types_rows},
             {"id": "generations", "label": "By generation", "order": 2, "rows": gen_rows},
-            {"id": "legendary", "label": "Legendary", "order": 3, "rows": leg_rows},
-            {"id": "archetypes", "label": "Archetypes", "order": 4, "rows": arch_rows},
-            {"id": "team-pool", "label": "Team pool", "order": 5, "rows": pool_rows},
-            {"id": "distributions", "label": "Distributions", "order": 6, "rows": dist_rows},
+            {"id": "starters", "label": "Starter finals", "order": 3, "rows": starter_rows},
+            {"id": "legendary", "label": "Legendary", "order": 4, "rows": leg_rows},
+            {"id": "archetypes", "label": "Archetypes", "order": 5, "rows": arch_rows},
+            {"id": "team-pool", "label": "Team pool", "order": 6, "rows": pool_rows},
+            {"id": "distributions", "label": "Distributions", "order": 7, "rows": dist_rows},
         ],
     }
     return book

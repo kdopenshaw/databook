@@ -10,11 +10,13 @@ How do base stats differ across **types** (both slots), **generations**, **legen
 |--------|------|-------|
 | `data/Pokemon.csv` | 800 | Public Gen 1–6 form table (National Dex `#` 1–721). SHA-256 `02eabc49d3c70bc1e150891bdb9acb254910adfdfc12a6020c7b7117b2eca32f`. |
 
+**Starter finals:** 18 primary-form species (dex # 3, 6, 9, …, 658) flagged `is_starter_final`. Each also emits six `record_kind=base_stat` rows (`stat_label` / `stat_value`) for per-species stat panels. Default species/type filters add `record_kind=type_slot` so these long rows do not enter population cuts.
+
 Rebuild: `python3 src/data/transforms/build_canonical.py` then `python3 src/data/transforms/build_rows.py`, then `npm test`. Generators call `mergeUserRows` so `createdBy: "user"` rows (e.g. Summary `md-analyst-speed-tiers`) survive regen.
 
 ## Grain
 
-**Canonical file:** one row per **form × type slot** (Primary, and Secondary when dual-typed). Mega/alternate formes are retained with `is_primary_form=false` but default charts exclude them.
+**Canonical file:** one row per **form × type slot** (Primary, and Secondary when dual-typed), plus optional **base_stat** rows for starter-finals stat panels. Mega/alternate formes are retained with `is_primary_form=false` but default charts exclude them.
 
 | Population | Filter | Rows | Use |
 |------------|--------|------|-----|

@@ -54,6 +54,39 @@ ARCHETYPE_FLOOR = 0.5
 # Physical vs special lean: |Attack − Sp. Atk| ≥ this raw gap.
 PHYS_SPEC_GAP = 15
 
+# Traditional starter lines — final evolution dex # (primary CSV row per species).
+STARTER_FINAL_DEX: set[int] = {
+    3,
+    6,
+    9,
+    154,
+    157,
+    160,
+    254,
+    257,
+    260,
+    389,
+    392,
+    395,
+    497,
+    500,
+    503,
+    652,
+    655,
+    658,
+}
+
+STAT_PROFILE = [
+    ("hp", "HP", 0),
+    ("attack", "Attack", 1),
+    ("defense", "Defense", 2),
+    ("sp_atk", "Sp. Atk", 3),
+    ("sp_def", "Sp. Def", 4),
+    ("speed", "Speed", 5),
+]
+
+STAT_LABEL_LEVELS = [label for _, label, _ in STAT_PROFILE]
+
 
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
@@ -116,10 +149,13 @@ def main() -> None:
             else:
                 offense_lean = "Balanced"
 
+            dex_int = int(dex)
+            is_starter_final = primary and dex_int in STARTER_FINAL_DEX
+
             forms.append(
                 {
                     "form_index": idx,
-                    "dex_number": int(dex),
+                    "dex_number": dex_int,
                     "name": name,
                     "type_1": raw["Type 1"].strip(),
                     "type_2": type2 if type2 else None,
@@ -137,6 +173,7 @@ def main() -> None:
                     "form_kind": form_kind,
                     "phys_minus_spec": lean,
                     "offense_lean": offense_lean,
+                    "is_starter_final": is_starter_final,
                 }
             )
 
@@ -221,6 +258,7 @@ def main() -> None:
             rows_out.append(
                 {
                     "row_id": f"{f['dex_number']}-{f['form_index']}-{slot[0]}",
+                    "record_kind": "type_slot",
                     "form_index": f["form_index"],
                     "dex_number": f["dex_number"],
                     "name": f["name"],
@@ -261,14 +299,78 @@ def main() -> None:
                     "is_primary_form": f["is_primary_form"],
                     "is_mega": f["is_mega"],
                     "form_kind": f["form_kind"],
+                    "is_starter_final": f["is_starter_final"],
+                    "stat_label": None,
+                    "stat_value": None,
+                    "stat_rank": None,
                 }
             )
+
+        if f["is_primary_form"] and f["is_starter_final"]:
+            for stat_col, label, rank in STAT_PROFILE:
+                rows_out.append(
+                    {
+                        "row_id": f"{f['dex_number']}-{f['form_index']}-stat-{stat_col}",
+                        "record_kind": "base_stat",
+                        "form_index": f["form_index"],
+                        "dex_number": f["dex_number"],
+                        "name": f["name"],
+                        "type_1": f["type_1"],
+                        "type_2": f["type_2"],
+                        "type_slot": None,
+                        "type": None,
+                        "in_primary_slot": False,
+                        "in_secondary_slot": False,
+                        "is_dual_type": f["is_dual_type"],
+                        "total": f["total"],
+                        "hp": f["hp"],
+                        "attack": f["attack"],
+                        "defense": f["defense"],
+                        "sp_atk": f["sp_atk"],
+                        "sp_def": f["sp_def"],
+                        "speed": f["speed"],
+                        "offense": f["offense"],
+                        "bulk": f["bulk"],
+                        "phys_minus_spec": f["phys_minus_spec"],
+                        "offense_lean": f["offense_lean"],
+                        "z_offense": f["z_offense"],
+                        "z_bulk": f["z_bulk"],
+                        "z_speed": f["z_speed"],
+                        "glass_score": f["glass_score"],
+                        "tank_score": f["tank_score"],
+                        "is_glass_cannon": f["is_glass_cannon"],
+                        "is_tank": f["is_tank"],
+                        "archetype": f["archetype"],
+                        "speed_tier": f["speed_tier"],
+                        "speed_tier_rank": f["speed_tier_rank"],
+                        "in_team_pool": f["in_team_pool"],
+                        "pool_share_unit": f["pool_share_unit"],
+                        "generation": f["generation"],
+                        "generation_label": f["generation_label"],
+                        "legendary": f["legendary"],
+                        "status": f["status"],
+                        "is_primary_form": True,
+                        "is_mega": f["is_mega"],
+                        "form_kind": f["form_kind"],
+                        "is_starter_final": True,
+                        "stat_label": label,
+                        "stat_value": f[stat_col],
+                        "stat_rank": rank,
+                    }
+                )
 
     n_primary = sum(1 for r in rows_out if r["is_primary_form"] and r["type_slot"] == "Primary")
     n_type_part = sum(1 for r in rows_out if r["is_primary_form"])
 
     schema = [
         {"name": "row_id", "type": "categorical", "nullable": False},
+        {
+            "name": "record_kind",
+            "type": "categorical",
+            "levels": ["type_slot", "base_stat"],
+            "nullable": False,
+            "description": "type_slot = form×type slot rows; base_stat = long stat slice for starter-final panels.",
+        },
         {"name": "form_index", "type": "quantitative", "nullable": False},
         {"name": "dex_number", "type": "quantitative", "label": "Dex #", "nullable": False},
         {"name": "name", "type": "categorical", "label": "Name", "nullable": False},
@@ -279,8 +381,8 @@ def main() -> None:
             "type": "categorical",
             "label": "Type slot",
             "levels": ["Primary", "Secondary"],
-            "nullable": False,
-            "description": "Primary = Type 1; Secondary = Type 2 when present.",
+            "nullable": True,
+            "description": "Primary = Type 1; Secondary = Type 2 when present; null on base_stat rows.",
         },
         {
             "name": "type",
@@ -289,6 +391,7 @@ def main() -> None:
             "levels": TYPE_LEVELS,
             "nullable": False,
             "description": "Type for this slot — use with is_primary_form for both-slot participation.",
+            "nullable": True,
         },
         {"name": "in_primary_slot", "type": "boolean", "nullable": False},
         {"name": "in_secondary_slot", "type": "boolean", "nullable": False},
@@ -375,6 +478,22 @@ def main() -> None:
             "levels": ["Base", "Mega/Primal", "Alternate"],
             "nullable": False,
         },
+        {
+            "name": "is_starter_final",
+            "type": "boolean",
+            "nullable": False,
+            "description": "Primary-form traditional starter final evolution (18 species, gens 1–6).",
+        },
+        {
+            "name": "stat_label",
+            "type": "categorical",
+            "label": "Stat",
+            "levels": STAT_LABEL_LEVELS,
+            "nullable": True,
+            "description": "Populated on record_kind=base_stat rows for starter-final stat panels.",
+        },
+        {"name": "stat_value", "type": "quantitative", "label": "Stat value", "nullable": True},
+        {"name": "stat_rank", "type": "quantitative", "nullable": True},
     ]
 
     payload = {
@@ -394,6 +513,8 @@ def main() -> None:
             "nGlassCannonPrimary": n_glass,
             "nTankPrimary": n_tank,
             "nTeamPool": n_pool,
+            "nStarterFinals": len(STARTER_FINAL_DEX),
+            "nStarterStatRows": sum(1 for r in rows_out if r["record_kind"] == "base_stat"),
             "archetypeGap": ARCHETYPE_GAP,
             "archetypeFloor": ARCHETYPE_FLOOR,
             "physSpecGap": PHYS_SPEC_GAP,

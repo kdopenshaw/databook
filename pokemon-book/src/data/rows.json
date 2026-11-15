@@ -2,7 +2,7 @@
   "title": "Pok\u00e9mon Base Stats (Gen 1\u20136)",
   "experimentId": "pokemon-gen1-6-r3",
   "description": "Primary-form base-stat chart book \u2014 both-slot types, generations, legendary flag, archetypes, team-pool speed tiers, and distributions.",
-  "generatedAt": "2026-11-15T08:17:35.142Z",
+  "generatedAt": "2026-11-15T08:20:16.881Z",
   "defaultTabId": "summary",
   "conventions": {
     "zeroBaselineBars": true,
@@ -25,6 +25,8 @@
       "Both-slot type charts use column `type`; they intentionally double-count dual-types.",
       "Type-1-only panels undercount types that appear mainly as Type 2 \u2014 prefer both-slot for identity.",
       "Team-pool speed shares use sum(pool_share_unit) by speed_tier (axis at 0); counts on a separate row.",
+      "Default filters include record_kind=type_slot \u2014 long-form base_stat rows are for starter-final panels only.",
+      "Starter-final stat panels share scaleGroup starter-final-stats with yDomain [0, 130].",
       "Prefer share / count_if / sum_if / mean_if for rates and conditional totals.",
       "Do not chart near-flat bands as trends without acknowledging flatness.",
       "mergeUserRows preserves createdBy:user rows (e.g. md-analyst-speed-tiers) across regen."
@@ -46,6 +48,7 @@
       "tabIds": [
         "types",
         "generations",
+        "starters",
         "legendary",
         "archetypes",
         "team-pool",
@@ -194,6 +197,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -255,6 +263,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -336,6 +349,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -402,6 +420,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -481,6 +504,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -548,6 +576,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -631,6 +664,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -697,6 +735,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -785,6 +828,11 @@
                     "value": true
                   },
                   {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
+                  },
+                  {
                     "column": "legendary",
                     "op": "eq",
                     "value": false
@@ -849,6 +897,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   },
                   {
                     "column": "legendary",
@@ -937,6 +990,11 @@
                     "value": true
                   },
                   {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
+                  },
+                  {
                     "column": "legendary",
                     "op": "eq",
                     "value": false
@@ -1001,6 +1059,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   },
                   {
                     "column": "legendary",
@@ -1080,6 +1143,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   },
                   {
                     "column": "legendary",
@@ -1170,6 +1238,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -1262,6 +1335,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -1325,6 +1403,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -1403,6 +1486,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -1473,6 +1561,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -1551,6 +1644,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -1641,6 +1739,11 @@
                     "value": "Primary"
                   },
                   {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
+                  },
+                  {
                     "column": "legendary",
                     "op": "eq",
                     "value": false
@@ -1707,6 +1810,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   },
                   {
                     "column": "legendary",
@@ -1777,6 +1885,11 @@
                     "value": "Primary"
                   },
                   {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
+                  },
+                  {
                     "column": "legendary",
                     "op": "eq",
                     "value": false
@@ -1834,9 +1947,1169 @@
       ]
     },
     {
+      "id": "starters",
+      "label": "Starter finals",
+      "order": 3,
+      "rows": [
+        {
+          "id": "md-starters",
+          "type": "markdown",
+          "order": 0,
+          "createdBy": "skill",
+          "body": "## Starter final evolutions (Gen 1\u20136)\n\n**Population:** the 18 traditional starter **final** lines \u2014 primary CSV rows for Venusaur through Greninja (no Mega/alternate formes). Canonical adds **long-form** `record_kind=base_stat` rows (six stats per final) so each panel charts raw stat magnitudes without inventing pivot columns.\n\n**Scales:** all 18 stat panels share `scaleGroup: starter-final-stats` with `yDomain: [0, 130]` so Grass/Fire/Water finals within a generation compare honestly."
+        },
+        {
+          "id": "md-starter-g1",
+          "type": "markdown",
+          "order": 1.0,
+          "createdBy": "skill",
+          "body": "### Generation 1 \u2014 Venusaur \u00b7 Charizard \u00b7 Blastoise"
+        },
+        {
+          "id": "comp-starter-g1",
+          "type": "component",
+          "order": 1.1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-starter-g1-grass",
+              "title": "Venusaur",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Venusaur"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 0
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            },
+            {
+              "id": "chart-starter-g1-fire",
+              "title": "Charizard",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Charizard"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 1
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            },
+            {
+              "id": "chart-starter-g1-water",
+              "title": "Blastoise",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Blastoise"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 5
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            }
+          ]
+        },
+        {
+          "id": "md-starter-g2",
+          "type": "markdown",
+          "order": 2.0,
+          "createdBy": "skill",
+          "body": "### Generation 2 \u2014 Meganium \u00b7 Typhlosion \u00b7 Feraligatr"
+        },
+        {
+          "id": "comp-starter-g2",
+          "type": "component",
+          "order": 2.1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-starter-g2-grass",
+              "title": "Meganium",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Meganium"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 0
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            },
+            {
+              "id": "chart-starter-g2-fire",
+              "title": "Typhlosion",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Typhlosion"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 1
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            },
+            {
+              "id": "chart-starter-g2-water",
+              "title": "Feraligatr",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Feraligatr"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 5
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            }
+          ]
+        },
+        {
+          "id": "md-starter-g3",
+          "type": "markdown",
+          "order": 3.0,
+          "createdBy": "skill",
+          "body": "### Generation 3 \u2014 Sceptile \u00b7 Blaziken \u00b7 Swampert"
+        },
+        {
+          "id": "comp-starter-g3",
+          "type": "component",
+          "order": 3.1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-starter-g3-grass",
+              "title": "Sceptile",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Sceptile"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 0
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            },
+            {
+              "id": "chart-starter-g3-fire",
+              "title": "Blaziken",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Blaziken"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 1
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            },
+            {
+              "id": "chart-starter-g3-water",
+              "title": "Swampert",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Swampert"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 5
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            }
+          ]
+        },
+        {
+          "id": "md-starter-g4",
+          "type": "markdown",
+          "order": 4.0,
+          "createdBy": "skill",
+          "body": "### Generation 4 \u2014 Torterra \u00b7 Infernape \u00b7 Empoleon"
+        },
+        {
+          "id": "comp-starter-g4",
+          "type": "component",
+          "order": 4.1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-starter-g4-grass",
+              "title": "Torterra",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Torterra"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 0
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            },
+            {
+              "id": "chart-starter-g4-fire",
+              "title": "Infernape",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Infernape"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 1
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            },
+            {
+              "id": "chart-starter-g4-water",
+              "title": "Empoleon",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Empoleon"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 5
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            }
+          ]
+        },
+        {
+          "id": "md-starter-g5",
+          "type": "markdown",
+          "order": 5.0,
+          "createdBy": "skill",
+          "body": "### Generation 5 \u2014 Serperior \u00b7 Emboar \u00b7 Samurott"
+        },
+        {
+          "id": "comp-starter-g5",
+          "type": "component",
+          "order": 5.1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-starter-g5-grass",
+              "title": "Serperior",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Serperior"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 0
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            },
+            {
+              "id": "chart-starter-g5-fire",
+              "title": "Emboar",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Emboar"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 1
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            },
+            {
+              "id": "chart-starter-g5-water",
+              "title": "Samurott",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Samurott"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 5
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            }
+          ]
+        },
+        {
+          "id": "md-starter-g6",
+          "type": "markdown",
+          "order": 6.0,
+          "createdBy": "skill",
+          "body": "### Generation 6 \u2014 Chesnaught \u00b7 Delphox \u00b7 Greninja"
+        },
+        {
+          "id": "comp-starter-g6",
+          "type": "component",
+          "order": 6.1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-starter-g6-grass",
+              "title": "Chesnaught",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Chesnaught"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 0
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            },
+            {
+              "id": "chart-starter-g6-fire",
+              "title": "Delphox",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Delphox"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 1
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            },
+            {
+              "id": "chart-starter-g6-water",
+              "title": "Greninja",
+              "query": {
+                "filter": [
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "base_stat"
+                  },
+                  {
+                    "column": "name",
+                    "op": "eq",
+                    "value": "Greninja"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "stat_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "stat_label",
+                "value": "stat_value"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "stat_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "stat_value",
+                    "name": "Base stat",
+                    "colorIndex": 5
+                  }
+                ],
+                "categoryWidth": 72,
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Primary form \u00b7 record_kind=base_stat \u00b7 shared scaleGroup starter-final-stats",
+              "notes": "Six base stats on a 0\u2013130 axis \u2014 siblings share yDomain across all starter finals.",
+              "scaleGroup": "starter-final-stats"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "legendary",
       "label": "Legendary",
-      "order": 3,
+      "order": 4,
       "rows": [
         {
           "id": "md-leg",
@@ -1870,6 +3143,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -1931,6 +3209,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -2006,6 +3289,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -2069,6 +3357,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -2132,6 +3425,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -2195,6 +3493,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -2258,6 +3561,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -2321,6 +3629,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -2404,6 +3717,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -2485,6 +3803,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -2566,6 +3889,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "orderBy": [
@@ -2633,7 +3961,7 @@
     {
       "id": "archetypes",
       "label": "Archetypes",
-      "order": 4,
+      "order": 5,
       "rows": [
         {
           "id": "md-arch",
@@ -2667,6 +3995,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -2728,6 +4061,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -2803,6 +4141,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -2871,6 +4214,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -2959,6 +4307,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -3022,6 +4375,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -3085,6 +4443,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -3148,6 +4511,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -3211,6 +4579,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -3274,6 +4647,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -3357,6 +4735,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -3431,6 +4814,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -3517,6 +4905,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -3598,6 +4991,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -3679,6 +5077,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "orderBy": [
@@ -3752,7 +5155,7 @@
     {
       "id": "team-pool",
       "label": "Team pool",
-      "order": 5,
+      "order": 6,
       "rows": [
         {
           "id": "md-pool",
@@ -3786,6 +5189,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   },
                   {
                     "column": "in_team_pool",
@@ -3867,6 +5275,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   },
                   {
                     "column": "in_team_pool",
@@ -3951,6 +5364,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -4032,6 +5450,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -4100,6 +5523,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -4180,6 +5608,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "groupBy": [
@@ -4262,6 +5695,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   },
                   {
                     "column": "speed_tier",
@@ -4356,6 +5794,11 @@
                     "value": "Primary"
                   },
                   {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
+                  },
+                  {
                     "column": "in_team_pool",
                     "op": "eq",
                     "value": true
@@ -4414,7 +5857,7 @@
     {
       "id": "distributions",
       "label": "Distributions",
-      "order": 6,
+      "order": 7,
       "rows": [
         {
           "id": "md-dist",
@@ -4448,6 +5891,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "bin": [
@@ -4535,6 +5983,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "bin": [
@@ -4610,6 +6063,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "bin": [
@@ -4685,6 +6143,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   }
                 ],
                 "bin": [
@@ -4773,6 +6236,11 @@
                     "column": "type_slot",
                     "op": "eq",
                     "value": "Primary"
+                  },
+                  {
+                    "column": "record_kind",
+                    "op": "eq",
+                    "value": "type_slot"
                   },
                   {
                     "column": "legendary",
