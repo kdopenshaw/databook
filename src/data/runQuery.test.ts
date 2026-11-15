@@ -48,4 +48,16 @@ describe('runQuery', () => {
   it('refuses groupBy without aggregate', () => {
     expect(() => runQuery(table, { groupBy: ['group'] })).toThrow(QueryError);
   });
+
+  it('fills empty histogram bins by default', () => {
+    const rows = runQuery(table, {
+      filter: [{ column: 'x', op: 'not_null' }],
+      bin: [{ column: 'x', step: 5 }],
+      aggregate: [{ fn: 'count', as: 'n' }],
+    });
+    // Observed x: 1,4,9,15 → bins 0,5,10,15 — empty 10 should appear with n=0
+    expect(rows.map((r) => r.x_bin)).toEqual([0, 5, 10, 15]);
+    expect(rows.find((r) => r.x_bin === 10)?.n).toBe(0);
+  });
 });
+

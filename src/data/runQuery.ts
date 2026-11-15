@@ -167,7 +167,37 @@ export function runQuery(table: Table, query: ChartQuery): DataRow[] {
       }
       return 0;
     });
-    rows = out;
+
+    // Fill empty histogram bins so gaps stay visible on categorical axes (P2.3).
+    if (query.bin?.length === 1 && !(query.groupBy?.length) && query.bin[0].fillEmpty !== false) {
+      const b = query.bin[0];
+      const startKey = binOutput(b);
+      const endKey = binEndOutput(b);
+      const starts = out.map((r) => num(r[startKey])).filter((v): v is number => v !== null);
+      if (starts.length) {
+        const min = Math.min(...starts);
+        const max = Math.max(...starts);
+        const byStart = new Map(out.map((r) => [num(r[startKey]), r]));
+        const filled: DataRow[] = [];
+        for (let s = min; s <= max + b.step * 1e-9; s = roundBin(s + b.step)) {
+          const existing = byStart.get(s) ?? byStart.get(roundBin(s));
+          if (existing) {
+            filled.push(existing);
+          } else {
+            const row: DataRow = { [startKey]: s, [endKey]: roundBin(s + b.step) };
+            for (const a of query.aggregate ?? []) {
+              row[a.as] = a.fn === 'count' || a.fn === 'count_distinct' || a.fn === 'sum' ? 0 : null;
+            }
+            filled.push(row);
+          }
+        }
+        rows = filled;
+      } else {
+        rows = out;
+      }
+    } else {
+      rows = out;
+    }
   } else {
     rows = [...rows];
   }

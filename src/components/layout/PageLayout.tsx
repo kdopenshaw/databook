@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { ThemeToggle } from '../theme/ThemeToggle';
 import { Sidebar } from './Sidebar';
 import { BookTabs } from './BookTabs';
-import type { TabSection } from '../../data/types';
+import type { BookPage, TabSection } from '../../data/types';
 
 type Props = {
   title: string;
@@ -10,14 +10,36 @@ type Props = {
   tabs: TabSection[];
   activeTabId: string;
   onSelectTab: (tabId: string) => void;
+  pages?: BookPage[];
+  activePageId?: string;
+  onSelectPage?: (pageId: string) => void;
   footer?: ReactNode;
   children: ReactNode;
 };
 
-export function PageLayout({ title, experimentId, tabs, activeTabId, onSelectTab, footer, children }: Props) {
+/**
+ * Tabs are the primary section nav. Sidebar appears only when `pages` are defined
+ * (page groups), so it never duplicates the tab strip 1:1.
+ */
+export function PageLayout({
+  title,
+  experimentId,
+  tabs,
+  activeTabId,
+  onSelectTab,
+  pages = [],
+  activePageId = '',
+  onSelectPage,
+  footer,
+  children,
+}: Props) {
+  const showSidebar = pages.length > 0 && Boolean(onSelectPage);
+
   return (
-    <div className="cb-shell">
-      <Sidebar tabs={tabs} activeTabId={activeTabId} onSelect={onSelectTab} />
+    <div className={`cb-shell${showSidebar ? ' cb-shell-with-sidebar' : ' cb-shell-tabs-only'}`}>
+      {showSidebar ? (
+        <Sidebar pages={pages} activePageId={activePageId} onSelectPage={onSelectPage!} />
+      ) : null}
       <div className="cb-main-column">
         <header className="cb-header">
           <div className="cb-title">
