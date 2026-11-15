@@ -81,3 +81,39 @@ The stock renderer could not draw several of the chosen forms. All extensions ar
 - **Misleading comparison:** "Archetypes among Megas" compared Megas against all species. It is now "Archetype share: base forms vs their Megas" (11 of 48 vs 28 of 50), which is the like-for-like comparison.
 - **Unreadable ticks:** share charts got explicit `valueTicks` (0/25/50/75/100%, 0–20%), and the small-multiple histograms got shared y ticks (0–140).
 - **Generation shares:** a mixed chart (legendary share and dual-type share on one axis) was reduced to legendary share; dual-type share lives in the dual-typing section.
+
+## Round 5 (a cold teammate's starter section, commit 1eeecb9)
+
+Another agent with no context added a starter-final section to Generations. Its data work was sound: the 18-species list is correct, it went through `build_canonical.py` / `build_rows.py` rather than hand-editing JSON, and the prose numbers are right. What it missed:
+
+- **A bar chart with a cut-off axis** ("mean total by role", y from 520 to 540). Fire's bar (532) drew about 1.7× as tall as Grass's (527), a 1% difference. This is exactly the rule the round-4 review had just enforced.
+- **Charts of a non-result.** All 18 totals sit in 525–535, so a line chart of totals (whose "means" were each one species, via three new pivot columns) and a role bar chart both said "flat" while looking like trends. The real story is in how the points are spent (Fire is frail and special, Gen 2 reuses Gen 1's numbers), and the section didn't tell it.
+- **Small multiples that can't be compared or read:**
+  - Each panel auto-scaled its own y-axis.
+  - The x-axis read Fire / Grass / Water in every panel, so you couldn't tell which Pokémon is which without hovering.
+  - Every panel had the same subtitle, "e.g. Venusaur / Charizard / Blastoise", even in Gens 2–6.
+  - No panel had a note.
+- **Colours:** Grass / Fire / Water were drawn in palette 0 / 3 / 4, which in this book are HP / Sp. Atk / Sp. Def, right next to stat-coloured charts.
+- **Documentation and tests:**
+  - No test for any new number.
+  - No `understanding.md` entry for the new columns.
+  - No manifest param for the hand-maintained starter list.
+  - No check that the list matched 18 species (a typo would have silently dropped one).
+
+What I changed:
+- Dropped the three pivot columns.
+- Added a one-per-(generation, role) guard in the transform and recorded the list in the manifest.
+- The totals are now a generated 6 × 3 markdown table.
+- New "Average stat profile by role" chart on a zero baseline.
+- Per-generation panels use names on the x-axis, a shared 0–130 scale and one takeaway note each.
+- The prose is derived from the data and tested.
+- Documented in `understanding.md`.
+
+**What would have helped them, in this repo** (now done):
+1. **The house rules were only in this log and in my head.** They now sit as a conventions block at the top of `build_rows.py`, the file any editor has to open.
+2. **Tests enforce the rules.** `book.test.ts` → "book conventions" covers zero-based bars, stated line-axis zooms, a shared scale for small multiples, and fixed stat colours. Run against 1eeecb9, it fails on every chart problem above.
+
+**What would have helped, in the skill** (read-only, so these are suggestions):
+3. **There is no "extend an existing book" path.** `SKILL.md` is an init → profile → transform → emit pipeline. It never tells a later editor to read `understanding.md`, the generator, or the tests first, or to rerun the sanity step on the whole book.
+4. **The chart rules exist but are routed elsewhere.** "Bar charts start at zero" and "scales are consistent across panels" are in `references/anthropic-data-plugin/skills/validate-data` and `create-viz`. The router sends agents there only for profiling and for choosing a chart form, not as a pre-commit check. Pipeline step 6 ("queries return rows") has no chart-honesty items.
+5. **The spec has no place for book-level conventions** (a palette meaning, a population filter). `chart-book-spec.md` could reserve a `conventions` block in `BookDocument` or `understanding.md`, so the next agent inherits them.
