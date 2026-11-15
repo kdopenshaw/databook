@@ -262,7 +262,7 @@ type ComponentRow = RowBase & {
 type Row = MarkdownRow | ComponentRow;
 ```
 
-`ChartEncoding` maps query result columns to visual roles. Stock **`RechartsSpec`** fields (horizontal bars via `layout: "vertical"`, `stackId`, axis labels, domains, `colorBy`, numeric `xType`, …) are documented in `SKILL.md` and `src/data/types.ts`. Unknown marks fail `npm run lint:charts`. Generators must preserve `createdBy: "user"` rows via `mergeUserRows`.
+`ChartEncoding` maps query result columns to visual roles. Stock **`RechartsSpec`** fields (horizontal bars via `layout: "vertical"`, `stackId`, axis labels, domains, `colorBy`, numeric `xType`, …) are documented in `SKILL.md` and `src/data/types.ts`. Unknown marks fail `npm run ok` (live chart lint). Generators must preserve `createdBy: "user"` rows via `mergeUserRows`.
 
 ### 3.4 How the agent chooses row type
 
@@ -396,7 +396,7 @@ See §8 open questions.
 ### 5.3 Tabs (Geist)
 
 - Use Geist’s **Tabs** component from the open-source Geist design system (e.g. `@vercel/geistcn` / published Geist Tabs API).  
-- Skill emits `tabs[]` with `id` / `label` / `rows`; optional `pages[]` for Sidebar grouping (mobile page switcher when the sidebar is hidden). Chart honesty is enforced by `src/data/chartLint.ts` (`npm run lint:charts`) — bar axes include 0, line zooms are stated, sibling panels share domains via identical `dataKey` aliases or `scaleGroup`, and near-flat “trend” bands are rejected unless flatness is acknowledged.  
+- Skill emits `tabs[]` with `id` / `label` / `rows`; optional `pages[]` for Sidebar grouping (mobile page switcher when the sidebar is hidden). Chart honesty is enforced by `src/data/chartLint.ts` via **`npm run ok`** (live book + canonical) — bar axes include 0, line zooms are stated, sibling panels share domains via identical `dataKey` aliases or `scaleGroup`, and near-flat “trend” bands are rejected unless flatness is acknowledged. `npm run lint:charts` remains unit tests of the linter only.  
 - Prefer reflecting the active tab in the URL (`?tab=` via `pushState`; optional `?page=`) so refresh and Back work — scaffold-owned.  
 - Tabs are **not** generated as one-off per-book UI; only labels and row membership vary.
 
@@ -470,7 +470,7 @@ src/
     runQuery.ts
 ```
 
-Dependencies include at least: `react`, `recharts`, `react-markdown`, and the **Geist** package that provides Tabs + typography/spacing tokens (e.g. `@vercel/geistcn` / current Geist open-source distribution).
+Dependencies include at least: `react`, `recharts`, `react-markdown`. Geist typography is **vendored** (`public/fonts/*.woff2`); Tabs are the scaffold `BookTabs` primitive (do not add the `geist` npm package — it peers Next unused).
 
 ### 6.2 Standard components (required)
 
@@ -601,7 +601,7 @@ If a book scaffold already exists, init is a no-op or a version-aware refresh �
 - [ ] `rows.json` (`BookDocument`) renders markdown rows (**react-markdown**) and component rows in order inside the active tab.  
 - [ ] Running book offers a quiet **(+)** between rows to insert editable user markdown; inserts persist (browser overlay + `mergeUserRows` shape).  
 - [ ] Skill markdown is findings prose — no default “Analyst ask/take” framing.  
-- [ ] A component row can hold multiple charts side by side; `ref` reuses charts; `npm run lint:charts` gates honesty.   
+- [ ] A component row can hold multiple charts side by side; `ref` reuses charts; `npm run ok` gates honesty (live lint + query smoke).   
 - [ ] Chart blocks carry **inlined** query objects; no separate queries/recipe file.  
 - [ ] Canonical data is **one JSON file** of normalized rows; queries shape data at read time.  
 - [ ] Skill invoke runs **databook init** automatically and installs the trivial hello-world + exponential sample.  

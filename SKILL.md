@@ -33,9 +33,11 @@ Do **not** re-init. **Every** extend round (including R2/R3/cold) must complete 
 | 1 | Read `src/data/understanding.md` | Grain, population filters, caveats recalled |
 | 2 | Read `BookDocument.conventions` in `rows.json` (+ generator header) | Honesty rules in working memory |
 | 3 | Find the generator (`src/data/transforms/…`) | Prefer editing it over hand-editing `rows.json` |
-| 4 | `npm run extend-check` | understanding.md + conventions + `scripts/check-book.mjs` present |
-| 5 | Open **validate-data** + **create-viz** pointers | `references/anthropic-data-plugin/skills/validate-data/` and `references/anthropic-dataviz/METHOD.md` (or `create-viz/`) — honesty, not only first-chart choice |
-| 6 | Apply → `mergeUserRows` → **`npm test`** → **`npm run lint:charts`** → **`npm run check`** (blocking) → visual when server up (`npm run check:visual -- --url …`) | All green |
+| 4 | Apply → `mergeUserRows` → **`npm run ok`** (blocking) | Artifacts + live `lintBook(rows, { table })` + nonempty query smoke green |
+| 5 | Open **validate-data** / **create-viz** | **Only when choosing new chart forms / cuts** — not every regen |
+| 6 | Visual | **Optional** on handoff or UI doubt: `npm run check:visual -- --url http://127.0.0.1:5173/` |
+
+**Exploratory loop:** leave `npm run dev` running; after each edit run **only** `npm run ok`. Do **not** also run `lint:charts`, `check`, `extend-check`, `npm test`, or `check:visual` every round (`check`/`validate`/`extend-check` are aliases or subsets of `ok`).
 
 House rules that must not live only in a private `AGENT_NOTES.md`:
 
@@ -49,7 +51,7 @@ House rules that must not live only in a private `AGENT_NOTES.md`:
 
 ### Init (automatic when no book yet)
 
-1. Copy the scaffold listed in `scaffold-files.txt` (or: `src/`, `public/`, `scripts/`, `index.html`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `.gitignore`) into the **target**. **`scripts/` is required** so `npm run check` works.
+1. Copy the scaffold listed in `scaffold-files.txt` (or: `src/`, `public/`, `scripts/`, `index.html`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `vitest.ok.config.ts`, `.gitignore`) into the **target**. **`scripts/` is required** so `npm run ok` works.
 2. Write the **minimal sample** into the target: one tab **Overview**, markdown **hello world**, one exponential curve chart, tiny `canonical.json`, `understanding.md`, and `BookDocument.conventions`.
 3. Set `index.html` `<title>` from `BookDocument.title` when replacing the sample.
 4. Mount **BookTabs** (primary nav). Sidebar appears only when `pages` are defined (desktop); mobile shows a horizontal page switcher.
@@ -65,7 +67,7 @@ House rules that must not live only in a private `AGENT_NOTES.md`:
 | 3 | **Transform** | `src/data/canonical.json` — **one** JSON file of normalized rows |
 | 4 | **Choose charts** | → Anthropic dataviz; pick Recharts compositions from **stock RechartsSpec** |
 | 5 | **Emit document** | `src/data/rows.json` (`BookDocument`); inlined `query` + `recharts` + `encoding`; set `conventions` |
-| 6 | **Sanity-check (blocking)** | `npm run extend-check` (when extending); queries return rows; **`npm run lint:charts`**; **`npm run check`**; prefer **`check:visual`** with the dev server; multi-chart rows have a clear comparison purpose |
+| 6 | **Sanity-check (blocking)** | **`npm run ok`** (artifacts + live honesty lint with canonical + query nonempty smoke). Optional: `check:visual` on handoff. Multi-chart rows need a clear comparison purpose. |
 
 **Do not** create `queries.json`, `blocks.json`, or a closed `ChartCatalog` of bar/line/…. Queries live on each chart block.
 
@@ -76,7 +78,7 @@ Open bundled references **only at the step that needs them**. Do **not** dump al
 | When | Read |
 |------|------|
 | Profiling / exploring unfamiliar sources | `references/anthropic-data-plugin/skills/explore-data/` and related (`validate-data`, `statistical-analysis`, `sql-queries`, `analyze`, …) |
-| Validation / statistical checks **and pre-commit honesty** | `references/anthropic-data-plugin/skills/validate-data/`, `statistical-analysis/`, plus dataviz zero-baseline / scale guidance |
+| Validation / statistical checks when cutting new analysis | `references/anthropic-data-plugin/skills/validate-data/`, `statistical-analysis/`, plus dataviz zero-baseline / scale guidance |
 | Choosing chart form / encodings | `references/anthropic-dataviz/METHOD.md`, then `create-viz/` / `data-visualization/` |
 | Layout / rows / scaffold rules | This file + `chart-book-spec.md` + `src/data/types.ts` |
 
@@ -99,7 +101,7 @@ Important optional fields (all in `src/data/types.ts`):
 | `tooltipKeys`, `decimals`, `valueFormat` | Tooltip polish |
 | `colorIndex`, `strokeDasharray` | Stable palette slots / dashed lines |
 
-**Do not fork the scaffold renderer** for these — emit the fields above. Unknown marks fail `lint:charts`.
+**Do not fork the scaffold renderer** for these — emit the fields above. Unknown marks fail `npm run ok` / chart lint.
 
 ### Multi-chart rows, scaleGroup & pages
 
@@ -143,6 +145,6 @@ Write findings as normal prose and section headings that state the point (“HP 
 
 - Charts: **Recharts** only (stock renderer fields above).
 - Markdown: **react-markdown** + GFM. In-app **(+)** inserts user markdown; skill output stays findings prose (no default “Analyst ask/take” sections).
-- Typography: **`geist`** font package. Tabs: Geist-styled `BookTabs`.
+- Typography: **vendored Geist fonts** in `public/fonts/` (no `geist` npm package). Tabs: Geist-styled `BookTabs`.
 - Theme: CSS variables + class `dark` on `<html>` via `ThemeToggle` + `localStorage`. Charts remount on theme change.
 - Product docs live in this repo’s root `README.md` only.

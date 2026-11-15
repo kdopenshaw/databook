@@ -1,7 +1,6 @@
 /**
- * Geist typography comes from the `geist` npm package (fonts only).
- * Font files are vendored into public/fonts so Vite can serve them without
- * hitting the package `exports` field (which only exposes next/font entrypoints).
+ * Geist typography from vendored woff2 in public/fonts (no `geist` npm dep —
+ * that package peers Next and is unused at runtime).
  */
 export function injectGeistFonts() {
   if (typeof document === 'undefined') return;
