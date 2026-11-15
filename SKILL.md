@@ -13,16 +13,19 @@ Follow `chart-book-spec.md` for schemas, invariants, and acceptance criteria.
 
 ## On invoke (always)
 
+**Target** = the user’s open workspace (where the chart book belongs).  
+**Skill package** = this install (`SKILL.md`, `chart-book-spec.md`, `references/`, scaffold) — treat as a **read-only template**. **Copy** scaffold files into the target; **never** write experiment data, `canonical.json`, `rows.json`, or analysis into the skill install folder (`~/.cursor/skills/databook`, `.cursor/skills/databook`, or the product clone used only as the template).
+
 1. **Run databook init automatically** — there is no separate user-facing init command.
-   - Ensure nested layout: `src/components/`, `src/data/`, plus the fixed Vite React shell at the book root when scaffolding a new book.
-   - If no book yet: write the **minimal sample**
+   - In the **target** workspace: ensure nested layout `src/components/`, `src/data/`, plus the fixed Vite React shell at the book root when scaffolding a new book (copy from the skill package; do not edit the package in place).
+   - If no book yet: write the **minimal sample** into the target
      - one tab **Overview**
      - one markdown row body **hello world**
      - one component row with a single **exponential curve** chart
-     - tiny synthetic points in `src/data/canonical.json`
+     - tiny synthetic points in the target’s `src/data/canonical.json`
    - Mount **Sidebar + BookTabs** even for that single-tab sample.
    - **Do not** generate a README inside the target book when initializing into another project.
-2. Continue with the user’s request (replace the sample with real analysis as needed).
+2. Continue with the user’s request (replace the sample with real analysis as needed) — all writes stay in the **target**.
 
 ## Pipeline
 
