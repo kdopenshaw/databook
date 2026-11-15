@@ -38,6 +38,12 @@ COUNT_GEN_DOMAIN = [0, 180]
 SHARE_DOMAIN = [0, 0.35]
 LEG_MEAN_DOMAIN = [0, 160]
 LEG_BST_DOMAIN = [0, 700]
+ARCH_COUNT_DOMAIN = [0, 700]
+ARCH_BST_DOMAIN = [0, 600]
+ARCH_STAT_DOMAIN = [0, 140]
+ARCH_SHARE_DOMAIN = [0, 0.25]
+ARCH_LEAN_COUNT = [0, 400]
+SLOT_COUNT_DOMAIN = [0, 130]
 
 
 def merge_user_rows(previous: dict | None, nxt: dict) -> dict:
@@ -499,8 +505,8 @@ def build_book() -> dict:
         x_key="type",
         data_key="n",
         name="Species",
-        subtitle="Primary forms · Type 1 only (type_slot=Primary) · no double-count",
-        notes="Type-1-only cut — compare with both-slot participation chart above.",
+        subtitle="Primary forms · Type 1 only (type_slot=Primary) · undercounts Type-2-only roles",
+        notes="Type-1-only cut — Flying and other common secondaries look thinner than both-slot.",
         y_domain=COUNT_TYPE_DOMAIN,
         color_index=0,
         decimals=0,
@@ -509,6 +515,132 @@ def build_book() -> dict:
             "groupBy": ["type"],
             "aggregate": [{"fn": "count", "as": "n", "label": "Species"}],
             "orderBy": [{"column": "n", "direction": "desc"}],
+        },
+    )
+    # Both-slot slot split: Primary vs Secondary participation via count_if.
+    type_slot_primary = bar_h(
+        "chart-type-slot-primary",
+        "Primary-slot participations by type",
+        x_key="type",
+        data_key="n_primary_slot",
+        name="Primary slot",
+        subtitle="count_if(type_slot=Primary) · both-slot groups · scaleGroup type-slots",
+        notes="Within both-slot type groups, how many rows are Type 1.",
+        y_domain=SLOT_COUNT_DOMAIN,
+        scale_group="type-slots",
+        color_index=0,
+        decimals=0,
+        height=380,
+        query={
+            "filter": TYPE_ANY,
+            "groupBy": ["type"],
+            "aggregate": [
+                {
+                    "fn": "count_if",
+                    "as": "n_primary_slot",
+                    "label": "Primary slot",
+                    "where": {"column": "type_slot", "op": "eq", "value": "Primary"},
+                }
+            ],
+            "orderBy": [{"column": "type", "direction": "asc"}],
+        },
+    )
+    type_slot_secondary = bar_h(
+        "chart-type-slot-secondary",
+        "Secondary-slot participations by type",
+        x_key="type",
+        data_key="n_secondary_slot",
+        name="Secondary slot",
+        subtitle="count_if(type_slot=Secondary) · both-slot groups · scaleGroup type-slots",
+        notes="Type 2 appearances — Flying/Poison often dominate here vs Type-1-only charts.",
+        y_domain=SLOT_COUNT_DOMAIN,
+        scale_group="type-slots",
+        color_index=5,
+        decimals=0,
+        height=380,
+        query={
+            "filter": TYPE_ANY,
+            "groupBy": ["type"],
+            "aggregate": [
+                {
+                    "fn": "count_if",
+                    "as": "n_secondary_slot",
+                    "label": "Secondary slot",
+                    "where": {"column": "type_slot", "op": "eq", "value": "Secondary"},
+                }
+            ],
+            "orderBy": [{"column": "type", "direction": "asc"}],
+        },
+    )
+    type_speed = bar_h(
+        "chart-type-speed",
+        "Mean Speed by type",
+        x_key="type",
+        data_key="mean_speed",
+        name="Mean Speed",
+        subtitle="Both slots · non-legendary · pairs with bulk/offense families separately",
+        y_domain=STAT_DOMAIN,
+        color_index=5,
+        height=380,
+        query={
+            "filter": TYPE_ANY_NONLEG,
+            "groupBy": ["type"],
+            "aggregate": [{"fn": "mean", "column": "speed", "as": "mean_speed", "label": "Mean Speed"}],
+            "orderBy": [{"column": "type", "direction": "asc"}],
+        },
+    )
+    type_glass_share = bar_h(
+        "chart-type-glass-share",
+        "Glass-cannon share by type",
+        x_key="type",
+        data_key="glass_share",
+        name="Glass share",
+        subtitle="share(is_glass_cannon) · primary forms · both slots",
+        y_domain=ARCH_SHARE_DOMAIN,
+        scale_group="type-arch-rate",
+        color_index=1,
+        value_format="percent",
+        decimals=1,
+        height=380,
+        query={
+            "filter": TYPE_ANY,
+            "groupBy": ["type"],
+            "aggregate": [
+                {
+                    "fn": "share",
+                    "as": "glass_share",
+                    "label": "Glass share",
+                    "where": {"column": "is_glass_cannon", "op": "eq", "value": True},
+                }
+            ],
+            "orderBy": [{"column": "glass_share", "direction": "desc"}],
+        },
+    )
+    type_tank_share = bar_h(
+        "chart-type-tank-share",
+        "Tank share by type",
+        x_key="type",
+        data_key="tank_share",
+        name="Tank share",
+        subtitle="share(is_tank) · primary forms · both slots",
+        y_domain=ARCH_SHARE_DOMAIN,
+        scale_group="type-arch-rate",
+        color_index=4,
+        value_format="percent",
+        decimals=1,
+        height=380,
+        query={
+            "filter": TYPE_ANY,
+            "groupBy": ["type"],
+            "aggregate": [
+                {
+                    "fn": "share",
+                    "as": "tank_share",
+                    "label": "Tank share",
+                    "where": {"column": "is_tank", "op": "eq", "value": True},
+                }
+            ],
+            "orderBy": [{"column": "tank_share", "direction": "desc"}],
         },
     )
 
@@ -940,6 +1072,296 @@ def build_book() -> dict:
         },
     )
 
+    # ---- Archetypes ----
+    arch_count = bar_v(
+        "chart-arch-count",
+        "Species count by archetype",
+        x_key="archetype",
+        series=[{"dataKey": "n", "name": "Species", "colorIndex": 0}],
+        subtitle="Primary forms · Glass 61 · Tank 41 · Neither remainder",
+        y_domain=ARCH_COUNT_DOMAIN,
+        show_legend=False,
+        decimals=0,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["archetype"],
+            "aggregate": [{"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "archetype", "direction": "asc"}],
+        },
+    )
+    arch_bst = bar_v(
+        "chart-arch-bst",
+        "Mean BST by archetype",
+        x_key="archetype",
+        series=[{"dataKey": "mean_bst", "name": "Mean BST", "colorIndex": 2}],
+        subtitle="Primary forms · separate scale from six-stat means",
+        y_domain=ARCH_BST_DOMAIN,
+        show_legend=False,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["archetype"],
+            "aggregate": [{"fn": "mean", "column": "total", "as": "mean_bst"}],
+            "orderBy": [{"column": "archetype", "direction": "asc"}],
+        },
+    )
+    arch_glass_share_gen = bar_v(
+        "chart-arch-glass-gen",
+        "Glass-cannon share by generation",
+        x_key="generation_label",
+        series=[{"dataKey": "glass_share", "name": "Glass share", "colorIndex": 1}],
+        subtitle="share(is_glass_cannon) · primary forms",
+        y_domain=ARCH_SHARE_DOMAIN,
+        scale_group="arch-gen-rate",
+        show_legend=False,
+        value_format="percent",
+        decimals=1,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["generation_label"],
+            "aggregate": [
+                {
+                    "fn": "share",
+                    "as": "glass_share",
+                    "where": {"column": "is_glass_cannon", "op": "eq", "value": True},
+                }
+            ],
+            "orderBy": [{"column": "generation_label", "direction": "asc"}],
+        },
+    )
+    arch_tank_share_gen = bar_v(
+        "chart-arch-tank-gen",
+        "Tank share by generation",
+        x_key="generation_label",
+        series=[{"dataKey": "tank_share", "name": "Tank share", "colorIndex": 4}],
+        subtitle="share(is_tank) · primary forms",
+        y_domain=ARCH_SHARE_DOMAIN,
+        scale_group="arch-gen-rate",
+        show_legend=False,
+        value_format="percent",
+        decimals=1,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["generation_label"],
+            "aggregate": [
+                {
+                    "fn": "share",
+                    "as": "tank_share",
+                    "where": {"column": "is_tank", "op": "eq", "value": True},
+                }
+            ],
+            "orderBy": [{"column": "generation_label", "direction": "asc"}],
+        },
+    )
+    arch_atk = bar_v(
+        "chart-arch-atk",
+        "Mean Attack",
+        x_key="archetype",
+        series=[{"dataKey": "mean_atk", "name": "Attack", "colorIndex": 1}],
+        subtitle="scaleGroup arch-stats",
+        y_domain=ARCH_STAT_DOMAIN,
+        scale_group="arch-stats",
+        show_legend=False,
+        height=280,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["archetype"],
+            "aggregate": [{"fn": "mean", "column": "attack", "as": "mean_atk"}],
+            "orderBy": [{"column": "archetype", "direction": "asc"}],
+        },
+    )
+    arch_spa = bar_v(
+        "chart-arch-spa",
+        "Mean Sp. Atk",
+        x_key="archetype",
+        series=[{"dataKey": "mean_spa", "name": "Sp. Atk", "colorIndex": 3}],
+        subtitle="scaleGroup arch-stats",
+        y_domain=ARCH_STAT_DOMAIN,
+        scale_group="arch-stats",
+        show_legend=False,
+        height=280,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["archetype"],
+            "aggregate": [{"fn": "mean", "column": "sp_atk", "as": "mean_spa"}],
+            "orderBy": [{"column": "archetype", "direction": "asc"}],
+        },
+    )
+    arch_def = bar_v(
+        "chart-arch-def",
+        "Mean Defense",
+        x_key="archetype",
+        series=[{"dataKey": "mean_def", "name": "Defense", "colorIndex": 2}],
+        subtitle="scaleGroup arch-stats",
+        y_domain=ARCH_STAT_DOMAIN,
+        scale_group="arch-stats",
+        show_legend=False,
+        height=280,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["archetype"],
+            "aggregate": [{"fn": "mean", "column": "defense", "as": "mean_def"}],
+            "orderBy": [{"column": "archetype", "direction": "asc"}],
+        },
+    )
+    arch_spdef = bar_v(
+        "chart-arch-spdef",
+        "Mean Sp. Def",
+        x_key="archetype",
+        series=[{"dataKey": "mean_spdef", "name": "Sp. Def", "colorIndex": 4}],
+        subtitle="scaleGroup arch-stats",
+        y_domain=ARCH_STAT_DOMAIN,
+        scale_group="arch-stats",
+        show_legend=False,
+        height=280,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["archetype"],
+            "aggregate": [{"fn": "mean", "column": "sp_def", "as": "mean_spdef"}],
+            "orderBy": [{"column": "archetype", "direction": "asc"}],
+        },
+    )
+    arch_speed = bar_v(
+        "chart-arch-speed",
+        "Mean Speed",
+        x_key="archetype",
+        series=[{"dataKey": "mean_speed", "name": "Speed", "colorIndex": 5}],
+        subtitle="scaleGroup arch-stats",
+        y_domain=ARCH_STAT_DOMAIN,
+        scale_group="arch-stats",
+        show_legend=False,
+        height=280,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["archetype"],
+            "aggregate": [{"fn": "mean", "column": "speed", "as": "mean_speed"}],
+            "orderBy": [{"column": "archetype", "direction": "asc"}],
+        },
+    )
+    arch_hp = bar_v(
+        "chart-arch-hp",
+        "Mean HP",
+        x_key="archetype",
+        series=[{"dataKey": "mean_hp", "name": "HP", "colorIndex": 0}],
+        subtitle="scaleGroup arch-stats",
+        y_domain=ARCH_STAT_DOMAIN,
+        scale_group="arch-stats",
+        show_legend=False,
+        height=280,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["archetype"],
+            "aggregate": [{"fn": "mean", "column": "hp", "as": "mean_hp"}],
+            "orderBy": [{"column": "archetype", "direction": "asc"}],
+        },
+    )
+    lean_count = bar_v(
+        "chart-lean-count",
+        "Species by offense lean",
+        x_key="offense_lean",
+        series=[{"dataKey": "n", "name": "Species", "colorIndex": 5}],
+        subtitle="|Attack−Sp.Atk| ≥ 15 → Physical/Special · primary forms",
+        y_domain=ARCH_LEAN_COUNT,
+        show_legend=False,
+        decimals=0,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["offense_lean"],
+            "aggregate": [{"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "offense_lean", "direction": "asc"}],
+        },
+    )
+    lean_glass_count_if = bar_v(
+        "chart-lean-glass-count",
+        "Glass cannons by offense lean",
+        x_key="offense_lean",
+        series=[{"dataKey": "n_glass", "name": "Glass cannons", "colorIndex": 1}],
+        subtitle="count_if(is_glass_cannon) within lean · primary forms",
+        y_domain=[0, 40],
+        show_legend=False,
+        decimals=0,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["offense_lean"],
+            "aggregate": [
+                {
+                    "fn": "count_if",
+                    "as": "n_glass",
+                    "where": {"column": "is_glass_cannon", "op": "eq", "value": True},
+                }
+            ],
+            "orderBy": [{"column": "offense_lean", "direction": "asc"}],
+        },
+    )
+    arch_mean_if_offense = bar_v(
+        "chart-arch-mean-if-offense",
+        "Mean offense among glass cannons (mean_if)",
+        x_key="offense_lean",
+        series=[{"dataKey": "mean_glass_off", "name": "Mean offense (glass)", "colorIndex": 1}],
+        subtitle="mean_if(offense where is_glass_cannon) by lean",
+        y_domain=ARCH_STAT_DOMAIN,
+        scale_group="arch-cond-offense",
+        show_legend=False,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["offense_lean"],
+            "aggregate": [
+                {
+                    "fn": "mean_if",
+                    "column": "offense",
+                    "as": "mean_glass_off",
+                    "where": {"column": "is_glass_cannon", "op": "eq", "value": True},
+                }
+            ],
+            "orderBy": [{"column": "offense_lean", "direction": "asc"}],
+        },
+    )
+    arch_sum_if_tank_bst = bar_v(
+        "chart-arch-sum-if-tank",
+        "Sum of tank BST (sum_if)",
+        x_key="offense_lean",
+        series=[{"dataKey": "sum_tank_bst", "name": "Sum BST (tanks)", "colorIndex": 4}],
+        subtitle="sum_if(total where is_tank) by lean · own scale",
+        notes="Conditional total — not a sibling of mean panels.",
+        y_domain=[0, 25000],
+        show_legend=False,
+        decimals=0,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["offense_lean"],
+            "aggregate": [
+                {
+                    "fn": "sum_if",
+                    "column": "total",
+                    "as": "sum_tank_bst",
+                    "where": {"column": "is_tank", "op": "eq", "value": True},
+                }
+            ],
+            "orderBy": [{"column": "offense_lean", "direction": "asc"}],
+        },
+    )
+    scatter_arch = scatter(
+        "chart-scatter-arch",
+        "Offense vs bulk by archetype",
+        x_key="bulk",
+        y_key="offense",
+        subtitle="Primary forms · glass / tank / neither",
+        x_domain=[0, 200],
+        y_domain=[0, 200],
+        tooltip_keys=["name", "type_1", "archetype", "total"],
+        color_by={
+            "key": "archetype",
+            "levels": [
+                {"value": "Neither", "label": "Neither", "colorIndex": 0},
+                {"value": "Glass cannon", "label": "Glass cannon", "colorIndex": 1},
+                {"value": "Tank", "label": "Tank", "colorIndex": 4},
+            ],
+        },
+        query={
+            "filter": SPECIES,
+            "orderBy": [{"column": "dex_number", "direction": "asc"}],
+        },
+    )
+
     # ---- Summary refs ----
     summary_rows = [
         md(
@@ -949,7 +1371,9 @@ def build_book() -> dict:
 
 **Population:** 721 primary forms (first CSV row per National Dex `#`). Mega and alternate formes are in the canonical file but excluded from default charts via `is_primary_form`.
 
-**Type caveats:** both-slot panels double-count dual-types; Type-1 panels use `type_slot=Primary` only. See Deep dive → By type and `understanding.md`.
+**Type caveats:** default type panels use **both slots** (dual-types counted twice). Type-1-only panels undercount common secondaries (e.g. Flying). See Deep dive → By type and `understanding.md`.
+
+**Archetypes:** glass cannon (61) / tank (41) from z-score gaps on primary forms — Deep dive → Archetypes.
 
 Charts below are **refs** into the detail tabs.""",
         ),
@@ -960,14 +1384,18 @@ Charts below are **refs** into the detail tabs.""",
                 ref_block("ref-type-count", "chart-type-count", title="Type participation (ref)"),
                 ref_block("ref-gen-bst", "chart-gen-bst", title="Mean BST by gen (ref)"),
                 ref_block("ref-leg-bst", "chart-leg-bst", title="Legendary vs not — BST (ref)"),
+                ref_block("ref-arch-count", "chart-arch-count", title="Archetype counts (ref)"),
             ],
             wrap=True,
         ),
         comp(
             "comp-summary-hist",
             2,
-            [ref_block("ref-hist-total", "chart-hist-total", title="BST distribution (ref)")],
-            wrap=False,
+            [
+                ref_block("ref-hist-total", "chart-hist-total", title="BST distribution (ref)"),
+                ref_block("ref-scatter-arch", "chart-scatter-arch", title="Offense vs bulk (ref)"),
+            ],
+            wrap=True,
         ),
     ]
 
@@ -977,18 +1405,51 @@ Charts below are **refs** into the detail tabs.""",
             0,
             """## By type
 
-Default panels use **both type slots** (`type` on primary forms). Dual-types appear under each of their types.
+**Default = both type slots** (`type` on primary forms). Dual-types appear under each of their types — this is intentional participation weighting, not a Type-1 undercount.
 
-The Type-1-only count at the bottom uses `type_slot=Primary` for an undoubled species tally — do not treat it as the same population as both-slot means.""",
+Slot-split panels use `count_if` on `type_slot` inside both-slot groups. The Type-1-only count at the bottom is a **contrast** cut: it undercounts types that appear mainly as Type 2.""",
         ),
         comp("comp-type-count-bst", 1, [type_count, type_bst]),
-        comp("comp-type-shares", 2, [type_leg_share, type_dual_share]),
-        md("md-types-offense", 3, "### Offense means (non-legendary) — shared `scaleGroup: type-offense`"),
-        comp("comp-type-offense", 4, [type_atk, type_spatk]),
-        md("md-types-bulk", 5, "### Bulk means (non-legendary) — shared `scaleGroup: type-bulk`"),
-        comp("comp-type-bulk", 6, [type_def, type_spdef]),
-        md("md-types-type1", 7, "### Type 1 only (no double-count)"),
-        comp("comp-type1", 8, [type1_count]),
+        md("md-types-slots", 2, "### Slot split (both-slot groups) — `scaleGroup: type-slots`"),
+        comp("comp-type-slots", 3, [type_slot_primary, type_slot_secondary]),
+        comp("comp-type-shares", 4, [type_leg_share, type_dual_share]),
+        md("md-types-arch-rate", 5, "### Archetype rates by type (both slots) — `scaleGroup: type-arch-rate`"),
+        comp("comp-type-arch-rate", 6, [type_glass_share, type_tank_share]),
+        md("md-types-offense", 7, "### Offense means (non-legendary) — shared `scaleGroup: type-offense`"),
+        comp("comp-type-offense", 8, [type_atk, type_spatk]),
+        md("md-types-bulk", 9, "### Bulk means (non-legendary) — shared `scaleGroup: type-bulk`"),
+        comp("comp-type-bulk", 10, [type_def, type_spdef]),
+        comp("comp-type-speed", 11, [type_speed]),
+        md("md-types-type1", 12, "### Type 1 only (undercounts Type-2 roles — contrast)"),
+        comp("comp-type1", 13, [type1_count]),
+    ]
+
+    arch_rows = [
+        md(
+            "md-arch",
+            0,
+            """## Archetypes
+
+Z-scores fit on 721 primary forms (`gap=1.0`, `floor=0.5`):
+
+- **Glass cannon** — high offense relative to bulk (61)
+- **Tank** — high bulk relative to offense and Speed (41)
+- **Neither** — everyone else
+
+**Offense lean:** Physical / Special when `|Attack−Sp.Atk| ≥ 15`, else Balanced.
+
+Counts stay on separate rows from means. Six-stat means share `scaleGroup: arch-stats`.""",
+        ),
+        comp("comp-arch-count-bst", 1, [arch_count, arch_bst]),
+        comp("comp-arch-gen-rates", 2, [arch_glass_share_gen, arch_tank_share_gen]),
+        md("md-arch-stats", 3, "### Mean stats by archetype — `scaleGroup: arch-stats`"),
+        comp("comp-arch-stats", 4, [arch_hp, arch_atk, arch_def, arch_spa, arch_spdef, arch_speed]),
+        md("md-arch-lean", 5, "### Physical vs special lean"),
+        comp("comp-lean-count", 6, [lean_count, lean_glass_count_if]),
+        md("md-arch-cond", 7, "### Conditional aggregates (`mean_if` / `sum_if`)"),
+        comp("comp-arch-mean-if", 8, [arch_mean_if_offense]),
+        comp("comp-arch-sum-if", 9, [arch_sum_if_tank_bst]),
+        comp("comp-arch-scatter", 10, [scatter_arch]),
     ]
 
     gen_rows = [
@@ -1039,23 +1500,28 @@ Histograms over primary forms. Stat panels share `scaleGroup: stat-hist` with id
 
     book = {
         "title": "Pokémon Base Stats (Gen 1–6)",
-        "experimentId": "pokemon-gen1-6-r1",
-        "description": "Primary-form base-stat chart book — types, generations, legendary flag, and distributions.",
+        "experimentId": "pokemon-gen1-6-r2",
+        "description": (
+            "Primary-form base-stat chart book — both-slot types, generations, "
+            "legendary flag, archetypes, and distributions."
+        ),
         "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
         "defaultTabId": "summary",
         "conventions": {
             "zeroBaselineBars": True,
             "population": (
                 "Per-species: is_primary_form && type_slot=Primary (721). "
-                "Type-participation: is_primary_form any slot (dual-types counted twice)."
+                "Type-participation: is_primary_form any slot (dual-types counted twice). "
+                "Archetypes: z-score gap=1.0 floor=0.5 on primary forms (Glass 61 / Tank 41); "
+                "offense lean |Atk−SpA|≥15."
             ),
             "palette": {
-                "0": "HP / counts / non-legendary",
-                "1": "Attack / legendary",
+                "0": "HP / counts / Neither / non-legendary",
+                "1": "Attack / legendary / Glass cannon",
                 "2": "Defense / BST",
                 "3": "Sp. Atk",
-                "4": "Sp. Def",
-                "5": "Speed / dual-type / polarity",
+                "4": "Sp. Def / Tank",
+                "5": "Speed / dual-type / Secondary slot / polarity",
             },
             "notes": [
                 "Bar charts must include 0 on the value axis (omit yDomain or set yDomain[0] <= 0).",
@@ -1064,6 +1530,7 @@ Histograms over primary forms. Stat panels share `scaleGroup: stat-hist` with id
                 "Do not mix counts and means (or BST totals vs six-stat means) as unlabeled siblings.",
                 "Canonical grain is form × type slot — filter type_slot=Primary for per-species charts.",
                 "Both-slot type charts use column `type`; they intentionally double-count dual-types.",
+                "Type-1-only panels undercount types that appear mainly as Type 2 — prefer both-slot for identity.",
                 "Prefer share / count_if / sum_if / mean_if for rates and conditional totals.",
                 "mergeUserRows preserves createdBy:user rows across regen.",
             ],
@@ -1079,7 +1546,13 @@ Histograms over primary forms. Stat panels share `scaleGroup: stat-hist` with id
                 "id": "page-deep",
                 "label": "Deep dive",
                 "order": 1,
-                "tabIds": ["types", "generations", "legendary", "distributions"],
+                "tabIds": [
+                    "types",
+                    "generations",
+                    "legendary",
+                    "archetypes",
+                    "distributions",
+                ],
             },
         ],
         "tabs": [
@@ -1087,7 +1560,8 @@ Histograms over primary forms. Stat panels share `scaleGroup: stat-hist` with id
             {"id": "types", "label": "By type", "order": 1, "rows": types_rows},
             {"id": "generations", "label": "By generation", "order": 2, "rows": gen_rows},
             {"id": "legendary", "label": "Legendary", "order": 3, "rows": leg_rows},
-            {"id": "distributions", "label": "Distributions", "order": 4, "rows": dist_rows},
+            {"id": "archetypes", "label": "Archetypes", "order": 4, "rows": arch_rows},
+            {"id": "distributions", "label": "Distributions", "order": 5, "rows": dist_rows},
         ],
     }
     return book

@@ -2,7 +2,8 @@
 """Build pokemon-book/src/data/canonical.json from data/Pokemon.csv (stdlib only).
 
 Grain: one row per form × type slot (Primary, and Secondary when dual-typed).
-Primary-form flag = first CSV row per National Dex #.
+Archetype z-scores are fit on primary forms (first CSV row per dex #), then
+copied onto every slot row for that form.
 """
 
 from __future__ import annotations
@@ -47,6 +48,12 @@ TYPE_LEVELS = [
     "Water",
 ]
 
+# Judgment thresholds (documented in understanding.md).
+ARCHETYPE_GAP = 1.0
+ARCHETYPE_FLOOR = 0.5
+# Physical vs special lean: |Attack − Sp. Atk| ≥ this raw gap.
+PHYS_SPEC_GAP = 15
+
 
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
@@ -54,6 +61,16 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: f.read(65536), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def mean(xs: list[float]) -> float:
+    return sum(xs) / len(xs) if xs else float("nan")
+
+
+def stdev(xs: list[float], mu: float) -> float:
+    if len(xs) < 2:
+        return 0.0
+    return (sum((x - mu) ** 2 for x in xs) / (len(xs) - 1)) ** 0.5
 
 
 def is_mega_name(name: str) -> bool:
@@ -91,6 +108,13 @@ def main() -> None:
             offense = max(stats["attack"], stats["sp_atk"])
             bulk = (stats["hp"] + stats["defense"] + stats["sp_def"]) / 3.0
             dual = bool(type2)
+            lean = stats["attack"] - stats["sp_atk"]
+            if lean >= PHYS_SPEC_GAP:
+                offense_lean = "Physical"
+            elif lean <= -PHYS_SPEC_GAP:
+                offense_lean = "Special"
+            else:
+                offense_lean = "Balanced"
 
             forms.append(
                 {
@@ -111,9 +135,61 @@ def main() -> None:
                     "is_primary_form": primary,
                     "is_mega": mega,
                     "form_kind": form_kind,
-                    "phys_minus_spec": stats["attack"] - stats["sp_atk"],
+                    "phys_minus_spec": lean,
+                    "offense_lean": offense_lean,
                 }
             )
+
+    # Fit z-scores on primary forms only (721 species).
+    base = [f for f in forms if f["is_primary_form"]]
+    off_vals = [f["offense"] for f in base]
+    bulk_vals = [f["bulk"] for f in base]
+    spd_vals = [f["speed"] for f in base]
+    mu_off, mu_bulk, mu_spd = mean(off_vals), mean(bulk_vals), mean(spd_vals)
+    sd_off = stdev(off_vals, mu_off)
+    sd_bulk = stdev(bulk_vals, mu_bulk)
+    sd_spd = stdev(spd_vals, mu_spd)
+
+    def z(v: float, mu: float, sd: float) -> float:
+        return 0.0 if sd == 0 else (v - mu) / sd
+
+    n_glass = n_tank = 0
+    for f in forms:
+        z_off = z(f["offense"], mu_off, sd_off)
+        z_bulk = z(f["bulk"], mu_bulk, sd_bulk)
+        z_spd = z(f["speed"], mu_spd, sd_spd)
+        glass_score = z_off - z_bulk
+        tank_score = z_bulk - max(z_off, z_spd)
+        is_glass = glass_score >= ARCHETYPE_GAP and z_off >= ARCHETYPE_FLOOR
+        is_tank = tank_score >= ARCHETYPE_GAP and z_bulk >= ARCHETYPE_FLOOR
+        if is_glass and is_tank:
+            if glass_score >= tank_score:
+                is_tank = False
+            else:
+                is_glass = False
+        if is_glass:
+            archetype = "Glass cannon"
+        elif is_tank:
+            archetype = "Tank"
+        else:
+            archetype = "Neither"
+        if f["is_primary_form"]:
+            if is_glass:
+                n_glass += 1
+            if is_tank:
+                n_tank += 1
+        f.update(
+            {
+                "z_offense": round(z_off, 4),
+                "z_bulk": round(z_bulk, 4),
+                "z_speed": round(z_spd, 4),
+                "glass_score": round(glass_score, 4),
+                "tank_score": round(tank_score, 4),
+                "is_glass_cannon": is_glass,
+                "is_tank": is_tank,
+                "archetype": archetype,
+            }
+        )
 
     rows_out: list[dict] = []
     for f in forms:
@@ -144,6 +220,15 @@ def main() -> None:
                     "offense": f["offense"],
                     "bulk": f["bulk"],
                     "phys_minus_spec": f["phys_minus_spec"],
+                    "offense_lean": f["offense_lean"],
+                    "z_offense": f["z_offense"],
+                    "z_bulk": f["z_bulk"],
+                    "z_speed": f["z_speed"],
+                    "glass_score": f["glass_score"],
+                    "tank_score": f["tank_score"],
+                    "is_glass_cannon": f["is_glass_cannon"],
+                    "is_tank": f["is_tank"],
+                    "archetype": f["archetype"],
                     "generation": f["generation"],
                     "generation_label": f["generation_label"],
                     "legendary": f["legendary"],
@@ -193,6 +278,29 @@ def main() -> None:
         {"name": "offense", "type": "quantitative", "label": "Offense (max Atk/SpA)", "nullable": False},
         {"name": "bulk", "type": "quantitative", "label": "Bulk (mean HP/Def/SpD)", "nullable": False},
         {"name": "phys_minus_spec", "type": "quantitative", "label": "Attack − Sp. Atk", "nullable": False},
+        {
+            "name": "offense_lean",
+            "type": "categorical",
+            "label": "Offense lean",
+            "levels": ["Physical", "Balanced", "Special"],
+            "nullable": False,
+            "description": f"|Attack−Sp.Atk| ≥ {PHYS_SPEC_GAP} → Physical/Special; else Balanced.",
+        },
+        {"name": "z_offense", "type": "quantitative", "nullable": False},
+        {"name": "z_bulk", "type": "quantitative", "nullable": False},
+        {"name": "z_speed", "type": "quantitative", "nullable": False},
+        {"name": "glass_score", "type": "quantitative", "nullable": False},
+        {"name": "tank_score", "type": "quantitative", "nullable": False},
+        {"name": "is_glass_cannon", "type": "boolean", "nullable": False},
+        {"name": "is_tank", "type": "boolean", "nullable": False},
+        {
+            "name": "archetype",
+            "type": "categorical",
+            "label": "Archetype",
+            "levels": ["Glass cannon", "Tank", "Neither"],
+            "nullable": False,
+            "description": f"Z-score gap≥{ARCHETYPE_GAP}, floor≥{ARCHETYPE_FLOOR} on primary-form fit.",
+        },
         {"name": "generation", "type": "quantitative", "label": "Generation", "nullable": False},
         {
             "name": "generation_label",
@@ -238,13 +346,19 @@ def main() -> None:
             "nPrimarySpecies": n_primary,
             "nTypeParticipationRows": n_type_part,
             "nCanonicalRows": len(rows_out),
+            "nGlassCannonPrimary": n_glass,
+            "nTankPrimary": n_tank,
+            "archetypeGap": ARCHETYPE_GAP,
+            "archetypeFloor": ARCHETYPE_FLOOR,
+            "physSpecGap": PHYS_SPEC_GAP,
         },
     }
 
     OUT_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     print(
         f"Wrote {OUT_PATH} · forms={len(forms)} · primary={n_primary} · "
-        f"type_part={n_type_part} · rows={len(rows_out)}"
+        f"type_part={n_type_part} · rows={len(rows_out)} · "
+        f"glass={n_glass} · tank={n_tank}"
     )
 
 

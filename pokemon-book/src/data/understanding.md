@@ -2,7 +2,7 @@
 
 ## Question
 
-How do base stats differ across **types**, **generations**, and **legendary status**, and what do the **stat distributions** look like in the primary-form species pool?
+How do base stats differ across **types** (both slots), **generations**, **legendary status**, **offensive/defensive archetypes**, and what do the **stat distributions** look like in the primary-form species pool?
 
 ## Sources
 
@@ -18,17 +18,34 @@ Rebuild: `python3 src/data/transforms/build_canonical.py` then `python3 src/data
 
 | Population | Filter | Rows | Use |
 |------------|--------|------|-----|
-| Per-species (honest primary form) | `is_primary_form` ∧ `type_slot=Primary` | **721** | Gens, legendary, distributions, Summary KPIs |
-| Type participation (both slots) | `is_primary_form` (any slot) | **~1,071** | Type identity / type means |
-| Type-1 only | `is_primary_form` ∧ `type_slot=Primary` grouped by `type` (= Type 1) | 721 | Explicit Type-1 comparisons |
+| Per-species (honest primary form) | `is_primary_form` ∧ `type_slot=Primary` | **721** | Gens, legendary, distributions, archetypes, Summary KPIs |
+| Type participation (both slots) | `is_primary_form` (any slot) | **~1,071** | Type identity / type means / archetype rates by type |
+| Type-1 only | `is_primary_form` ∧ `type_slot=Primary` grouped by `type` | 721 | Explicit Type-1 comparisons (undercounts dual-type secondaries) |
+| Secondary slot only | `is_primary_form` ∧ `type_slot=Secondary` | **350** | Dual-types’ Type 2 participation |
 
 `is_primary_form` = first CSV row for each National Dex `#` (base species before Mega/alternate formes).
 
 ## Type-1 vs both-slot (read this)
 
-- **Type 1 / primary slot:** each species counted once. Dual-types contribute only their first type. Charts labeled “Type 1” or filtered to `type_slot=Primary` use this.
-- **Both-slot participation:** dual-types appear under **both** types. Counts and means are participation-weighted; a Water/Flying species contributes to Water **and** Flying. Default “By type” panels use both slots via column `type` and document the double-count.
+- **Type 1 / primary slot:** each species counted once. Dual-types contribute only their first type. Charts labeled “Type 1” or filtered to `type_slot=Primary` **undercount** types that appear mainly as Type 2 (e.g. Flying).
+- **Both-slot participation:** dual-types appear under **both** types. Counts and means are participation-weighted; a Water/Flying species contributes to Water **and** Flying. Default “By type” panels use both slots via column `type`.
+- **Slot split:** Primary vs Secondary `count_if` panels show how much of a type’s participation is first-slot vs second-slot — still both-slot aware, not Type-1-only.
 - Do **not** mix Type-1 and both-slot panels in the same sibling row without matching filters and labels.
+
+## Archetypes
+
+Fit on **721 primary forms**; scores copy onto every slot row for that form.
+
+| Field | Definition |
+|-------|------------|
+| Offense | `max(Attack, Sp. Atk)` |
+| Bulk | `mean(HP, Defense, Sp. Def)` |
+| Glass cannon | `z(offense)−z(bulk) ≥ 1` and `z(offense) ≥ 0.5` → **61** |
+| Tank | `z(bulk)−max(z(offense), z(Speed)) ≥ 1` and `z(bulk) ≥ 0.5` → **41** |
+| Neither | Everyone else (mutual exclusivity: larger gap wins if both fire) |
+| Offense lean | Physical / Special if `\|Attack−Sp.Atk\| ≥ 15`, else Balanced |
+
+These are descriptive design clusters, not competitive tier lists.
 
 ## Honesty conventions
 
@@ -44,3 +61,4 @@ Rebuild: `python3 src/data/transforms/build_canonical.py` then `python3 src/data
 - Mega and alternate formes inflate raw CSV means if left unfiltered — always use `is_primary_form` for species-level claims.
 - Base stats are design constants (not measured combat outcomes).
 - Generation means of BST vary modestly (~402–446); do not over-claim a strong “power creep” trend from this cut alone.
+- Archetype thresholds are analyst judgment (`gap=1.0`, `floor=0.5`, lean gap `15`).

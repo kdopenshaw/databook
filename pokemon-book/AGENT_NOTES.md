@@ -1,56 +1,54 @@
-# AGENT_NOTES — Pokémon reaudit2 Round 1
+# AGENT_NOTES — Pokémon reaudit2 Round 2 (extend)
 
 ## Branch
 
-`cursor/pokemon-reaudit2-r1-a7c3` off tip `cursor/reaudit-remaining-fixes-f6db` @ `d0f2822`.
+`cursor/pokemon-reaudit2-r1-a7c3` (continued from R1 @ `8b6673b`).
 
-## What shipped
+## What changed (R2)
 
-Fresh `pokemon-book/` from scaffold (`scaffold-files.txt`, **including `scripts/`**).
+Fail-closed **extend** (no re-init):
 
-| Artifact | Notes |
-|----------|-------|
-| `data/Pokemon.csv` | 800 rows from `origin/cursor/pokemon-reaudit-r1-1b05` |
-| `src/data/canonical.json` | form × type slot · 1,214 rows · 721 primary species |
-| `src/data/understanding.md` | Grain + Type-1 vs both-slot caveats |
-| `src/data/rows.json` | 5 tabs · 2 pages · 33 charts · 4 refs |
-| `src/data/transforms/` | `build_canonical.py` + `build_rows.py` (`mergeUserRows`) |
+1. Read `understanding.md` + `BookDocument.conventions`
+2. `npm run extend-check` → ok
+3. Opened validate-data + create-viz / METHOD pointers
+4. Edited generators (`build_canonical.py`, `build_rows.py`) + regenerated artifacts
+5. `mergeUserRows` in generator (no `createdBy:user` rows present this round)
+6. Blocking: `npm test` → `lint:charts` → `check` → `check:visual`
 
-**Tabs:** Summary · By type · By generation · Legendary · Distributions  
-**Pages:** Overview (Summary) · Deep dive (the rest)
+### Content
 
-**Conventions:** `zeroBaselineBars`, population string, palette, honesty notes.  
-**scaleGroup:** `type-offense`, `type-bulk`, `gen-stats`, `leg-stats`, `stat-hist` (+ a few single-panel tags).  
-**Aggregates used:** `share`, `count_if`, `mean_if`, `sum_if`, plus `count`/`mean`.
+- **Archetypes tab:** glass cannon (61) / tank (41) / neither; physical vs special lean; `scaleGroup: arch-stats`; gen shares; scatter; `mean_if` / `sum_if` / `count_if` / `share`
+- **By type improved:** both-slot default kept; Primary vs Secondary `count_if` slot split (`scaleGroup: type-slots`); glass/tank shares by type; mean Speed; Type-1-only labeled as undercount contrast
+- **Summary refs** extended (archetype count + offense/bulk scatter) — no query copies
+- Canonical now carries archetype / lean / z-score fields
 
-Stock RechartsSpec only — no renderer forks.
+| Metric | R1 | R2 |
+|--------|----|----|
+| Tabs | 5 | **6** (+ Archetypes) |
+| Charts | 33 | **53** |
+| Refs | 4 | **6** |
 
 ## Rebuild
 
 ```bash
 cd pokemon-book
-npm install
 python3 src/data/transforms/build_canonical.py
 python3 src/data/transforms/build_rows.py
 npm test && npm run lint:charts && npm run check
-npm run dev -- --port 5180 --host 127.0.0.1
-npm run check:visual -- --url http://127.0.0.1:5180/
 ```
 
-## Blocking results (this run)
+## Blocking results (R2)
 
 | Check | Result |
 |-------|--------|
+| `npm run extend-check` | ok |
 | `npm test` | 25 passed |
 | `npm run lint:charts` | 12 passed |
 | `npm run check` | ok |
-| `npm run extend-check` | ok (not an extend round; sanity) |
 | `npm run check:visual` | ok (HTTP 200 + screenshot) |
 
 ## Skill friction
 
-- Init sample must be fully replaced (`canonical.json`, `rows.json`, `understanding.md`, `index.html` title) — easy to leave sample crumbs if transforms are skipped.
-- `scaffold-files.txt` now lists `scripts/` (this tip) — copy worked; `npm run check` / `check:visual` available (prior R1 notes said scripts were missing).
-- `scaleGroup` removes the old “rename every aggregate to `mean_stat`” lint workaround for sibling means — used intentionally on offense/bulk/gen/leg/hist panels.
-- `valueFormat: "percent"` expects 0–1 shares from `share`.
-- validate-data + create-viz pointers opened at chart-choice time per skill router (not ambient dump of all references).
+- Extend checklist is clear; must stay on the book branch (workspace can reset to product tip without `pokemon-book/`).
+- Archetype thresholds are judgment — documented in `understanding.md` + conventions population string.
+- `scaleGroup` continues to replace identical-`dataKey` aliasing for sibling means.

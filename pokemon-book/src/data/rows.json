@@ -1,19 +1,19 @@
 {
   "title": "Pok\u00e9mon Base Stats (Gen 1\u20136)",
-  "experimentId": "pokemon-gen1-6-r1",
-  "description": "Primary-form base-stat chart book \u2014 types, generations, legendary flag, and distributions.",
-  "generatedAt": "2026-11-15T08:05:55.008Z",
+  "experimentId": "pokemon-gen1-6-r2",
+  "description": "Primary-form base-stat chart book \u2014 both-slot types, generations, legendary flag, archetypes, and distributions.",
+  "generatedAt": "2026-11-15T08:10:35.050Z",
   "defaultTabId": "summary",
   "conventions": {
     "zeroBaselineBars": true,
-    "population": "Per-species: is_primary_form && type_slot=Primary (721). Type-participation: is_primary_form any slot (dual-types counted twice).",
+    "population": "Per-species: is_primary_form && type_slot=Primary (721). Type-participation: is_primary_form any slot (dual-types counted twice). Archetypes: z-score gap=1.0 floor=0.5 on primary forms (Glass 61 / Tank 41); offense lean |Atk\u2212SpA|\u226515.",
     "palette": {
-      "0": "HP / counts / non-legendary",
-      "1": "Attack / legendary",
+      "0": "HP / counts / Neither / non-legendary",
+      "1": "Attack / legendary / Glass cannon",
       "2": "Defense / BST",
       "3": "Sp. Atk",
-      "4": "Sp. Def",
-      "5": "Speed / dual-type / polarity"
+      "4": "Sp. Def / Tank",
+      "5": "Speed / dual-type / Secondary slot / polarity"
     },
     "notes": [
       "Bar charts must include 0 on the value axis (omit yDomain or set yDomain[0] <= 0).",
@@ -22,6 +22,7 @@
       "Do not mix counts and means (or BST totals vs six-stat means) as unlabeled siblings.",
       "Canonical grain is form \u00d7 type slot \u2014 filter type_slot=Primary for per-species charts.",
       "Both-slot type charts use column `type`; they intentionally double-count dual-types.",
+      "Type-1-only panels undercount types that appear mainly as Type 2 \u2014 prefer both-slot for identity.",
       "Prefer share / count_if / sum_if / mean_if for rates and conditional totals.",
       "mergeUserRows preserves createdBy:user rows across regen."
     ]
@@ -43,6 +44,7 @@
         "types",
         "generations",
         "legendary",
+        "archetypes",
         "distributions"
       ]
     }
@@ -58,7 +60,7 @@
           "type": "markdown",
           "order": 0,
           "createdBy": "skill",
-          "body": "## Pok\u00e9mon base stats \u2014 Gen 1\u20136\n\n**Population:** 721 primary forms (first CSV row per National Dex `#`). Mega and alternate formes are in the canonical file but excluded from default charts via `is_primary_form`.\n\n**Type caveats:** both-slot panels double-count dual-types; Type-1 panels use `type_slot=Primary` only. See Deep dive \u2192 By type and `understanding.md`.\n\nCharts below are **refs** into the detail tabs."
+          "body": "## Pok\u00e9mon base stats \u2014 Gen 1\u20136\n\n**Population:** 721 primary forms (first CSV row per National Dex `#`). Mega and alternate formes are in the canonical file but excluded from default charts via `is_primary_form`.\n\n**Type caveats:** default type panels use **both slots** (dual-types counted twice). Type-1-only panels undercount common secondaries (e.g. Flying). See Deep dive \u2192 By type and `understanding.md`.\n\n**Archetypes:** glass cannon (61) / tank (41) from z-score gaps on primary forms \u2014 Deep dive \u2192 Archetypes.\n\nCharts below are **refs** into the detail tabs."
         },
         {
           "id": "comp-summary-refs",
@@ -88,6 +90,12 @@
               "ref": "chart-leg-bst",
               "flex": 1,
               "title": "Legendary vs not \u2014 BST (ref)"
+            },
+            {
+              "id": "ref-arch-count",
+              "ref": "chart-arch-count",
+              "flex": 1,
+              "title": "Archetype counts (ref)"
             }
           ]
         },
@@ -99,7 +107,7 @@
           "layout": {
             "gap": 16,
             "align": "stretch",
-            "wrap": false
+            "wrap": true
           },
           "components": [
             {
@@ -107,6 +115,12 @@
               "ref": "chart-hist-total",
               "flex": 1,
               "title": "BST distribution (ref)"
+            },
+            {
+              "id": "ref-scatter-arch",
+              "ref": "chart-scatter-arch",
+              "flex": 1,
+              "title": "Offense vs bulk (ref)"
             }
           ]
         }
@@ -122,7 +136,7 @@
           "type": "markdown",
           "order": 0,
           "createdBy": "skill",
-          "body": "## By type\n\nDefault panels use **both type slots** (`type` on primary forms). Dual-types appear under each of their types.\n\nThe Type-1-only count at the bottom uses `type_slot=Primary` for an undoubled species tally \u2014 do not treat it as the same population as both-slot means."
+          "body": "## By type\n\n**Default = both type slots** (`type` on primary forms). Dual-types appear under each of their types \u2014 this is intentional participation weighting, not a Type-1 undercount.\n\nSlot-split panels use `count_if` on `type_slot` inside both-slot groups. The Type-1-only count at the bottom is a **contrast** cut: it undercounts types that appear mainly as Type 2."
         },
         {
           "id": "comp-type-count-bst",
@@ -260,9 +274,161 @@
           ]
         },
         {
+          "id": "md-types-slots",
+          "type": "markdown",
+          "order": 2,
+          "createdBy": "skill",
+          "body": "### Slot split (both-slot groups) \u2014 `scaleGroup: type-slots`"
+        },
+        {
+          "id": "comp-type-slots",
+          "type": "component",
+          "order": 3,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-type-slot-primary",
+              "title": "Primary-slot participations by type",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count_if",
+                    "as": "n_primary_slot",
+                    "label": "Primary slot",
+                    "where": {
+                      "column": "type_slot",
+                      "op": "eq",
+                      "value": "Primary"
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "type",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "n_primary_slot"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n_primary_slot",
+                    "name": "Primary slot",
+                    "colorIndex": 0
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 380,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ]
+              },
+              "flex": 1,
+              "subtitle": "count_if(type_slot=Primary) \u00b7 both-slot groups \u00b7 scaleGroup type-slots",
+              "notes": "Within both-slot type groups, how many rows are Type 1.",
+              "scaleGroup": "type-slots"
+            },
+            {
+              "id": "chart-type-slot-secondary",
+              "title": "Secondary-slot participations by type",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count_if",
+                    "as": "n_secondary_slot",
+                    "label": "Secondary slot",
+                    "where": {
+                      "column": "type_slot",
+                      "op": "eq",
+                      "value": "Secondary"
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "type",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "n_secondary_slot"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n_secondary_slot",
+                    "name": "Secondary slot",
+                    "colorIndex": 5
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 380,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ]
+              },
+              "flex": 1,
+              "subtitle": "count_if(type_slot=Secondary) \u00b7 both-slot groups \u00b7 scaleGroup type-slots",
+              "notes": "Type 2 appearances \u2014 Flying/Poison often dominate here vs Type-1-only charts.",
+              "scaleGroup": "type-slots"
+            }
+          ]
+        },
+        {
           "id": "comp-type-shares",
           "type": "component",
-          "order": 2,
+          "order": 4,
           "createdBy": "skill",
           "layout": {
             "gap": 16,
@@ -403,16 +569,168 @@
           ]
         },
         {
+          "id": "md-types-arch-rate",
+          "type": "markdown",
+          "order": 5,
+          "createdBy": "skill",
+          "body": "### Archetype rates by type (both slots) \u2014 `scaleGroup: type-arch-rate`"
+        },
+        {
+          "id": "comp-type-arch-rate",
+          "type": "component",
+          "order": 6,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-type-glass-share",
+              "title": "Glass-cannon share by type",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "share",
+                    "as": "glass_share",
+                    "label": "Glass share",
+                    "where": {
+                      "column": "is_glass_cannon",
+                      "op": "eq",
+                      "value": true
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "glass_share",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "glass_share"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "glass_share",
+                    "name": "Glass share",
+                    "colorIndex": 1
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 380,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  0.25
+                ],
+                "valueFormat": "percent"
+              },
+              "flex": 1,
+              "subtitle": "share(is_glass_cannon) \u00b7 primary forms \u00b7 both slots",
+              "scaleGroup": "type-arch-rate"
+            },
+            {
+              "id": "chart-type-tank-share",
+              "title": "Tank share by type",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "share",
+                    "as": "tank_share",
+                    "label": "Tank share",
+                    "where": {
+                      "column": "is_tank",
+                      "op": "eq",
+                      "value": true
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "tank_share",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "tank_share"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "tank_share",
+                    "name": "Tank share",
+                    "colorIndex": 4
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 380,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  0.25
+                ],
+                "valueFormat": "percent"
+              },
+              "flex": 1,
+              "subtitle": "share(is_tank) \u00b7 primary forms \u00b7 both slots",
+              "scaleGroup": "type-arch-rate"
+            }
+          ]
+        },
+        {
           "id": "md-types-offense",
           "type": "markdown",
-          "order": 3,
+          "order": 7,
           "createdBy": "skill",
           "body": "### Offense means (non-legendary) \u2014 shared `scaleGroup: type-offense`"
         },
         {
           "id": "comp-type-offense",
           "type": "component",
-          "order": 4,
+          "order": 8,
           "createdBy": "skill",
           "layout": {
             "gap": 16,
@@ -557,14 +875,14 @@
         {
           "id": "md-types-bulk",
           "type": "markdown",
-          "order": 5,
+          "order": 9,
           "createdBy": "skill",
           "body": "### Bulk means (non-legendary) \u2014 shared `scaleGroup: type-bulk`"
         },
         {
           "id": "comp-type-bulk",
           "type": "component",
-          "order": 6,
+          "order": 10,
           "createdBy": "skill",
           "layout": {
             "gap": 16,
@@ -707,16 +1025,94 @@
           ]
         },
         {
+          "id": "comp-type-speed",
+          "type": "component",
+          "order": 11,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-type-speed",
+              "title": "Mean Speed by type",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "speed",
+                    "as": "mean_speed",
+                    "label": "Mean Speed"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "type",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "mean_speed"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_speed",
+                    "name": "Mean Speed",
+                    "colorIndex": 5
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 380,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Both slots \u00b7 non-legendary \u00b7 pairs with bulk/offense families separately"
+            }
+          ]
+        },
+        {
           "id": "md-types-type1",
           "type": "markdown",
-          "order": 7,
+          "order": 12,
           "createdBy": "skill",
-          "body": "### Type 1 only (no double-count)"
+          "body": "### Type 1 only (undercounts Type-2 roles \u2014 contrast)"
         },
         {
           "id": "comp-type1",
           "type": "component",
-          "order": 8,
+          "order": 13,
           "createdBy": "skill",
           "layout": {
             "gap": 16,
@@ -786,8 +1182,8 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Primary forms \u00b7 Type 1 only (type_slot=Primary) \u00b7 no double-count",
-              "notes": "Type-1-only cut \u2014 compare with both-slot participation chart above."
+              "subtitle": "Primary forms \u00b7 Type 1 only (type_slot=Primary) \u00b7 undercounts Type-2-only roles",
+              "notes": "Type-1-only cut \u2014 Flying and other common secondaries look thinner than both-slot."
             }
           ]
         }
@@ -2199,9 +2595,1115 @@
       ]
     },
     {
+      "id": "archetypes",
+      "label": "Archetypes",
+      "order": 4,
+      "rows": [
+        {
+          "id": "md-arch",
+          "type": "markdown",
+          "order": 0,
+          "createdBy": "skill",
+          "body": "## Archetypes\n\nZ-scores fit on 721 primary forms (`gap=1.0`, `floor=0.5`):\n\n- **Glass cannon** \u2014 high offense relative to bulk (61)\n- **Tank** \u2014 high bulk relative to offense and Speed (41)\n- **Neither** \u2014 everyone else\n\n**Offense lean:** Physical / Special when `|Attack\u2212Sp.Atk| \u2265 15`, else Balanced.\n\nCounts stay on separate rows from means. Six-stat means share `scaleGroup: arch-stats`."
+        },
+        {
+          "id": "comp-arch-count-bst",
+          "type": "component",
+          "order": 1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-arch-count",
+              "title": "Species count by archetype",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "archetype",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "archetype",
+                "y": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Species",
+                    "colorIndex": 0
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  700
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 Glass 61 \u00b7 Tank 41 \u00b7 Neither remainder"
+            },
+            {
+              "id": "chart-arch-bst",
+              "title": "Mean BST by archetype",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total",
+                    "as": "mean_bst"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "archetype",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "archetype",
+                "y": "mean_bst"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_bst",
+                    "name": "Mean BST",
+                    "colorIndex": 2
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  600
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 separate scale from six-stat means"
+            }
+          ]
+        },
+        {
+          "id": "comp-arch-gen-rates",
+          "type": "component",
+          "order": 2,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-arch-glass-gen",
+              "title": "Glass-cannon share by generation",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "generation_label"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "share",
+                    "as": "glass_share",
+                    "where": {
+                      "column": "is_glass_cannon",
+                      "op": "eq",
+                      "value": true
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "generation_label",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation_label",
+                "y": "glass_share"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "generation_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "glass_share",
+                    "name": "Glass share",
+                    "colorIndex": 1
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  0.25
+                ],
+                "valueFormat": "percent"
+              },
+              "flex": 1,
+              "subtitle": "share(is_glass_cannon) \u00b7 primary forms",
+              "scaleGroup": "arch-gen-rate"
+            },
+            {
+              "id": "chart-arch-tank-gen",
+              "title": "Tank share by generation",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "generation_label"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "share",
+                    "as": "tank_share",
+                    "where": {
+                      "column": "is_tank",
+                      "op": "eq",
+                      "value": true
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "generation_label",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation_label",
+                "y": "tank_share"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "generation_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "tank_share",
+                    "name": "Tank share",
+                    "colorIndex": 4
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  0.25
+                ],
+                "valueFormat": "percent"
+              },
+              "flex": 1,
+              "subtitle": "share(is_tank) \u00b7 primary forms",
+              "scaleGroup": "arch-gen-rate"
+            }
+          ]
+        },
+        {
+          "id": "md-arch-stats",
+          "type": "markdown",
+          "order": 3,
+          "createdBy": "skill",
+          "body": "### Mean stats by archetype \u2014 `scaleGroup: arch-stats`"
+        },
+        {
+          "id": "comp-arch-stats",
+          "type": "component",
+          "order": 4,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-arch-hp",
+              "title": "Mean HP",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "hp",
+                    "as": "mean_hp"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "archetype",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "archetype",
+                "y": "mean_hp"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_hp",
+                    "name": "HP",
+                    "colorIndex": 0
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  140
+                ]
+              },
+              "flex": 1,
+              "subtitle": "scaleGroup arch-stats",
+              "scaleGroup": "arch-stats"
+            },
+            {
+              "id": "chart-arch-atk",
+              "title": "Mean Attack",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "attack",
+                    "as": "mean_atk"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "archetype",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "archetype",
+                "y": "mean_atk"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_atk",
+                    "name": "Attack",
+                    "colorIndex": 1
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  140
+                ]
+              },
+              "flex": 1,
+              "subtitle": "scaleGroup arch-stats",
+              "scaleGroup": "arch-stats"
+            },
+            {
+              "id": "chart-arch-def",
+              "title": "Mean Defense",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "defense",
+                    "as": "mean_def"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "archetype",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "archetype",
+                "y": "mean_def"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_def",
+                    "name": "Defense",
+                    "colorIndex": 2
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  140
+                ]
+              },
+              "flex": 1,
+              "subtitle": "scaleGroup arch-stats",
+              "scaleGroup": "arch-stats"
+            },
+            {
+              "id": "chart-arch-spa",
+              "title": "Mean Sp. Atk",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "sp_atk",
+                    "as": "mean_spa"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "archetype",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "archetype",
+                "y": "mean_spa"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_spa",
+                    "name": "Sp. Atk",
+                    "colorIndex": 3
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  140
+                ]
+              },
+              "flex": 1,
+              "subtitle": "scaleGroup arch-stats",
+              "scaleGroup": "arch-stats"
+            },
+            {
+              "id": "chart-arch-spdef",
+              "title": "Mean Sp. Def",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "sp_def",
+                    "as": "mean_spdef"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "archetype",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "archetype",
+                "y": "mean_spdef"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_spdef",
+                    "name": "Sp. Def",
+                    "colorIndex": 4
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  140
+                ]
+              },
+              "flex": 1,
+              "subtitle": "scaleGroup arch-stats",
+              "scaleGroup": "arch-stats"
+            },
+            {
+              "id": "chart-arch-speed",
+              "title": "Mean Speed",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "speed",
+                    "as": "mean_speed"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "archetype",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "archetype",
+                "y": "mean_speed"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_speed",
+                    "name": "Speed",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  140
+                ]
+              },
+              "flex": 1,
+              "subtitle": "scaleGroup arch-stats",
+              "scaleGroup": "arch-stats"
+            }
+          ]
+        },
+        {
+          "id": "md-arch-lean",
+          "type": "markdown",
+          "order": 5,
+          "createdBy": "skill",
+          "body": "### Physical vs special lean"
+        },
+        {
+          "id": "comp-lean-count",
+          "type": "component",
+          "order": 6,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-lean-count",
+              "title": "Species by offense lean",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "offense_lean"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "offense_lean",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "offense_lean",
+                "y": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "offense_lean",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Species",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  400
+                ]
+              },
+              "flex": 1,
+              "subtitle": "|Attack\u2212Sp.Atk| \u2265 15 \u2192 Physical/Special \u00b7 primary forms"
+            },
+            {
+              "id": "chart-lean-glass-count",
+              "title": "Glass cannons by offense lean",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "offense_lean"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count_if",
+                    "as": "n_glass",
+                    "where": {
+                      "column": "is_glass_cannon",
+                      "op": "eq",
+                      "value": true
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "offense_lean",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "offense_lean",
+                "y": "n_glass"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "offense_lean",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n_glass",
+                    "name": "Glass cannons",
+                    "colorIndex": 1
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  40
+                ]
+              },
+              "flex": 1,
+              "subtitle": "count_if(is_glass_cannon) within lean \u00b7 primary forms"
+            }
+          ]
+        },
+        {
+          "id": "md-arch-cond",
+          "type": "markdown",
+          "order": 7,
+          "createdBy": "skill",
+          "body": "### Conditional aggregates (`mean_if` / `sum_if`)"
+        },
+        {
+          "id": "comp-arch-mean-if",
+          "type": "component",
+          "order": 8,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-arch-mean-if-offense",
+              "title": "Mean offense among glass cannons (mean_if)",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "offense_lean"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean_if",
+                    "column": "offense",
+                    "as": "mean_glass_off",
+                    "where": {
+                      "column": "is_glass_cannon",
+                      "op": "eq",
+                      "value": true
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "offense_lean",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "offense_lean",
+                "y": "mean_glass_off"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "offense_lean",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_glass_off",
+                    "name": "Mean offense (glass)",
+                    "colorIndex": 1
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  140
+                ]
+              },
+              "flex": 1,
+              "subtitle": "mean_if(offense where is_glass_cannon) by lean",
+              "scaleGroup": "arch-cond-offense"
+            }
+          ]
+        },
+        {
+          "id": "comp-arch-sum-if",
+          "type": "component",
+          "order": 9,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-arch-sum-if-tank",
+              "title": "Sum of tank BST (sum_if)",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "offense_lean"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "sum_if",
+                    "column": "total",
+                    "as": "sum_tank_bst",
+                    "where": {
+                      "column": "is_tank",
+                      "op": "eq",
+                      "value": true
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "offense_lean",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "offense_lean",
+                "y": "sum_tank_bst"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "offense_lean",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sum_tank_bst",
+                    "name": "Sum BST (tanks)",
+                    "colorIndex": 4
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  25000
+                ]
+              },
+              "flex": 1,
+              "subtitle": "sum_if(total where is_tank) by lean \u00b7 own scale",
+              "notes": "Conditional total \u2014 not a sibling of mean panels."
+            }
+          ]
+        },
+        {
+          "id": "comp-arch-scatter",
+          "type": "component",
+          "order": 10,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-scatter-arch",
+              "title": "Offense vs bulk by archetype",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "dex_number",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "bulk",
+                "y": "offense"
+              },
+              "recharts": {
+                "chart": "ScatterChart",
+                "xKey": "bulk",
+                "series": [
+                  {
+                    "mark": "Scatter",
+                    "dataKey": "offense",
+                    "name": "offense"
+                  }
+                ],
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": true,
+                "decimals": 0,
+                "colorBy": {
+                  "key": "archetype",
+                  "levels": [
+                    {
+                      "value": "Neither",
+                      "label": "Neither",
+                      "colorIndex": 0
+                    },
+                    {
+                      "value": "Glass cannon",
+                      "label": "Glass cannon",
+                      "colorIndex": 1
+                    },
+                    {
+                      "value": "Tank",
+                      "label": "Tank",
+                      "colorIndex": 4
+                    }
+                  ]
+                },
+                "xDomain": [
+                  0,
+                  200
+                ],
+                "yDomain": [
+                  0,
+                  200
+                ],
+                "tooltipKeys": [
+                  "name",
+                  "type_1",
+                  "archetype",
+                  "total"
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 glass / tank / neither"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "distributions",
       "label": "Distributions",
-      "order": 4,
+      "order": 5,
       "rows": [
         {
           "id": "md-dist",
