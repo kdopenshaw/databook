@@ -1,15 +1,17 @@
-import type { ComponentRow as ComponentRowModel, Table } from '../../data/types';
+import type { BookDocument, ComponentRow as ComponentRowModel, Table } from '../../data/types';
 import { ChartSlot } from './ChartSlot';
 
 type Props = {
   row: ComponentRowModel;
   table: Table;
+  book: BookDocument;
 };
 
-export function ComponentRow({ row, table }: Props) {
-  const gap = row.layout?.gap ?? 0;
+export function ComponentRow({ row, table, book }: Props) {
+  const gap = row.layout?.gap ?? 16;
   const align = row.layout?.align ?? 'stretch';
-  const wrap = row.layout?.wrap ?? false;
+  // Default wrap so multi-chart rows reflow instead of overflowing; agents may force nowrap.
+  const wrap = row.layout?.wrap ?? true;
 
   return (
     <div
@@ -21,7 +23,7 @@ export function ComponentRow({ row, table }: Props) {
       }}
     >
       {row.components.map((block) => (
-        <ChartSlot key={block.id} block={block} table={table} flex={block.flex ?? 1} />
+        <ChartSlot key={block.id} block={block} table={table} book={book} flex={block.flex ?? 1} />
       ))}
     </div>
   );

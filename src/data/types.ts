@@ -44,6 +44,12 @@ export type BinSpec = {
   step: number;
   /** Output column for the bin start; `${as}_end` holds the exclusive end. Defaults to `${column}_bin`. */
   as?: string;
+  /**
+   * When true (default), aggregated results include empty bins between the
+   * observed min and max so categorical axes do not hide gaps. Prefer
+   * `recharts.xType: "number"` + shared `xDomain` for small multiples.
+   */
+  fillEmpty?: boolean;
 };
 
 export type AggFn = 'count' | 'sum' | 'mean' | 'median' | 'min' | 'max' | 'count_distinct' | 'ratio';
@@ -74,8 +80,12 @@ export type ChartQuery = {
 
 // ---- Flexible Recharts composition (not a closed catalog enum) ----
 
+/**
+ * Supported stock marks: `Line` | `Bar` | `Area` | `Scatter` (case-insensitive).
+ * Unknown marks fail chart lint; extend the stock renderer before emitting new ones.
+ */
 export type RechartsSeriesSpec = {
-  /** Recharts mark type — extend freely; renderer supports common marks. */
+  /** Recharts mark type — stock: Line, Bar, Area, Scatter. */
   mark: string;
   dataKey: string;
   name?: string;
@@ -83,7 +93,12 @@ export type RechartsSeriesSpec = {
   fill?: string;
   type?: 'monotone' | 'linear' | 'step' | 'basis' | 'natural';
   strokeWidth?: number;
+  strokeDasharray?: string;
   dot?: boolean;
+  /** Bars/areas sharing a stackId stack on top of each other. */
+  stackId?: string;
+  /** Index into the --cb-series-* palette; defaults to the series position. */
+  colorIndex?: number;
 };
 
 /**
@@ -91,6 +106,9 @@ export type RechartsSeriesSpec = {
  * Prefer naming real Recharts chart roots (e.g. LineChart); the scaffold
  * renderer maps known roots and series marks without restricting the skill
  * to a documented starter menu of chart types.
+ *
+ * Stock-supported optional fields (see SKILL.md → RechartsSpec):
+ * layout, xLabel/yLabel, yDomain/xDomain, height, stackId, colorBy, xType, …
  */
 export type RechartsSpec = {
   chart: string;
@@ -101,6 +119,34 @@ export type RechartsSpec = {
   showGrid?: boolean;
   showLegend?: boolean;
   showTooltip?: boolean;
+  /** Recharts `layout`; "vertical" draws horizontal bars with `xKey` on the category (Y) axis. */
+  layout?: 'horizontal' | 'vertical';
+  xLabel?: string;
+  yLabel?: string;
+  /** Category-axis width in px for vertical layout (long labels). */
+  categoryWidth?: number;
+  height?: number;
+  /** Value-axis domain. Bars must include 0 (lint). Line zoom requires a stated reason. */
+  yDomain?: [number, number];
+  valueFormat?: 'number' | 'percent';
+  /** Max fraction digits in tooltips and ticks. */
+  decimals?: number;
+  barCategoryGap?: number | string;
+  /** Result columns listed in the scatter tooltip (e.g. a name column). */
+  tooltipKeys?: string[];
+  /** Scatter only: split result rows by a categorical column, one coloured series per listed level. */
+  colorBy?: { key: string; levels: { value: string; label?: string; colorIndex?: number }[] };
+  /** "number" puts `xKey` on a continuous axis (e.g. histogram bins aligned across small multiples). */
+  xType?: 'category' | 'number';
+  xDomain?: [number, number];
+  xTicks?: number[];
+  /**
+   * Numeric x only: plot each row at xKey + xShift. For histograms, use half the bin
+   * step so bars span [start, end); tooltips then show the bin range.
+   */
+  xShift?: number;
+  /** Explicit ticks on the value axis (Y, or X in vertical layout). */
+  valueTicks?: number[];
 };
 
 export type ChartEncoding = {
@@ -117,15 +163,22 @@ export type ChartBlock = {
   id: string;
   title: string;
   subtitle?: string;
-  recharts: RechartsSpec;
-  query: ChartQuery;
-  encoding: ChartEncoding;
+  /**
+   * Reuse another chart block by id (any tab). When set, the scaffold renders the
+   * referenced block’s query/recharts; optional local title/subtitle/notes override display.
+   * Prefer refs on Summary tabs instead of copying queries.
+   */
+  ref?: string;
+  recharts?: RechartsSpec;
+  query?: ChartQuery;
+  encoding?: ChartEncoding;
   notes?: string;
   flex?: number;
 };
 
 export type RowBase = {
   id: string;
+  /** Sort key within the tab; fractional values (e.g. 1.5) slot between neighbors. */
   order: number;
   createdBy: 'skill' | 'user';
 };
@@ -154,6 +207,32 @@ export type TabSection = {
   rows: BookRow[];
 };
 
+/**
+ * Optional top-level grouping above tabs. When present, Sidebar lists pages
+ * (not a duplicate of tabs); BookTabs shows only the active page’s tabs.
+ */
+export type BookPage = {
+  id: string;
+  label: string;
+  order: number;
+  tabIds: string[];
+};
+
+/**
+ * Book-level house rules inherited by cold agents and consumed by chart lint.
+ * Also document the same rules in `understanding.md`.
+ */
+export type BookConventions = {
+  /** Human-readable rules (palette meanings, population filters, grain caveats). */
+  notes?: string[];
+  /** Default true: bar charts may not use a yDomain that excludes 0. */
+  zeroBaselineBars?: boolean;
+  /** Palette slot → meaning, e.g. { "0": "HP", "1": "legendary / Attack" }. */
+  palette?: Record<string, string>;
+  /** Short description of the default analysis population / filters. */
+  population?: string;
+};
+
 export type BookDocument = {
   title: string;
   experimentId?: string;
@@ -161,4 +240,6 @@ export type BookDocument = {
   generatedAt?: string;
   tabs: TabSection[];
   defaultTabId?: string;
+  pages?: BookPage[];
+  conventions?: BookConventions;
 };

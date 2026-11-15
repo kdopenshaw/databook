@@ -8,7 +8,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint:charts": "vitest run src/data/chartLint.test.ts",
+    "check": "node scripts/check-book.mjs"
   },
   "dependencies": {
     "geist": "1.9.2",

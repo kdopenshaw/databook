@@ -2,20 +2,23 @@
 
 Repo-local **chart books**: a fixed React scaffold plus an AI skill that profiles experiment data, writes one canonical JSON of normalized rows, and emits a row-based document (markdown + side-by-side charts).
 
-**Start here:** [`SKILL.md`](./SKILL.md) is the product entrypoint. Invoking the skill runs **databook init automatically**, then profiles → charts → emits `rows.json`. Spec: [`chart-book-spec.md`](./chart-book-spec.md).
+**Start here:** [`SKILL.md`](./SKILL.md) is the product entrypoint. Invoking the skill runs **databook init automatically** (or the **extend existing book** path), then profiles → charts → emits `rows.json`. Spec: [`chart-book-spec.md`](./chart-book-spec.md). Live types: [`src/data/types.ts`](./src/data/types.ts).
 
-Charts use **[Recharts](https://recharts.org/)** (locked). Markdown uses **[react-markdown](https://github.com/remarkjs/react-markdown)**. Typography uses the **[`geist`](https://www.npmjs.com/package/geist)** font package; **Tabs** are a Geist-styled scaffold primitive (`BookTabs`). Sidebar, page shell, row container, markdown block, and chart slot are custom. Dark mode is CSS variables + class `dark` on `<html>` — no theme-provider library.
+Charts use **[Recharts](https://recharts.org/)** (locked). Markdown uses **[react-markdown](https://github.com/remarkjs/react-markdown)**. Typography uses the **[`geist`](https://www.npmjs.com/package/geist)** font package; **Tabs** are a Geist-styled scaffold primitive (`BookTabs`). Dark mode is CSS variables + class `dark` on `<html>` — no theme-provider library.
+
+**Prerequisite:** Node.js **20+** on PATH.
 
 ## What’s in this repo
 
 | Path | Role |
 |------|------|
-| [`SKILL.md`](./SKILL.md) | **Central** skill: auto-init, pipeline, reference router |
+| [`SKILL.md`](./SKILL.md) | **Central** skill: auto-init, extend path, pipeline, RechartsSpec, reference router |
 | [`chart-book-spec.md`](./chart-book-spec.md) | Product & implementation spec |
 | [`references/`](./references/) | Bundled Anthropic data plugin + dataviz (read when the skill routes you there) |
 | `src/components/` | Scaffold UI (layout, rows, theme toggle, Recharts helpers) |
-| `src/data/` | `canonical.json`, `rows.json`, `understanding.md`, `runQuery.ts` |
+| `src/data/` | `canonical.json`, `rows.json`, `understanding.md`, `runQuery.ts`, `chartLint.ts` |
 | [`scripts/install-skill.sh`](./scripts/install-skill.sh) | Link this repo into Cursor / Codex skill folders |
+| [`scripts/check-book.mjs`](./scripts/check-book.mjs) | Agent-friendly lint + optional HTTP check / screenshot recipe |
 
 ## Install the skill
 
@@ -29,6 +32,8 @@ cd databook
 
 That writes `~/.cursor/skills/databook` and `${CODEX_HOME:-~/.codex}/skills/databook` (symlink package). Open a **new** Agent chat and invoke `/databook`.
 
+**Never run `npm install` inside the skill install folder** — symlinks would write `node_modules` into this clone. Copy the scaffold into your target book, then install there.
+
 ### Skill package vs target project
 
 | | |
@@ -36,30 +41,22 @@ That writes `~/.cursor/skills/databook` and `${CODEX_HOME:-~/.codex}/skills/data
 | **Skill package** | This clone (and the linked folder under `~/.cursor/skills/databook`). Treat it as a **read-only template**: docs, references, and the scaffold to copy from. |
 | **Target project** | The workspace where you want a chart book (your experiment repo). The skill **copies** the scaffold there and writes `canonical.json` / `rows.json` / analysis into **that** tree. |
 
-Do **not** edit books or dump experiment data into `~/.cursor/skills/databook` (or into this product clone’s working tree unless you are developing DataBook itself).
-
 ### Team / repo install
 
-To commit discovery into a project so teammates get the skill without a personal install:
+To commit discovery into a **target** project so teammates get the skill without a personal install:
 
 ```bash
-./scripts/install-skill.sh --project
+# from the target project directory (not only from inside this clone)
+/path/to/databook/scripts/install-skill.sh --project
 ```
 
-That creates `.cursor/skills/databook` with **relative** symlinks back into this repo (or into a nested checkout). Commit that folder with the project.
+That creates **`$PWD/.cursor/skills/databook`** with relative symlinks back to the DataBook clone. Commit that folder with the project.
 
 Flags: `--cursor-only`, `--codex-only`, `--help`.
 
-A Cursor Marketplace plugin may ship later; it is **optional** and **not required**. Symlink install is the supported path today.
-
 ## How to use
 
-Invoke `/databook` on your experiment workspace. **Init runs automatically** — there is no separate init command. The skill:
-
-1. Copies the scaffold into the **target** workspace (if needed) and installs a **trivial** sample (Overview tab, “hello world” markdown, one exponential curve) so the app boots.
-2. Profiles your data (routing into `references/anthropic-data-plugin/` as needed).
-3. Writes `src/data/canonical.json` and self-describing rows with **inlined** query objects **in the target project**.
-4. Chooses Recharts compositions using routed viz guidance under `references/anthropic-dataviz/`.
+Invoke `/databook` on your experiment workspace. **Init runs automatically** when no book exists. If a book already exists, follow the skill’s **extend existing book** path (`understanding.md` → generator → tests → lint → visual check).
 
 When the skill initializes a chart book **inside another project**, it does **not** generate a README in that folder. This root README is for the DataBook product repo only.
 
@@ -69,15 +66,18 @@ In the **target** chart-book directory (after init), not in the skill install fo
 
 ```bash
 npm install
-npm run dev      # Vite
+npm run dev         # Vite
 npm run build
-npm test         # vitest (runQuery)
+npm test            # vitest (runQuery, chart lint, merge helpers)
+npm run lint:charts # chart honesty lint only
+npm run check       # lint:charts (+ optional --url for HTTP smoke)
 ```
 
 ## Document model (short)
 
-- **Tabs** — group rows into sections; every book includes them (synced with Sidebar).
-- **Sidebar** — jump between tab sections when the book grows large.
-- **Markdown row** — full width, react-markdown.
-- **Component row** — flex container for one or more chart blocks.
-- Each chart block is **self-describing**: title, flexible `recharts` spec, encoding, and **query object inlined** (no `queries.json` / recipe file).
+- **Tabs** — primary section nav (`BookTabs`, sticky, keyboard arrows, `?tab=` history).
+- **Pages** (optional) — Sidebar lists pages; tabs show that page’s sections. Without pages, no sidebar (avoids duplicating tabs).
+- **Markdown row** — full width; `createdBy: "user"` gets an analyst callout.
+- **Component row** — flex/wrap container for one or more chart blocks (aligned headers).
+- Each chart block is **self-describing** or a **`ref`** to another chart id (Summary without copied queries).
+- **`npm run lint:charts`** rejects truncated bar axes, unstated line zooms, unshared sibling scales, and unknown marks.

@@ -86,8 +86,15 @@ button {
 
 .cb-shell {
   display: grid;
-  grid-template-columns: var(--cb-sidebar-width) 1fr;
   min-height: 100vh;
+}
+
+.cb-shell-with-sidebar {
+  grid-template-columns: var(--cb-sidebar-width) 1fr;
+}
+
+.cb-shell-tabs-only {
+  grid-template-columns: 1fr;
 }
 
 .cb-sidebar {
@@ -206,6 +213,11 @@ button {
   width: 100%;
 }
 
+.cb-shell-tabs-only .cb-content {
+  max-width: min(var(--cb-content-wide), 100%);
+  margin-inline: auto;
+}
+
 .cb-footer {
   padding: 0 var(--cb-space-5) var(--cb-space-6);
   color: var(--cb-muted);
@@ -219,11 +231,24 @@ button {
   margin-bottom: var(--cb-space-6);
 }
 
+.cb-tabs-scroll {
+  position: sticky;
+  top: 56px;
+  z-index: 9;
+  margin: 0 calc(-1 * var(--cb-space-5));
+  padding: 0 var(--cb-space-5);
+  background: color-mix(in srgb, var(--cb-bg) 92%, transparent);
+  backdrop-filter: saturate(180%) blur(8px);
+  /* Fade hint when the tab strip overflows horizontally */
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%);
+}
+
 .cb-tabs-list {
   display: flex;
   gap: 0;
   border-bottom: 1px solid var(--cb-border);
   overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .cb-tabs-trigger {
@@ -251,6 +276,7 @@ button {
 
 .cb-tabs-panel {
   outline: none;
+  padding-top: var(--cb-space-5);
 }
 
 /* ---- Rows ---- */
@@ -289,6 +315,49 @@ button {
 
 .cb-markdown > :first-child {
   margin-top: 0;
+}
+
+.cb-markdown-user {
+  border-left: 3px solid var(--cb-accent);
+  padding: var(--cb-space-3) var(--cb-space-4);
+  background: color-mix(in srgb, var(--cb-accent) 6%, var(--cb-surface));
+  border-radius: 0 var(--cb-radius) var(--cb-radius) 0;
+}
+
+.cb-markdown-user-label {
+  margin: 0 0 0.5em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cb-accent);
+}
+
+.cb-markdown blockquote {
+  margin: 0 0 1em;
+  padding: 0.25em 0 0.25em 1em;
+  border-left: 3px solid var(--cb-border);
+  color: var(--cb-muted);
+}
+
+.cb-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  margin: 0 0 1em;
+}
+
+.cb-markdown th,
+.cb-markdown td {
+  border: 1px solid var(--cb-border);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.cb-markdown th {
+  background: var(--cb-code-bg);
+  font-weight: 600;
 }
 
 .cb-markdown p,
@@ -333,12 +402,21 @@ button {
   display: flex;
   align-items: stretch;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .cb-chart-slot {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   padding-top: var(--cb-space-4);
   border-top: 1px solid var(--cb-border);
+}
+
+/* Shared header band so sibling plot baselines align when titles wrap unevenly */
+.cb-chart-header {
+  min-height: 4.5rem;
+  margin-bottom: 4px;
 }
 
 .cb-chart-title {
@@ -346,12 +424,20 @@ button {
   font-weight: 600;
   letter-spacing: -0.01em;
   margin: 0;
+  line-height: 1.35;
 }
 
 .cb-chart-subtitle {
   color: var(--cb-muted);
   font-size: 13px;
-  margin: 2px 0 12px;
+  margin: 2px 0 0;
+  line-height: 1.35;
+}
+
+.cb-chart-subtitle-spacer {
+  visibility: hidden;
+  min-height: 1.35em;
+  margin: 2px 0 0;
 }
 
 .cb-chart-notes {
@@ -386,24 +472,34 @@ button {
 }
 
 @media (max-width: 800px) {
-  .cb-shell {
+  .cb-shell,
+  .cb-shell-with-sidebar {
     grid-template-columns: 1fr;
   }
 
+  /* Hide page sidebar on narrow viewports — tabs (sticky) are the only nav */
   .cb-sidebar {
-    position: static;
-    height: auto;
-    border-right: 0;
-    border-bottom: 1px solid var(--cb-border);
-    padding: var(--cb-space-3) var(--cb-space-4);
+    display: none;
   }
 
-  .cb-sidebar-nav {
-    flex-direction: row;
-    flex-wrap: wrap;
+  .cb-header {
+    position: sticky;
+    top: 0;
+  }
+
+  .cb-tabs-scroll {
+    top: 56px;
+  }
+
+  .cb-content {
+    padding: var(--cb-space-4);
   }
 
   .cb-component-row {
     flex-wrap: wrap;
+  }
+
+  .cb-chart-slot {
+    flex: 1 1 100% !important;
   }
 }
