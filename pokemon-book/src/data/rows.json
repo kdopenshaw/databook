@@ -63,6 +63,13 @@
           "body": "## Pok\u00e9mon base stats \u2014 Gen 1\u20136\n\n**Population:** 721 primary forms (first CSV row per National Dex `#`). Mega and alternate formes are in the canonical file but excluded from default charts via `is_primary_form`.\n\n**Type caveats:** default type panels use **both slots** (dual-types counted twice). Type-1-only panels undercount common secondaries (e.g. Flying). See Deep dive \u2192 By type and `understanding.md`.\n\n**Archetypes:** glass cannon (61) / tank (41) from z-score gaps on primary forms \u2014 Deep dive \u2192 Archetypes.\n\nCharts below are **refs** into the detail tabs."
         },
         {
+          "id": "md-analyst-speed-tiers",
+          "type": "markdown",
+          "order": 0.5,
+          "createdBy": "user",
+          "body": "## Analyst ask \u2014 speed tiers & team pool\n\nPlease add a **Team pool** (or similar) cut that buckets primary forms into speed tiers (e.g. slow / mid / fast / blistering) and shows **shares** and counts using `share` / `count_if` \u2014 not hand-pivoted boolean columns if the query helpers cover it.\n\nKeep this note (`createdBy: user`) via `mergeUserRows`. Prefer honesty: call out if mixed physical/special scales need `scaleGroup` or separate panels."
+        },
+        {
           "id": "comp-summary-refs",
           "type": "component",
           "order": 1,
