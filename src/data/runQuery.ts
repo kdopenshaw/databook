@@ -57,7 +57,39 @@ function matches(v: Value, f: FilterExpr): boolean {
   }
 }
 
+function rowsMatching(rows: DataRow[], where: FilterExpr | undefined): DataRow[] {
+  if (!where) return rows;
+  return rows.filter((r) => matches(r[where.column], where));
+}
+
 function aggregateGroup(rows: DataRow[], a: AggSpec): Value {
+  if (a.fn === 'count_if') {
+    return rowsMatching(rows, a.where).length;
+  }
+  if (a.fn === 'share') {
+    if (a.where) {
+      if (!rows.length) return null;
+      return rowsMatching(rows, a.where).length / rows.length;
+    }
+    // Boolean / truthy rate on `column` (preferred over mean for rates).
+    if (!a.column) return null;
+    if (!rows.length) return null;
+    let hits = 0;
+    for (const r of rows) {
+      const v = r[a.column];
+      if (v === true) hits += 1;
+      else if (typeof v === 'number') hits += v;
+      else if (typeof v === 'string' && v.length > 0) hits += 1;
+    }
+    return hits / rows.length;
+  }
+  if (a.fn === 'sum_if' || a.fn === 'mean_if') {
+    const subset = rowsMatching(rows, a.where);
+    const nums = subset.map((r) => num(r[a.column!])).filter((v): v is number => v !== null);
+    if (a.fn === 'sum_if') return nums.reduce((s, v) => s + v, 0);
+    if (!nums.length) return null;
+    return nums.reduce((s, v) => s + v, 0) / nums.length;
+  }
   if (a.fn === 'count') return a.column ? rows.filter((r) => r[a.column!] !== null).length : rows.length;
   const values = rows.map((r) => r[a.column!]).filter((v): v is Exclude<Value, null> => v !== null);
   if (a.fn === 'count_distinct') return new Set(values).size;
@@ -186,7 +218,15 @@ export function runQuery(table: Table, query: ChartQuery): DataRow[] {
           } else {
             const row: DataRow = { [startKey]: s, [endKey]: roundBin(s + b.step) };
             for (const a of query.aggregate ?? []) {
-              row[a.as] = a.fn === 'count' || a.fn === 'count_distinct' || a.fn === 'sum' ? 0 : null;
+              row[a.as] =
+                a.fn === 'count' ||
+                a.fn === 'count_distinct' ||
+                a.fn === 'count_if' ||
+                a.fn === 'sum' ||
+                a.fn === 'sum_if' ||
+                a.fn === 'share'
+                  ? 0
+                  : null;
             }
             filled.push(row);
           }

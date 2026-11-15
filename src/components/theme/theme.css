@@ -231,6 +231,46 @@ button {
   margin-bottom: var(--cb-space-6);
 }
 
+/* Mobile-only page switcher (sidebar stays desktop) */
+.cb-page-switcher {
+  display: none;
+}
+
+.cb-page-switcher-scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding: 8px var(--cb-space-5);
+  border-bottom: 1px solid var(--cb-border);
+  background: color-mix(in srgb, var(--cb-bg) 94%, transparent);
+}
+
+.cb-page-chip {
+  appearance: none;
+  border: 1px solid var(--cb-border);
+  background: transparent;
+  color: var(--cb-muted);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--cb-radius);
+  cursor: pointer;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.cb-page-chip:hover {
+  color: var(--cb-fg);
+  background: var(--cb-hover);
+}
+
+.cb-page-chip[aria-current='page'] {
+  color: var(--cb-fg);
+  border-color: var(--cb-fg);
+  background: var(--cb-hover);
+}
+
 .cb-tabs-scroll {
   position: sticky;
   top: 56px;
@@ -239,16 +279,45 @@ button {
   padding: 0 var(--cb-space-5);
   background: color-mix(in srgb, var(--cb-bg) 92%, transparent);
   backdrop-filter: saturate(180%) blur(8px);
-  /* Fade hint when the tab strip overflows horizontally */
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.cb-tabs-scroll-inner {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.cb-tabs-scroll-fade-left .cb-tabs-scroll-inner {
+  mask-image: linear-gradient(to right, transparent 0, #000 20px, #000 100%);
+}
+
+.cb-tabs-scroll-fade-right .cb-tabs-scroll-inner {
   mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%);
+}
+
+.cb-tabs-scroll-fade-left.cb-tabs-scroll-fade-right .cb-tabs-scroll-inner {
+  mask-image: linear-gradient(to right, transparent 0, #000 20px, #000 calc(100% - 28px), transparent 100%);
+}
+
+.cb-tabs-scroll-cue {
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--cb-muted);
+  font-size: 16px;
+  line-height: 1;
+  padding-left: 4px;
+  pointer-events: none;
 }
 
 .cb-tabs-list {
   display: flex;
   gap: 0;
   border-bottom: 1px solid var(--cb-border);
-  overflow-x: auto;
-  scrollbar-width: thin;
+  min-width: max-content;
 }
 
 .cb-tabs-trigger {
@@ -477,9 +546,16 @@ button {
     grid-template-columns: 1fr;
   }
 
-  /* Hide page sidebar on narrow viewports — tabs (sticky) are the only nav */
+  /* Hide page sidebar on narrow viewports — page switcher + sticky tabs */
   .cb-sidebar {
     display: none;
+  }
+
+  .cb-page-switcher {
+    display: block;
+    position: sticky;
+    top: 56px;
+    z-index: 10;
   }
 
   .cb-header {
@@ -488,7 +564,7 @@ button {
   }
 
   .cb-tabs-scroll {
-    top: 56px;
+    top: 104px;
   }
 
   .cb-content {

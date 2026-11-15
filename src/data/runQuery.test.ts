@@ -59,5 +59,39 @@ describe('runQuery', () => {
     expect(rows.map((r) => r.x_bin)).toEqual([0, 5, 10, 15]);
     expect(rows.find((r) => r.x_bin === 10)?.n).toBe(0);
   });
+
+  it('computes share and conditional aggregates', () => {
+    const byGroup = runQuery(table, {
+      groupBy: ['group'],
+      aggregate: [
+        { fn: 'share', column: 'flag', as: 'flag_share' },
+        { fn: 'count_if', where: { column: 'flag', op: 'eq', value: true }, as: 'flag_n' },
+        { fn: 'sum_if', column: 'n', where: { column: 'flag', op: 'eq', value: true }, as: 'flag_n_sum' },
+        { fn: 'mean_if', column: 'n', where: { column: 'flag', op: 'eq', value: true }, as: 'flag_n_mean' },
+      ],
+      orderBy: [{ column: 'group', direction: 'asc' }],
+    });
+    // levels order: b, a — but orderBy group asc uses level order (b before a)
+    const a = byGroup.find((r) => r.group === 'a')!;
+    const b = byGroup.find((r) => r.group === 'b')!;
+    // group a: r1 flag T, r3 F, r4 T → share 2/3, flag_n 2, sum 10+40=50, mean 25
+    expect(a.flag_share).toBeCloseTo(2 / 3);
+    expect(a.flag_n).toBe(2);
+    expect(a.flag_n_sum).toBe(50);
+    expect(a.flag_n_mean).toBe(25);
+    // group b: r2 F, r1(dup id) T → share 1/2
+    expect(b.flag_share).toBeCloseTo(0.5);
+    expect(b.flag_n).toBe(1);
+  });
+
+  it('computes share with where as matching-row proportion', () => {
+    const rows = runQuery(table, {
+      groupBy: ['group'],
+      aggregate: [{ fn: 'share', where: { column: 'n', op: 'gte', value: 30 }, as: 'big_share' }],
+    });
+    const a = rows.find((r) => r.group === 'a')!;
+    // a: n 10,30,40 → 2 of 3 ≥ 30
+    expect(a.big_share).toBeCloseTo(2 / 3);
+  });
 });
 

@@ -19,7 +19,8 @@ type Props = {
 
 /**
  * Tabs are the primary section nav. Sidebar appears only when `pages` are defined
- * (page groups), so it never duplicates the tab strip 1:1.
+ * (page groups), so it never duplicates the tab strip 1:1. On narrow viewports the
+ * sidebar is hidden and a sticky horizontal page switcher takes its place.
  */
 export function PageLayout({
   title,
@@ -34,6 +35,7 @@ export function PageLayout({
   children,
 }: Props) {
   const showSidebar = pages.length > 0 && Boolean(onSelectPage);
+  const sortedPages = [...pages].sort((a, b) => a.order - b.order);
 
   return (
     <div className={`cb-shell${showSidebar ? ' cb-shell-with-sidebar' : ' cb-shell-tabs-only'}`}>
@@ -53,6 +55,23 @@ export function PageLayout({
           </div>
           <ThemeToggle />
         </header>
+        {showSidebar ? (
+          <div className="cb-page-switcher" role="navigation" aria-label="Book pages">
+            <div className="cb-page-switcher-scroll">
+              {sortedPages.map((page) => (
+                <button
+                  key={page.id}
+                  type="button"
+                  className="cb-page-chip"
+                  aria-current={page.id === activePageId ? 'page' : undefined}
+                  onClick={() => onSelectPage?.(page.id)}
+                >
+                  {page.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <main className="cb-content">
           <BookTabs tabs={tabs} activeTabId={activeTabId} onSelect={onSelectTab}>
             {children}
