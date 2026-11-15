@@ -1,0 +1,60 @@
+{
+  "title": "DataBook",
+  "experimentId": "init-sample",
+  "description": "Trivial init sample — hello world + exponential curve.",
+  "generatedAt": "2026-11-15T00:00:00.000Z",
+  "defaultTabId": "overview",
+  "tabs": [
+    {
+      "id": "overview",
+      "label": "Overview",
+      "order": 0,
+      "rows": [
+        {
+          "id": "md-hello",
+          "type": "markdown",
+          "order": 0,
+          "createdBy": "skill",
+          "body": "hello world"
+        },
+        {
+          "id": "comp-exp",
+          "type": "component",
+          "order": 1,
+          "createdBy": "skill",
+          "layout": { "gap": 0, "align": "stretch", "wrap": false },
+          "components": [
+            {
+              "id": "chart-exp",
+              "title": "Exponential curve",
+              "subtitle": "y = e^x · synthetic init points",
+              "query": {
+                "label": "all exponential points",
+                "orderBy": [{ "column": "x", "direction": "asc" }]
+              },
+              "encoding": { "x": "x", "y": "y" },
+              "recharts": {
+                "chart": "LineChart",
+                "xKey": "x",
+                "series": [
+                  {
+                    "mark": "Line",
+                    "dataKey": "y",
+                    "name": "e^x",
+                    "type": "monotone",
+                    "strokeWidth": 2,
+                    "dot": true
+                  }
+                ],
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false
+              },
+              "flex": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
