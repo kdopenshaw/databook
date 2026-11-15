@@ -36,7 +36,7 @@ Default (no flags): personal install to both
 
 Do NOT run `npm install` in the skill install directory. That would write
 node_modules into this product clone via symlinks. Copy the scaffold into
-your chart-book target, then `npm install` there.
+your databook target, then `npm install` there.
 EOF
 }
 
@@ -122,7 +122,7 @@ write_skill_readme() {
 This directory is for **Cursor/Codex skill discovery** only.
 
 - Read `SKILL.md` and follow the pipeline there.
-- Copy the scaffold into your **target** chart-book project, then run `npm install` in that target.
+- Copy the scaffold into your **target** databook project, then run `npm install` in that target.
 - Symlinks here point at the product clone. Running `npm install` in this folder would pollute the clone via those links.
 
 Scaffold copy list: see `scaffold-files.txt` next to this README (or `SKILL.md` → Init).
@@ -135,7 +135,7 @@ write_scaffold_manifest() {
 # Files to copy from this skill package into the target book root (init).
 # Do not npm install inside the skill package — copy first, install in the target.
 SKILL.md                 # optional reference only; product entry stays in skill install
-chart-book-spec.md       # optional local copy for agents
+databook-spec.md       # optional local copy for agents
 index.html
 package.json
 package-lock.json
@@ -164,7 +164,7 @@ link_skill() {
   # with git's ignore machinery. Agents copy it from the product root per scaffold-files.txt.
   for name in \
     SKILL.md \
-    chart-book-spec.md \
+    databook-spec.md \
     references \
     src \
     scripts \

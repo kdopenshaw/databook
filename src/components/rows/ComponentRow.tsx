@@ -15,7 +15,7 @@ export function ComponentRow({ row, table, book }: Props) {
 
   return (
     <div
-      className="cb-row cb-component-row"
+      className="dbk-row dbk-component-row"
       style={{
         gap,
         alignItems: align === 'start' ? 'flex-start' : align === 'center' ? 'center' : 'stretch',

@@ -1,4 +1,4 @@
-# Chart Book — Product & Implementation Spec
+# DataBook — Product & Implementation Spec
 
 Status: draft for implementers  
 Audience: engineers building the scaffold, data layer, and AI skill  
@@ -12,7 +12,7 @@ Related research context: Cursor canvases cannot host Recharts (sandbox = `curso
 
 ### 1.1 What it is
 
-A **chart book** is a fixed-shape React application that presents one experiment’s analysis as **tabbed sections of rows**: full-width markdown rows and **component rows** that can hold one or more charts side by side, with a **sidebar** for jumping between sections when the book grows large. An **AI skill** (agent skill / prompt pack) drives creation:
+A **DataBook** is a fixed-shape React application that presents one experiment’s analysis as **tabbed sections of rows**: full-width markdown rows and **component rows** that can hold one or more charts side by side, with a **sidebar** for jumping between sections when the book grows large. An **AI skill** (agent skill / prompt pack) drives creation:
 
 1. **Init** the scaffold automatically (built into skill invocation — see §7.5).
 2. **Profile** unknown data (from a repo path, uploaded files, or a user description of sources).
@@ -40,11 +40,11 @@ The skill is **experiment-agnostic**: it does not hard-code domain workflows (fi
 - Cross-chart brushing, linked highlighting, or global filter bars that rewrite other charts.
 - Arbitrary notebook code cells executed in the browser.
 - Hosting charts inside Cursor `.canvas.tsx` (incompatible with Recharts / npm).
-- Replacing Plotly Studio / Hex for warehouse BI; this is a **repo-local / skill-emitted chart book**.
+- Replacing Plotly Studio / Hex for warehouse BI; this is a **repo-local / skill-emitted DataBook**.
 - Nested rows, free-form grids, or drag-and-drop layout editors (in-place **(+)** markdown insert between rows is in scope).
 - A pre-filled / restricted starter chart catalog (the agent uses Recharts’ full API).
 - A separate user-facing `databook init` command (init is automatic when the skill runs).
-- Generating a README inside emitted chart-book folders in other projects.
+- Generating a README inside emitted databook folders in other projects.
 
 ### 1.4 High-level flow
 
@@ -70,7 +70,7 @@ Sources (repo files | user description)
         │  ├── src/data/rows.json   # tabs → sections → rows
         │  └── src/components/… (fixed shell: sidebar, tabs, rows)
         ▼
-   User opens chart book (sidebar + Geist tabs + rows; dark via .dark on root)
+   User opens DataBook (sidebar + Geist tabs + rows; dark via .dark on root)
 ```
 
 ---
@@ -144,13 +144,13 @@ This is inputs for later markdown rows and for human review—not only chat ephe
 
 ### 2.5 Organization on disk (standard)
 
-**DataBook product repo** (this repository) and **emitted chart books** use the same nested layout:
+**DataBook product repo** (this repository) and **emitted databooks** use the same nested layout:
 
 ```text
 <databook-or-book-root>/
   README.md                 # DataBook product repo ONLY — init must NOT emit this into other projects
   SKILL.md                  # top-level skill (router + pipeline); product repo
-  chart-book-spec.md        # product repo
+  databook-spec.md        # product repo
   references/               # Anthropic bundles (product repo; skill routes here)
   src/
     components/             # React UI: sidebar, Geist tabs, layout, rows, charts, theme toggle
@@ -165,7 +165,7 @@ Emitted books in other projects get `src/` (and whatever the scaffold needs to r
 
 ### 3.1 Tabbed sections of rows (not strict markdown↔chart alternation)
 
-The chart book is a **document of tabbed sections**, each section a **linear stack of rows**, conceptually like Jupyter, but **not** limited to alternating markdown and a single chart:
+The DataBook is a **document of tabbed sections**, each section a **linear stack of rows**, conceptually like Jupyter, but **not** limited to alternating markdown and a single chart:
 
 - Top level: **tabs** (sections); each tab owns an ordered list of rows  
 - Typed **rows** with an explicit **order index** within a tab  
@@ -370,7 +370,7 @@ See §8 open questions.
 - The **rest of the primitive set is custom-built on top of Geist tokens**: page shell, sidebar, row container, markdown block, chart slot. Do not pull an entire third-party app shell; compose DataBook chrome from Geist foundations + these custom primitives.  
 - **Dark mode default** via **CSS variables** (aligned with Geist where applicable) and a **class toggle on the root element** (e.g. `class="dark"` on `<html>` or app root).  
 - **No theme-provider library** (no ThemeProvider package, no CSS-in-JS theme context library). Persist preference in `localStorage` and set/remove the root class.  
-- Same tokens for every chart book so books feel like one product.
+- Same tokens for every DataBook so books feel like one product.
 
 ### 5.2 Layout
 
@@ -412,10 +412,10 @@ See §8 open questions.
 Expose CSS variables on `:root` / `.dark`, preferring **Geist typography/spacing** foundations, consumed by layout chrome and by Recharts via `stroke`/`fill` props:
 
 - Geist-aligned type/spacing scale (as provided by the Geist package / tokens)  
-- `--cb-bg`, `--cb-fg`, `--cb-muted`, `--cb-border`  
-- `--cb-accent`  
-- `--cb-series-1` … `--cb-series-n` (colorblind-safe categorical)  
-- `--cb-sequential-*` / diverging when needed  
+- `--dbk-bg`, `--dbk-fg`, `--dbk-muted`, `--dbk-border`  
+- `--dbk-accent`  
+- `--dbk-series-1` … `--dbk-series-n` (colorblind-safe categorical)  
+- `--dbk-sequential-*` / diverging when needed  
 
 Chart gridlines and axes use muted tokens; never hard-code pure `#000` / `#fff` in chart components.
 
@@ -449,7 +449,7 @@ src/
   App.tsx                      # loads book doc + canonical.json; applies root dark class
   components/
     theme/
-      theme.css                # Geist-aligned + --cb-* variables for :root and .dark
+      theme.css                # Geist-aligned + --dbk-* variables for :root and .dark
       ThemeToggle.tsx          # sets/removes root class; localStorage — not a theme library
     layout/
       PageLayout.tsx           # header + sidebar + main column
@@ -506,7 +506,7 @@ Dependencies include at least: `react`, `recharts`, `react-markdown`. Geist typo
 
 Scaffold version may be pinned (e.g. `scaffold.version`) so skills know when to refresh the app shell.
 
-**Init must not** create a README inside the emitted chart-book folder when initializing into another project. The **DataBook product repo** keeps its own root README (§10).
+**Init must not** create a README inside the emitted databook folder when initializing into another project. The **DataBook product repo** keeps its own root README (§10).
 
 ---
 
@@ -514,7 +514,7 @@ Scaffold version may be pinned (e.g. `scaffold.version`) so skills know when to 
 
 ### 7.1 Role
 
-The **DataBook / Chart Book skill** (`SKILL.md` at repo root) teaches an agent to:
+The **DataBook skill** (`SKILL.md` at repo root) teaches an agent to:
 
 1. **Run databook init automatically** on invoke (§7.5).  
 2. Follow **routed** reads into `references/` at the right pipeline steps (§11) — not “read everything up front.”  
@@ -542,7 +542,7 @@ src/                           # scaffold template + (in product repo) working t
 
 Optional skill-local notes may live beside `SKILL.md` if needed; the **router** that says *when* to open each Anthropic file lives in **`SKILL.md`**.
 
-Triggers (examples): “create a chart book”, “profile this experiment data”, “add charts for …”, “refresh the chart book after cleaning”.
+Triggers (examples): “create a DataBook”, “profile this experiment data”, “add charts for …”, “refresh the DataBook after cleaning”.
 
 ### 7.3 Anthropic materials (routed, not ambient)
 
@@ -587,7 +587,7 @@ If a book scaffold already exists, init is a no-op or a version-aware refresh �
 2. **Query engine** — Simple in-memory JS vs Arquero vs DuckDB-WASM for large `canonical.json`; pick based on typical N.  
 3. **Skill hosting** — Cursor skill vs Claude skill vs both; emission path differs (local FS vs cloud agent).  
 4. **Multi-canonical datasets** — v1 assumes one JSON file; some experiments need fact + dim tables. Prefer join-into-one-canonical first; multi-file later if required.  
-5. **Component-row max children** — Soft cap at 3 vs hard validation at 4; confirm after first real multi-chart books.  
+5. **Component-row max children** — Soft cap at 3 vs hard validation at 4; confirm after first real multi-databooks.  
 6. **`RechartsSpec` persistence shape** — Exact JSON form for storing arbitrary Recharts compositions in `rows.json` (serializable element tree vs declarative DSL); lock after first working emitter.
 
 ---
@@ -618,7 +618,7 @@ If a book scaffold already exists, init is a no-op or a version-aware refresh �
 
 This **product repository** (`kdopenshaw/databook`) includes a **root `README.md`** describing what DataBook is, how to invoke the skill, and where `references/` and the scaffold live.
 
-**Emitted chart books** in other projects **must not** get an auto-generated README from init. Operators who want project-local docs write them themselves.
+**Emitted databooks** in other projects **must not** get an auto-generated README from init. Operators who want project-local docs write them themselves.
 
 ---
 
@@ -664,9 +664,9 @@ Vendored copy of the [`data/`](https://github.com/anthropics/knowledge-work-plug
 | Profiling / exploring unfamiliar sources | `references/anthropic-data-plugin/skills/explore-data/` (and related plugin skills as needed) |
 | Validation / statistical checks | `references/anthropic-data-plugin/skills/validate-data/`, `statistical-analysis/`, etc. |
 | Choosing chart form / encodings | `references/anthropic-dataviz/METHOD.md`, then `create-viz/` / `data-visualization/` as needed |
-| Building the book shell / rows | Chart Book rules in `SKILL.md` + this spec — not Anthropic dashboard skills as a second layout system |
+| Building the book shell / rows | DataBook rules in `SKILL.md` + this spec — not Anthropic dashboard skills as a second layout system |
 
-Do **not** instruct the agent to “read all of `references/` before starting.” Do **not** treat Anthropic dashboard builders as a replacement for the Chart Book row model.
+Do **not** instruct the agent to “read all of `references/` before starting.” Do **not** treat Anthropic dashboard builders as a replacement for the DataBook row model.
 
 ### 11.5 Maintenance
 

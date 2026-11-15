@@ -9,4 +9,4 @@ These folders ship with DataBook. They are **not** ambient background.
 | `anthropic-data-plugin/` | Vendored [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) `data/` plugin (Apache-2.0) | Profiling, explore, validate, stats, transforms |
 | `anthropic-dataviz/` | `METHOD.md` + `create-viz` / `data-visualization` | Chart form selection and encodings |
 
-See each folder’s `UPSTREAM.md` for pin/provenance. Full routing table: `chart-book-spec.md` §11 and `SKILL.md`.
+See each folder’s `UPSTREAM.md` for pin/provenance. Full routing table: `databook-spec.md` §11 and `SKILL.md`.

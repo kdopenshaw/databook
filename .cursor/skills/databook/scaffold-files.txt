@@ -1,7 +1,7 @@
 # Files to copy from this skill package into the target book root (init).
 # Do not npm install inside the skill package — copy first, install in the target.
 SKILL.md                 # optional reference only; product entry stays in skill install
-chart-book-spec.md       # optional local copy for agents
+databook-spec.md       # optional local copy for agents
 index.html
 package.json
 package-lock.json

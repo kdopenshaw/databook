@@ -15,14 +15,14 @@ export function Sidebar({ pages, activePageId, onSelectPage, tabs, activeTabId, 
   if (pages.length) {
     const sorted = [...pages].sort((a, b) => a.order - b.order);
     return (
-      <aside className="cb-sidebar" aria-label="Book pages">
-        <p className="cb-sidebar-label">Pages</p>
-        <nav className="cb-sidebar-nav">
+      <aside className="dbk-sidebar" aria-label="Book pages">
+        <p className="dbk-sidebar-label">Pages</p>
+        <nav className="dbk-sidebar-nav">
           {sorted.map((page) => (
             <button
               key={page.id}
               type="button"
-              className="cb-sidebar-item"
+              className="dbk-sidebar-item"
               aria-current={page.id === activePageId ? 'page' : undefined}
               onClick={() => onSelectPage(page.id)}
             >
@@ -38,14 +38,14 @@ export function Sidebar({ pages, activePageId, onSelectPage, tabs, activeTabId, 
   if (!tabs?.length || !onSelectTab) return null;
   const sorted = [...tabs].sort((a, b) => a.order - b.order);
   return (
-    <aside className="cb-sidebar" aria-label="Book sections">
-      <p className="cb-sidebar-label">Sections</p>
-      <nav className="cb-sidebar-nav">
+    <aside className="dbk-sidebar" aria-label="Book sections">
+      <p className="dbk-sidebar-label">Sections</p>
+      <nav className="dbk-sidebar-nav">
         {sorted.map((tab) => (
           <button
             key={tab.id}
             type="button"
-            className="cb-sidebar-item"
+            className="dbk-sidebar-item"
             aria-current={tab.id === activeTabId ? 'page' : undefined}
             onClick={() => onSelectTab(tab.id)}
           >

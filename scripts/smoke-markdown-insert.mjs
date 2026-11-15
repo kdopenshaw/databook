@@ -30,13 +30,13 @@ try {
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
   // Force-show first insert gap and click.
-  const gap = page.locator('.cb-insert-gap-btn').first();
+  const gap = page.locator('.dbk-insert-gap-btn').first();
   await gap.evaluate((el) => {
     el.style.opacity = '1';
   });
   await gap.click();
 
-  const textarea = page.locator('.cb-markdown-textarea');
+  const textarea = page.locator('.dbk-markdown-textarea');
   await textarea.waitFor({ state: 'visible', timeout: 5000 });
   await textarea.fill(`## ${marker}\n\nPersisted via (+).`);
   await page.getByRole('button', { name: 'Save' }).click();

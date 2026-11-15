@@ -119,7 +119,7 @@ export type RechartsSeriesSpec = {
   dot?: boolean;
   /** Bars/areas sharing a stackId stack on top of each other. */
   stackId?: string;
-  /** Index into the --cb-series-* palette; defaults to the series position. */
+  /** Index into the --dbk-series-* palette; defaults to the series position. */
   colorIndex?: number;
 };
 

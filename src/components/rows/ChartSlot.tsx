@@ -35,9 +35,9 @@ export function ChartSlot({ block, table, book, flex = 1 }: Props) {
   const title = live?.title ?? block.title;
   const subtitle = live?.subtitle;
   const header = (
-    <div className="cb-chart-header">
-      <h3 className="cb-chart-title">{title}</h3>
-      {subtitle ? <p className="cb-chart-subtitle">{subtitle}</p> : <p className="cb-chart-subtitle cb-chart-subtitle-spacer" aria-hidden />}
+    <div className="dbk-chart-header">
+      <h3 className="dbk-chart-title">{title}</h3>
+      {subtitle ? <p className="dbk-chart-subtitle">{subtitle}</p> : <p className="dbk-chart-subtitle dbk-chart-subtitle-spacer" aria-hidden />}
     </div>
   );
 
@@ -45,36 +45,36 @@ export function ChartSlot({ block, table, book, flex = 1 }: Props) {
 
   if (resolved.error || !live) {
     return (
-      <div className="cb-chart-slot" style={style} role="alert">
+      <div className="dbk-chart-slot" style={style} role="alert">
         {header}
-        <div className="cb-chart-error">{resolved.error ?? 'Invalid chart'}</div>
+        <div className="dbk-chart-error">{resolved.error ?? 'Invalid chart'}</div>
       </div>
     );
   }
 
   if (result.error) {
     return (
-      <div className="cb-chart-slot" style={style} role="alert">
+      <div className="dbk-chart-slot" style={style} role="alert">
         {header}
-        <div className="cb-chart-error">{result.error}</div>
+        <div className="dbk-chart-error">{result.error}</div>
       </div>
     );
   }
 
   if (!result.rows.length) {
     return (
-      <div className="cb-chart-slot" style={style} data-empty="true">
+      <div className="dbk-chart-slot" style={style} data-empty="true">
         {header}
-        <p className="cb-chart-empty">No rows for this chart’s query.</p>
+        <p className="dbk-chart-empty">No rows for this chart’s query.</p>
       </div>
     );
   }
 
   return (
-    <div className="cb-chart-slot" style={style}>
+    <div className="dbk-chart-slot" style={style}>
       {header}
       <RechartsRenderer data={result.rows} spec={live.recharts!} />
-      {live.notes ? <p className="cb-chart-notes">{live.notes}</p> : null}
+      {live.notes ? <p className="dbk-chart-notes">{live.notes}</p> : null}
     </div>
   );
 }

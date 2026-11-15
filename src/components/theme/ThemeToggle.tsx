@@ -36,7 +36,7 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
-      className="cb-theme-toggle"
+      className="dbk-theme-toggle"
       onClick={() => setDark((d) => !d)}
       aria-label={`Switch to ${next} theme`}
       title={`Switch to ${next} theme`}
