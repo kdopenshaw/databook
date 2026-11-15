@@ -52,6 +52,7 @@ Filter conventions used by chart queries:
   - `is_glass_cannon`: glass_score ≥ 1 and z(offense) ≥ 0.5. `is_tank`: tank_score ≥ 1 and z(bulk) ≥ 0.5. `archetype` is Glass cannon / Tank / Neither.
   - Megas and alternate forms are scored on the same base-form scale.
   - The thresholds are a judgment call (constants `ARCHETYPE_GAP` / `ARCHETYPE_FLOOR` in the transform). At a gap of 0.8 SD the counts become 78 / 57; at 1.2 SD they become 38 / 35.
+- **Team-building pool** (analyst's definition): `in_team_pool` = non-legendary and total ≥ 500 (134 base species). `speed_tier` is one of <60 / 60–79 / 80–99 / 100+, with one boolean per tier (`speed_lt60` … `speed_100plus`) so `mean` gives tier shares. `total_band` is one of <300 / 300–399 / 400–499 / 500+. `total_mono` / `total_dual` are pivot helpers for comparing mono- and dual-types.
 - **Pivot helpers** (the query engine has no pivot or conditional aggregate): `total_legendary` / `total_nonlegendary` are the total or null, so `mean` and `count` split by status within one query. `in_primary_slot` / `in_secondary_slot` are booleans so `sum` counts slots.
 
 ## Quality issues and caveats
@@ -76,4 +77,6 @@ Filter conventions used by chart queries:
   - By type: glass cannons are most common in Ghost (20%), Dark, Fighting, and Psychic, and there are none in Fairy. Tanks are most common in Rock (16%) and Steel (15%). Ghost is high on both.
   - By generation: Gen 2 has 8 tanks vs 2 glass cannons, and Gen 6 has few of either. 28 of 50 Megas score as glass cannons.
   - Per-type shares rest on 0–11 species each.
+- **Speed ≥ 100:** Electric has the highest share (33%), then Flying (26%) and Psychic (23%); Rock is lowest (5%). In the team pool, Flying and Fire have 8 fast species each, while Electric has 1 (Jolteon), because most fast Electrics sit at 480–497.
+- **Dual typing:** non-legendary dual-types average 417 vs 393 for mono-types, and lead in every generation. Within total bands the gap is only 2–10 points, and in the team pool it is zero (530 vs 529). The dual-type share rises from 39% (<300) to 57% (500+). Dual typing is a composition effect; it does not buy stats. This uses total band as a proxy, since there is no evolution-stage column.
 - Stat distributions: similar spread (SD 26–29). HP is the most right-skewed (1.7), while Attack and Speed are the most symmetric (about 0.3).

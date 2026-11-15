@@ -40,6 +40,11 @@ ARCHETYPES = ["Glass cannon", "Tank", "Neither"]
 # weak side by ARCHETYPE_GAP and itself be at least ARCHETYPE_FLOOR above average.
 ARCHETYPE_GAP = 1.0
 ARCHETYPE_FLOOR = 0.5
+# Analyst's team-building pool: non-legendary base stat total at or above this.
+TEAM_POOL_MIN_TOTAL = 500
+SPEED_TIERS = ["<60", "60–79", "80–99", "100+"]
+SPEED_TIER_FLAGS = ["speed_lt60", "speed_60_79", "speed_80_99", "speed_100plus"]
+TOTAL_BANDS = ["<300", "300–399", "400–499", "500+"]
 
 
 GLUED_FORM = re.compile(r"^(.+?[a-z])(?=[A-Z0-9])(.*(?:Forme|Cloak|Mode|Size|Male|Confined))$")
@@ -145,6 +150,16 @@ def main() -> None:
         row["is_tank"] = tank >= ARCHETYPE_GAP and z(row, "bulk") >= ARCHETYPE_FLOOR
         row["archetype"] = "Glass cannon" if row["is_glass_cannon"] else "Tank" if row["is_tank"] else "Neither"
 
+        row["in_team_pool"] = not row["legendary"] and row["total"] >= TEAM_POOL_MIN_TOTAL
+        sp = row["speed"]
+        row["speed_tier"] = "<60" if sp < 60 else "60–79" if sp < 80 else "80–99" if sp < 100 else "100+"
+        for tier, flag in zip(SPEED_TIERS, SPEED_TIER_FLAGS):
+            row[flag] = row["speed_tier"] == tier
+        t = row["total"]
+        row["total_band"] = "<300" if t < 300 else "300–399" if t < 400 else "400–499" if t < 500 else "500+"
+        row["total_mono"] = None if row["is_dual_type"] else t
+        row["total_dual"] = t if row["is_dual_type"] else None
+
     q = lambda name, label, unit=None, **kw: {"name": name, "type": "quantitative", "label": label, "nullable": False, **({"unit": unit} if unit else {}), **kw}
     c = lambda name, label, levels=None, **kw: {"name": name, "type": "categorical", "label": label, "nullable": False, **({"levels": levels} if levels else {}), **kw}
     b = lambda name, label, **kw: {"name": name, "type": "boolean", "label": label, "nullable": False, **kw}
@@ -181,6 +196,12 @@ def main() -> None:
         b("is_glass_cannon", "Glass cannon", description=f"glass_score ≥ {ARCHETYPE_GAP} and z(offense) ≥ {ARCHETYPE_FLOOR}"),
         b("is_tank", "Tank", description=f"tank_score ≥ {ARCHETYPE_GAP} and z(bulk) ≥ {ARCHETYPE_FLOOR}"),
         c("archetype", "Archetype", ARCHETYPES, description="Glass cannon / Tank / Neither (mutually exclusive)"),
+        b("in_team_pool", "Team-building pool", description=f"Non-legendary and total ≥ {TEAM_POOL_MIN_TOTAL} (analyst's definition)"),
+        c("speed_tier", "Speed tier", SPEED_TIERS),
+        *[b(flag, f"Speed {tier}", description="Pivot helper: mean() gives the tier's share") for tier, flag in zip(SPEED_TIERS, SPEED_TIER_FLAGS)],
+        c("total_band", "Total band", TOTAL_BANDS),
+        q("total_mono", "Total (mono-type only)", "points", nullable=True, description="Pivot helper: total if mono-type else null"),
+        q("total_dual", "Total (dual-type only)", "points", nullable=True, description="Pivot helper: total if dual-type else null"),
     ]
 
     built_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -206,6 +227,7 @@ def main() -> None:
                     "base_form_rule": "first CSV row per dex number",
                     "archetype_gap_sd": ARCHETYPE_GAP,
                     "archetype_floor_sd": ARCHETYPE_FLOOR,
+                    "team_pool_min_total": TEAM_POOL_MIN_TOTAL,
                     "archetype_scale": {k: {"mean": round(m, 3), "sd": round(s, 3)} for k, (m, s) in scale.items()},
                 },
                 "output": {"path": "src/data/canonical.json", "rows": len(out), "hash": dataset["hash"]},

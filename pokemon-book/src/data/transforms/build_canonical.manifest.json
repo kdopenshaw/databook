@@ -12,6 +12,7 @@
     "base_form_rule": "first CSV row per dex number",
     "archetype_gap_sd": 1.0,
     "archetype_floor_sd": 0.5,
+    "team_pool_min_total": 500,
     "archetype_scale": {
       "offense": {
         "mean": 84.825,
@@ -30,7 +31,7 @@
   "output": {
     "path": "src/data/canonical.json",
     "rows": 1214,
-    "hash": "81133f6758ad"
+    "hash": "e9bc21da7398"
   },
-  "builtAt": "2026-11-15T05:52:27Z"
+  "builtAt": "2026-11-15T05:55:40Z"
 }
