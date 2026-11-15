@@ -52,12 +52,34 @@ export type BinSpec = {
   fillEmpty?: boolean;
 };
 
-export type AggFn = 'count' | 'sum' | 'mean' | 'median' | 'min' | 'max' | 'count_distinct' | 'ratio';
+export type AggFn =
+  | 'count'
+  | 'sum'
+  | 'mean'
+  | 'median'
+  | 'min'
+  | 'max'
+  | 'count_distinct'
+  | 'ratio'
+  /** Proportion of rows in the group matching `where`, or mean of a boolean/`column` truthy rate. */
+  | 'share'
+  /** Count rows in the group matching `where` (requires `where`). */
+  | 'count_if'
+  /** Sum `column` over rows matching `where` (requires `where`). */
+  | 'sum_if'
+  /** Mean of `column` over rows matching `where` (requires `where`). */
+  | 'mean_if';
 
 export type AggSpec = {
   fn: AggFn;
   column?: string;
   denominator?: string;
+  /**
+   * Row filter applied inside each group for `share` / `count_if` / `sum_if` / `mean_if`.
+   * For `share` without `where`, a boolean/quantitative `column` is treated as a rate
+   * (mean of truthy / numeric values).
+   */
+  where?: FilterExpr;
   as: string;
   label?: string;
   unit?: string;
@@ -169,6 +191,12 @@ export type ChartBlock = {
    * Prefer refs on Summary tabs instead of copying queries.
    */
   ref?: string;
+  /**
+   * Sibling shared-scale group id. Related measures (e.g. mean_hp vs mean_atk) that
+   * should share yDomain set the same `scaleGroup` — no need to rename aggregates to
+   * an identical `dataKey`. Chart lint keys off this before falling back to dataKeys.
+   */
+  scaleGroup?: string;
   recharts?: RechartsSpec;
   query?: ChartQuery;
   encoding?: ChartEncoding;

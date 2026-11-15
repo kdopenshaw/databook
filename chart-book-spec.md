@@ -103,7 +103,7 @@ type ChartQuery = {
   filter?: FilterExpr[];      // e.g. { column, op, value }
   groupBy?: string[];         // categorical / time keys
   bin?: BinSpec[];            // numeric → histogram buckets
-  aggregate?: AggSpec[];      // { column, fn: 'sum' | 'mean' | 'count' | ... , as }
+  aggregate?: AggSpec[];      // { column, fn: 'sum' | 'mean' | 'count' | 'share' | 'count_if' | 'sum_if' | 'mean_if' | ... , as, where? }
   orderBy?: OrderSpec[];
   limit?: number;
   /** Sample for scatter / large-N safety; applied after aggregate unless raw */
@@ -241,6 +241,7 @@ type ChartBlock = {
   title: string;
   subtitle?: string;       // units, period, filters in plain language
   ref?: string;            // reuse another chart id; omit query/recharts when set
+  scaleGroup?: string;     // related measures share yDomain without identical dataKeys
   recharts?: RechartsSpec;
   query?: ChartQuery;      // inlined when not using ref
   encoding?: ChartEncoding;
@@ -304,7 +305,7 @@ Scaffold shell:
 
 Empty query results: omit that chart slot (reflow remaining flex children) and show a short inline note *or* omit the whole component row if every slot is empty (prefer skill-side omission of empty charts).
 
-On narrow viewports, `ComponentRow` wraps/stacks; the page sidebar is hidden and sticky tabs remain the only nav—responsive behavior is scaffold-owned, not per-book CSS. Chart headers share a min-height so sibling plot baselines stay aligned.
+On narrow viewports, `ComponentRow` wraps/stacks; the page sidebar is hidden and a sticky horizontal page switcher appears when `pages` exist; sticky tabs remain section nav (with overflow fade + scroll cue)—responsive behavior is scaffold-owned, not per-book CSS. Chart headers share a min-height so sibling plot baselines stay aligned.
 
 Init sample may use a **single** tab (still mounting Tabs + Sidebar so every book exercises the primitives).
 
@@ -393,7 +394,7 @@ See §8 open questions.
 ### 5.3 Tabs (Geist)
 
 - Use Geist’s **Tabs** component from the open-source Geist design system (e.g. `@vercel/geistcn` / published Geist Tabs API).  
-- Skill emits `tabs[]` with `id` / `label` / `rows`; optional `pages[]` for Sidebar grouping. Chart honesty is enforced by `src/data/chartLint.ts` (`npm run lint:charts`) — bar axes include 0, line zooms are stated, sibling panels share domains.  
+- Skill emits `tabs[]` with `id` / `label` / `rows`; optional `pages[]` for Sidebar grouping (mobile page switcher when the sidebar is hidden). Chart honesty is enforced by `src/data/chartLint.ts` (`npm run lint:charts`) — bar axes include 0, line zooms are stated, sibling panels share domains via identical `dataKey` aliases or `scaleGroup`, and near-flat “trend” bands are rejected unless flatness is acknowledged.  
 - Prefer reflecting the active tab in the URL (`?tab=` via `pushState`; optional `?page=`) so refresh and Back work — scaffold-owned.  
 - Tabs are **not** generated as one-off per-book UI; only labels and row membership vary.
 

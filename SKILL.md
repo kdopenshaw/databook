@@ -24,32 +24,35 @@ Follow `chart-book-spec.md` for schemas, invariants, and acceptance criteria.
 | No `src/data/rows.json` / no Vite book shell in target | **Init** (below) → full pipeline |
 | Book already exists (`understanding.md`, `canonical.json`, `rows.json`, often a generator under `src/data/transforms/`) | **Extend existing book** (skip init) |
 
-### Extend existing book (cold / any-model pickup)
+### Extend existing book (cold / any-model pickup) — FAIL-CLOSED
 
-Do **not** re-init. Orient in this order, then change:
+Do **not** re-init. **Every** extend round (including R2/R3/cold) must complete this checklist **before** editing charts or committing `rows.json`. Skipping a step is a failed extend — do not ship charts.
 
-1. Read `src/data/understanding.md` (grain, population filters, caveats).
-2. Read book-level `conventions` in `rows.json` (`BookDocument.conventions`) and any conventions block atop the row generator.
-3. Find the generator (`src/data/transforms/build_rows.py` or equivalent) — prefer editing it over hand-editing `rows.json`.
-4. Read / run existing tests (`npm test`, including chart lint + book conventions).
-5. Route to `validate-data` / `create-viz` **before** committing chart changes (honesty, not only first-chart choice).
-6. Apply the change → regenerate `rows.json` via `mergeUserRows` semantics (preserve `createdBy: "user"`) → `npm test` → **`npm run lint:charts`** → visual check (`npm run check` / screenshot recipe in `scripts/check-book.mjs`).
+| # | Mandatory gate | Done when |
+|---|----------------|-----------|
+| 1 | Read `src/data/understanding.md` | Grain, population filters, caveats recalled |
+| 2 | Read `BookDocument.conventions` in `rows.json` (+ generator header) | Honesty rules in working memory |
+| 3 | Find the generator (`src/data/transforms/…`) | Prefer editing it over hand-editing `rows.json` |
+| 4 | `npm run extend-check` | understanding.md + conventions + `scripts/check-book.mjs` present |
+| 5 | Open **validate-data** + **create-viz** pointers | `references/anthropic-data-plugin/skills/validate-data/` and `references/anthropic-dataviz/METHOD.md` (or `create-viz/`) — honesty, not only first-chart choice |
+| 6 | Apply → `mergeUserRows` → **`npm test`** → **`npm run lint:charts`** → **`npm run check`** (blocking) → visual when server up (`npm run check:visual -- --url …`) | All green |
 
 House rules that must not live only in a private `AGENT_NOTES.md`:
 
 - **Bar charts:** value axis includes 0 (omit `yDomain` or set `yDomain[0] <= 0`). Truncated bars fail lint.
 - **Line charts:** if `yDomain` starts above 0, subtitle or notes must say `axis starts at …`.
-- **Small multiples / sibling panels** in one component row that share measures: **shared explicit `yDomain`** (and `xDomain` when numeric).
-- **Don’t chart a non-result** (e.g. a flat band presented as a “trend”). Prefer a table or prose.
+- **Small multiples / sibling panels:** set the same **`scaleGroup`** (or identical measure `dataKey` aliases) and a **shared explicit `yDomain`** (and `xDomain` when numeric). Do not rename unrelated aggregates just to satisfy lint — use `scaleGroup`.
+- **Don’t chart a non-result** (near-flat band as a “trend”). Lint rejects trend-claiming line/area charts with relative range &lt; 5% unless subtitle/notes acknowledge flatness.
 - Keep generators + tests + `understanding.md` in the **target repo** (never `/tmp` only).
 - Multi-chart rows: 2–3 charts typical; use `ref` on Summary tabs instead of copying queries.
+- Prefer **`share` / `count_if` / `sum_if` / `mean_if`** over inventing pivot columns for rates and conditional totals.
 
 ### Init (automatic when no book yet)
 
-1. Copy the scaffold listed in `scaffold-files.txt` (or: `src/`, `public/`, `index.html`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `.gitignore`) into the **target**.
-2. Write the **minimal sample** into the target: one tab **Overview**, markdown **hello world**, one exponential curve chart, tiny `canonical.json`.
+1. Copy the scaffold listed in `scaffold-files.txt` (or: `src/`, `public/`, `scripts/`, `index.html`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `.gitignore`) into the **target**. **`scripts/` is required** so `npm run check` works.
+2. Write the **minimal sample** into the target: one tab **Overview**, markdown **hello world**, one exponential curve chart, tiny `canonical.json`, `understanding.md`, and `BookDocument.conventions`.
 3. Set `index.html` `<title>` from `BookDocument.title` when replacing the sample.
-4. Mount **BookTabs** (primary nav). Sidebar appears only when `pages` are defined.
+4. Mount **BookTabs** (primary nav). Sidebar appears only when `pages` are defined (desktop); mobile shows a horizontal page switcher.
 5. **Do not** generate a README inside the target book when initializing into another project.
 6. Continue with the user’s request — all writes stay in the **target**.
 
@@ -57,12 +60,12 @@ House rules that must not live only in a private `AGENT_NOTES.md`:
 
 | Step | Action | Artifacts |
 |------|--------|-----------|
-| 1 | **Init** (automatic if needed) | scaffold + trivial sample |
+| 1 | **Init** (automatic if needed) | scaffold + trivial sample **including `scripts/`** |
 | 2 | **Profile** sources | → Anthropic data plugin → `src/data/understanding.md` |
 | 3 | **Transform** | `src/data/canonical.json` — **one** JSON file of normalized rows |
 | 4 | **Choose charts** | → Anthropic dataviz; pick Recharts compositions from **stock RechartsSpec** |
 | 5 | **Emit document** | `src/data/rows.json` (`BookDocument`); inlined `query` + `recharts` + `encoding`; set `conventions` |
-| 6 | **Sanity-check** | queries return rows; **`npm run lint:charts`** (zero-baseline bars, shared sibling scales, known marks); multi-chart rows have a clear comparison purpose; tab labels scannable; visual check |
+| 6 | **Sanity-check (blocking)** | `npm run extend-check` (when extending); queries return rows; **`npm run lint:charts`**; **`npm run check`**; prefer **`check:visual`** with the dev server; multi-chart rows have a clear comparison purpose |
 
 **Do not** create `queries.json`, `blocks.json`, or a closed `ChartCatalog` of bar/line/…. Queries live on each chart block.
 
@@ -98,11 +101,23 @@ Important optional fields (all in `src/data/types.ts`):
 
 **Do not fork the scaffold renderer** for these — emit the fields above. Unknown marks fail `lint:charts`.
 
-### Multi-chart rows & pages
+### Multi-chart rows, scaleGroup & pages
 
 - **Component rows** hold 1–N chart blocks (small multiples). Prefer shared domains; default flex wrap.
+- **`scaleGroup: "stats"`** (example) on sibling panels that share a measure family — lint enforces a shared `yDomain` without forcing identical `dataKey` names. Alias pattern: you may also emit the same aggregate `as` / `dataKey` across panels when it is truly the same measure.
 - **`ref: "<chartId>"`** on a block reuses another chart (Summary tab) — do not copy queries.
-- **`pages`** (optional): Sidebar lists pages; tabs show only the active page’s `tabIds`. Without pages, **tabs only** (no duplicate sidebar).
+- **`pages`** (optional): Sidebar lists pages on desktop; mobile shows a sticky page switcher. Tabs show only the active page’s `tabIds`. Without pages, **tabs only**.
+
+### Query aggregates (rates & conditionals)
+
+Prefer first-class helpers over pivot columns:
+
+| `fn` | Use |
+|------|-----|
+| `share` | With `where`: matching rows / group size. With boolean `column`: truthy rate. |
+| `count_if` | Count rows matching `where` |
+| `sum_if` / `mean_if` | Sum/mean of `column` over rows matching `where` |
+| `ratio` | Sum(numerator) / sum(denominator) |
 
 ### User rows
 
@@ -114,7 +129,7 @@ Important optional fields (all in `src/data/types.ts`):
 
 - **Tabs** group rows; **pages** (optional) group tabs.
 - Row types: `markdown` | `component`.
-- Chart blocks: `title`, `recharts`, `encoding`, **`query` inlined** — or `ref` to another block.
+- Chart blocks: `title`, `recharts`, `encoding`, **`query` inlined** — or `ref` to another block; optional `scaleGroup`.
 - Canonical data: one JSON file; `runQuery` shapes slices (`filter` / `groupBy` / `bin` / `aggregate` / `orderBy` / `limit` / `sample`). Single-bin histograms fill empty bins by default.
 
 ## Locked choices

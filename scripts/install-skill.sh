@@ -143,6 +143,7 @@ tsconfig.json
 vite.config.ts
 public/
 src/
+scripts/                 # check-book.mjs — required for `npm run check` / visual QA
 .gitignore               # scaffold gitignore (node_modules, dist, …)
 # After copy: set index.html <title> from BookDocument.title; replace sample data.
 EOF
@@ -166,6 +167,7 @@ link_skill() {
     chart-book-spec.md \
     references \
     src \
+    scripts \
     package.json \
     package-lock.json \
     index.html \

@@ -7,7 +7,9 @@
 import { describe, expect, it } from 'vitest';
 import type { BookDocument, ChartBlock } from './types';
 import { lintBookErrors } from './chartLint';
+import { loadCanonical } from './loadCanonical';
 import bookJson from './rows.json';
+import understanding from './understanding.md?raw';
 
 const book = bookJson as BookDocument;
 
@@ -16,8 +18,9 @@ const blocks: ChartBlock[] = book.tabs.flatMap((t) =>
 );
 
 describe('book conventions (template)', () => {
-  it('passes chart lint (zero-baseline bars, shared sibling scales, known marks)', () => {
-    expect(lintBookErrors(book)).toEqual([]);
+  it('passes chart lint (zero-baseline bars, shared sibling scales, known marks, near-flat trends)', () => {
+    const table = loadCanonical();
+    expect(lintBookErrors(book, { table })).toEqual([]);
   });
 
   it('bar charts that set yDomain still include 0', () => {
@@ -29,10 +32,11 @@ describe('book conventions (template)', () => {
   });
 
   it('documents book-level conventions for the next editor', () => {
-    // Prefer setting BookDocument.conventions (notes / palette / population).
-    // This assertion is soft: init sample may omit conventions until real analysis.
-    if (book.conventions?.notes?.length) {
-      expect(book.conventions.notes.length).toBeGreaterThan(0);
-    }
+    expect(book.conventions, 'set BookDocument.conventions before shipping charts').toBeTruthy();
+    expect(book.conventions?.notes?.length ?? 0).toBeGreaterThan(0);
+  });
+
+  it('keeps understanding.md next to the book (extend-path fail-closed)', () => {
+    expect(understanding.trim().length, 'src/data/understanding.md is required for extend').toBeGreaterThan(0);
   });
 });

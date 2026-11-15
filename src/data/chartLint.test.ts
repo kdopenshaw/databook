@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { lintBook, lintBookErrors } from './chartLint';
-import type { BookDocument, ChartBlock } from './types';
+import type { BookDocument, ChartBlock, Table } from './types';
 import sample from './rows.json';
 
 const block = (partial: Partial<ChartBlock> & Pick<ChartBlock, 'id' | 'title'>): ChartBlock => {
@@ -81,6 +81,106 @@ describe('lintBook', () => {
     });
     const issues = lintBookErrors(bookOf([a, b]));
     expect(issues.some((i) => i.code === 'shared-scale-mismatch')).toBe(true);
+  });
+
+  it('groups related measures via scaleGroup without identical dataKeys', () => {
+    const a = block({
+      id: 'hp',
+      title: 'HP',
+      scaleGroup: 'stats',
+      recharts: { chart: 'BarChart', xKey: 'gen', series: [{ mark: 'Bar', dataKey: 'mean_hp' }], yDomain: [0, 100] },
+    });
+    const b = block({
+      id: 'atk',
+      title: 'Attack',
+      scaleGroup: 'stats',
+      recharts: { chart: 'BarChart', xKey: 'gen', series: [{ mark: 'Bar', dataKey: 'mean_atk' }], yDomain: [0, 140] },
+    });
+    const issues = lintBookErrors(bookOf([a, b]));
+    expect(issues.some((i) => i.code === 'shared-scale-mismatch')).toBe(true);
+  });
+
+  it('accepts related measures that share scaleGroup + yDomain', () => {
+    const a = block({
+      id: 'hp',
+      title: 'HP',
+      scaleGroup: 'stats',
+      recharts: { chart: 'BarChart', xKey: 'gen', series: [{ mark: 'Bar', dataKey: 'mean_hp' }], yDomain: [0, 140] },
+    });
+    const b = block({
+      id: 'atk',
+      title: 'Attack',
+      scaleGroup: 'stats',
+      recharts: { chart: 'BarChart', xKey: 'gen', series: [{ mark: 'Bar', dataKey: 'mean_atk' }], yDomain: [0, 140] },
+    });
+    expect(lintBookErrors(bookOf([a, b]))).toEqual([]);
+  });
+
+  it('rejects near-flat bands claimed as trends (yDomain)', () => {
+    const issues = lintBookErrors(
+      bookOf([
+        block({
+          id: 'flat',
+          title: 'Win rate trend',
+          recharts: {
+            chart: 'LineChart',
+            xKey: 't',
+            yDomain: [0.49, 0.51],
+            series: [{ mark: 'Line', dataKey: 'rate' }],
+          },
+        }),
+      ]),
+    );
+    expect(issues.some((i) => i.code === 'near-flat-trend')).toBe(true);
+  });
+
+  it('allows near-flat when flatness is acknowledged', () => {
+    const issues = lintBookErrors(
+      bookOf([
+        block({
+          id: 'flat-ok',
+          title: 'Win rate trend',
+          subtitle: 'Near-flat band — no clear trend; axis starts at 0.49',
+          recharts: {
+            chart: 'LineChart',
+            xKey: 't',
+            yDomain: [0.49, 0.51],
+            series: [{ mark: 'Line', dataKey: 'rate' }],
+          },
+        }),
+      ]),
+    );
+    expect(issues.filter((i) => i.code === 'near-flat-trend')).toEqual([]);
+  });
+
+  it('rejects near-flat trends from query data when table is provided', () => {
+    const table: Table = {
+      schema: [
+        { name: 't', type: 'categorical' },
+        { name: 'rate', type: 'quantitative' },
+      ],
+      rows: [
+        { t: 'a', rate: 0.5 },
+        { t: 'b', rate: 0.501 },
+        { t: 'c', rate: 0.499 },
+      ],
+    };
+    const issues = lintBookErrors(
+      bookOf([
+        block({
+          id: 'data-flat',
+          title: 'Conversion growth over time',
+          query: { orderBy: [{ column: 't', direction: 'asc' }] },
+          recharts: {
+            chart: 'LineChart',
+            xKey: 't',
+            series: [{ mark: 'Line', dataKey: 'rate' }],
+          },
+        }),
+      ]),
+      { table },
+    );
+    expect(issues.some((i) => i.code === 'near-flat-trend')).toBe(true);
   });
 
   it('rejects unknown marks', () => {

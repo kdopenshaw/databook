@@ -19,6 +19,10 @@ const AGG_LABEL: Record<AggSpec['fn'], string> = {
   min: 'Min',
   max: 'Max',
   ratio: 'Ratio',
+  share: 'Share',
+  count_if: 'Count if',
+  sum_if: 'Sum if',
+  mean_if: 'Mean if',
 };
 
 /** Static checks on a query object against the canonical column contract. */
@@ -58,8 +62,29 @@ export function validateQuery(query: ChartQuery, schema: ColumnSpec[]): string[]
   for (const [i, a] of (query.aggregate ?? []).entries()) {
     const where = `aggregate[${i}] (${a.as})`;
     if (!a.as) errors.push(`aggregate[${i}]: "as" is required`);
+    if (a.where) {
+      const wc = col(a.where.column, `${where} where`);
+      if (wc && ['gt', 'gte', 'lt', 'lte'].includes(a.where.op) && !ORDERED.includes(wc.type))
+        errors.push(`${where} where: "${a.where.op}" needs a quantitative or temporal column`);
+    }
     if (a.fn === 'count') {
       if (a.column) col(a.column, where);
+      continue;
+    }
+    if (a.fn === 'count_if') {
+      if (!a.where) errors.push(`${where}: count_if requires "where"`);
+      continue;
+    }
+    if (a.fn === 'share') {
+      if (!a.where && !a.column) errors.push(`${where}: share needs "where" or a boolean/rate "column"`);
+      if (a.column && !a.where) col(a.column, where);
+      continue;
+    }
+    if (a.fn === 'sum_if' || a.fn === 'mean_if') {
+      if (!a.where) errors.push(`${where}: ${a.fn} requires "where"`);
+      const c = col(a.column, where);
+      if (c && !NUMERIC_AGG.includes(c.type))
+        errors.push(`${where}: ${a.fn} needs a quantitative or boolean column, "${c.name}" is ${c.type}`);
       continue;
     }
     const c = col(a.column, where);
@@ -114,9 +139,10 @@ export function inferResultSchema(query: ChartQuery, schema: ColumnSpec[]): Colu
     const c = a.column ? cols.get(a.column) : undefined;
     let type: ColumnType = 'quantitative';
     let unit = c?.unit;
-    if (a.fn === 'count' || a.fn === 'count_distinct') unit = 'count';
-    if (a.fn === 'ratio') unit = 'ratio';
-    if (a.fn === 'mean' && c?.type === 'boolean') unit = 'ratio';
+    if (a.fn === 'count' || a.fn === 'count_distinct' || a.fn === 'count_if') unit = 'count';
+    if (a.fn === 'ratio' || a.fn === 'share') unit = 'ratio';
+    if ((a.fn === 'mean' || a.fn === 'mean_if') && c?.type === 'boolean') unit = 'ratio';
+    if (a.fn === 'sum_if') unit = c?.unit;
     if ((a.fn === 'min' || a.fn === 'max') && c?.type === 'temporal') type = 'temporal';
     const label = a.label ?? (a.fn === 'count' && !c ? 'Rows' : `${AGG_LABEL[a.fn]} ${c ? columnLabel(c).toLowerCase() : ''}`.trim());
     out.push({ name: a.as, type, unit: a.unit ?? unit, label });

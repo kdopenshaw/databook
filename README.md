@@ -18,7 +18,8 @@ Charts use **[Recharts](https://recharts.org/)** (locked). Markdown uses **[reac
 | `src/components/` | Scaffold UI (layout, rows, theme toggle, Recharts helpers) |
 | `src/data/` | `canonical.json`, `rows.json`, `understanding.md`, `runQuery.ts`, `chartLint.ts` |
 | [`scripts/install-skill.sh`](./scripts/install-skill.sh) | Link this repo into Cursor / Codex skill folders |
-| [`scripts/check-book.mjs`](./scripts/check-book.mjs) | Agent-friendly lint + optional HTTP check / screenshot recipe |
+| [`scripts/check-book.mjs`](./scripts/check-book.mjs) | Blocking lint + optional HTTP / Playwright visual check |
+| [`scripts/extend-check.mjs`](./scripts/extend-check.mjs) | Fail-closed extend-path gate (understanding + conventions + check script) |
 
 ## Install the skill
 
@@ -56,9 +57,9 @@ Flags: `--cursor-only`, `--codex-only`, `--help`.
 
 ## How to use
 
-Invoke `/databook` on your experiment workspace. **Init runs automatically** when no book exists. If a book already exists, follow the skill’s **extend existing book** path (`understanding.md` → generator → tests → lint → visual check).
+Invoke `/databook` on your experiment workspace. **Init runs automatically** when no book exists. If a book already exists, follow the skill’s **fail-closed extend** path (`understanding.md` → conventions → `extend-check` → validate-data/create-viz → lint → **`npm run check`**).
 
-When the skill initializes a chart book **inside another project**, it does **not** generate a README in that folder. This root README is for the DataBook product repo only.
+When the skill initializes a chart book **inside another project**, it does **not** generate a README in that folder. This root README is for the DataBook product repo only. Init copies **`scripts/`** so `npm run check` works in every book.
 
 ## Run a book
 
@@ -70,14 +71,17 @@ npm run dev         # Vite
 npm run build
 npm test            # vitest (runQuery, chart lint, merge helpers)
 npm run lint:charts # chart honesty lint only
-npm run check       # lint:charts (+ optional --url for HTTP smoke)
+npm run check       # lint:charts (blocking on extend)
+npm run extend-check
+npm run check:visual -- --url http://127.0.0.1:5173/   # Playwright / chromium screenshot
 ```
 
 ## Document model (short)
 
-- **Tabs** — primary section nav (`BookTabs`, sticky, keyboard arrows, `?tab=` history).
-- **Pages** (optional) — Sidebar lists pages; tabs show that page’s sections. Without pages, no sidebar (avoids duplicating tabs).
+- **Tabs** — primary section nav (`BookTabs`, sticky, keyboard arrows, overflow fade + scroll cue, `?tab=` history).
+- **Pages** (optional) — Sidebar on desktop; mobile page switcher when sidebar is hidden. Tabs show that page’s sections. Without pages, no sidebar (avoids duplicating tabs).
 - **Markdown row** — full width; `createdBy: "user"` gets an analyst callout.
-- **Component row** — flex/wrap container for one or more chart blocks (aligned headers).
+- **Component row** — flex/wrap container for one or more chart blocks (aligned headers). Related measures use **`scaleGroup`** + shared `yDomain`.
 - Each chart block is **self-describing** or a **`ref`** to another chart id (Summary without copied queries).
-- **`npm run lint:charts`** rejects truncated bar axes, unstated line zooms, unshared sibling scales, and unknown marks.
+- Query helpers: **`share` / `count_if` / `sum_if` / `mean_if`** for rates and conditional aggregates.
+- **`npm run lint:charts`** rejects truncated bar axes, unstated line zooms, unshared sibling scales, unknown marks, and near-flat “trend” bands.
