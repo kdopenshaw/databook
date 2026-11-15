@@ -12,6 +12,7 @@ import csv
 import hashlib
 import json
 import re
+import statistics
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -34,6 +35,11 @@ TYPES = sorted(
 )
 GENS = [f"Gen {i}" for i in range(1, 7)]
 FORM_KINDS = ["Base", "Mega/Primal", "Alternate form"]
+ARCHETYPES = ["Glass cannon", "Tank", "Neither"]
+# Archetype rule, in base-form standard deviations: the strong side must beat the
+# weak side by ARCHETYPE_GAP and itself be at least ARCHETYPE_FLOOR above average.
+ARCHETYPE_GAP = 1.0
+ARCHETYPE_FLOOR = 0.5
 
 
 GLUED_FORM = re.compile(r"^(.+?[a-z])(?=[A-Z0-9])(.*(?:Forme|Cloak|Mode|Size|Male|Confined))$")
@@ -120,6 +126,24 @@ def main() -> None:
     for row in out:
         row["has_mega_form"] = row["dex"] in mega_dex
         row["mega_uplift"] = row["total"] - base_total[row["dex"]] if row["form_kind"] == "Mega/Primal" else None
+        row["offense"] = max(row["attack"], row["sp_atk"])
+        row["bulk"] = round((row["hp"] + row["defense"] + row["sp_def"]) / 3, 1)
+
+    # Archetypes: z-scores against the 721 base forms (one row per species), applied to every form.
+    species_rows = [r for r in out if r["is_primary_form"] and r["type_slot"] == "Primary"]
+    scale = {}
+    for k in ("offense", "bulk", "speed"):
+        vals = [r[k] for r in species_rows]
+        scale[k] = (statistics.fmean(vals), statistics.pstdev(vals))
+    z = lambda r, k: (r[k] - scale[k][0]) / scale[k][1]
+    for row in out:
+        glass = z(row, "offense") - z(row, "bulk")
+        tank = z(row, "bulk") - max(z(row, "offense"), z(row, "speed"))
+        row["glass_score"] = round(glass, 3)
+        row["tank_score"] = round(tank, 3)
+        row["is_glass_cannon"] = glass >= ARCHETYPE_GAP and z(row, "offense") >= ARCHETYPE_FLOOR
+        row["is_tank"] = tank >= ARCHETYPE_GAP and z(row, "bulk") >= ARCHETYPE_FLOOR
+        row["archetype"] = "Glass cannon" if row["is_glass_cannon"] else "Tank" if row["is_tank"] else "Neither"
 
     q = lambda name, label, unit=None, **kw: {"name": name, "type": "quantitative", "label": label, "nullable": False, **({"unit": unit} if unit else {}), **kw}
     c = lambda name, label, levels=None, **kw: {"name": name, "type": "categorical", "label": label, "nullable": False, **({"levels": levels} if levels else {}), **kw}
@@ -150,6 +174,13 @@ def main() -> None:
         q("total_nonlegendary", "Total (non-legendary only)", "points", nullable=True, description="Pivot helper: total if not legendary else null"),
         b("has_mega_form", "Species has a Mega/Primal", description="True on every form of a dex number that has a Mega/Primal"),
         q("mega_uplift", "Mega/Primal uplift", "points", nullable=True, description="Total minus base form total; Mega/Primal rows only"),
+        q("offense", "Offense", "points", description="max(Attack, Sp. Atk): the better attacking stat"),
+        q("bulk", "Bulk", "points", description="mean(HP, Defense, Sp. Def), 1 decimal"),
+        q("glass_score", "Glass-cannon score", "SD", description="z(offense) − z(bulk), z over the 721 base forms"),
+        q("tank_score", "Tank score", "SD", description="z(bulk) − max(z(offense), z(speed)), z over the 721 base forms"),
+        b("is_glass_cannon", "Glass cannon", description=f"glass_score ≥ {ARCHETYPE_GAP} and z(offense) ≥ {ARCHETYPE_FLOOR}"),
+        b("is_tank", "Tank", description=f"tank_score ≥ {ARCHETYPE_GAP} and z(bulk) ≥ {ARCHETYPE_FLOOR}"),
+        c("archetype", "Archetype", ARCHETYPES, description="Glass cannon / Tank / Neither (mutually exclusive)"),
     ]
 
     built_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -170,7 +201,13 @@ def main() -> None:
             {
                 "script": "src/data/transforms/build_canonical.py",
                 "inputs": [{"path": "data/Pokemon.csv", "sha256": sha, "rows": len(src_rows)}],
-                "params": {"grain": "form x type slot", "base_form_rule": "first CSV row per dex number"},
+                "params": {
+                    "grain": "form x type slot",
+                    "base_form_rule": "first CSV row per dex number",
+                    "archetype_gap_sd": ARCHETYPE_GAP,
+                    "archetype_floor_sd": ARCHETYPE_FLOOR,
+                    "archetype_scale": {k: {"mean": round(m, 3), "sd": round(s, 3)} for k, (m, s) in scale.items()},
+                },
                 "output": {"path": "src/data/canonical.json", "rows": len(out), "hash": dataset["hash"]},
                 "builtAt": built_at,
             },

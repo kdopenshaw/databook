@@ -35,7 +35,13 @@ describe.each(blocks.map((b) => [b.id, b] as const))('chart %s', (_id, block) =>
   it('only encodes columns the query returns', () => {
     const cols = new Set(Object.keys(rows[0]));
     const spec = block.recharts;
-    const keys = [spec.xKey, ...(spec.series ?? []).map((s) => s.dataKey), ...(spec.yKeys ?? []), ...(spec.tooltipKeys ?? [])];
+    const keys = [
+      spec.xKey,
+      ...(spec.series ?? []).map((s) => s.dataKey),
+      ...(spec.yKeys ?? []),
+      ...(spec.tooltipKeys ?? []),
+      ...(spec.colorBy ? [spec.colorBy.key] : []),
+    ];
     for (const k of keys) expect(cols, `${block.id} → ${k}`).toContain(k);
     for (const v of Object.values(block.encoding)) if (typeof v === 'string' && cols.has(v)) expect(cols).toContain(v);
   });
@@ -61,6 +67,30 @@ describe('canonical sanity (numbers quoted in markdown)', () => {
     expect(Math.round(r.leg as number)).toBe(620);
     expect(Math.round(r.non as number)).toBe(404);
     expect(r.leg_min).toBe(580);
+  });
+
+  it('flags 61 glass cannons and 41 tanks among base forms, never both', () => {
+    const r = one({
+      filter: BASE,
+      aggregate: [
+        { fn: 'sum', column: 'is_glass_cannon', as: 'glass' },
+        { fn: 'sum', column: 'is_tank', as: 'tank' },
+      ],
+    });
+    expect(r).toEqual({ glass: 61, tank: 41 });
+    const both = runQuery(table, {
+      filter: [{ column: 'is_glass_cannon', op: 'eq', value: true }, { column: 'is_tank', op: 'eq', value: true }],
+    });
+    expect(both).toHaveLength(0);
+  });
+
+  it('scatter colorBy levels cover every archetype value', () => {
+    for (const b of blocks) {
+      if (!b.recharts.colorBy) continue;
+      const values = new Set(runQuery(table, b.query).map((r) => r[b.recharts.colorBy!.key]));
+      const levels = new Set(b.recharts.colorBy.levels.map((l) => l.value));
+      for (const v of values) expect(levels, `${b.id} level ${String(v)}`).toContain(v);
+    }
   });
 
   it('Mega/Primal uplift is +100 except one +90', () => {

@@ -286,6 +286,129 @@ Mega/Primal forms add **exactly +100** to the base total in 49 of 50 cases (Mega
     ),
 ])
 
+ARCH_LEVELS = [
+    {"value": "Neither", "colorIndex": 7},
+    {"value": "Glass cannon", "colorIndex": 5},
+    {"value": "Tank", "colorIndex": 2},
+]
+STAT_HIST_TICKS = [0, 50, 100, 150, 200, 250]
+
+
+def stat_hist(key, label, color_index):
+    return chart(
+        f"chart-hist-{key}", label, "Species per 10-point bin",
+        {"filter": BASE, "bin": [{"column": key, "step": 10, "as": f"{key}_bin"}],
+         "aggregate": [{"fn": "count", "as": "species", "label": "Species"}]},
+        {"chart": "BarChart", "xKey": f"{key}_bin", "xType": "number", "xDomain": [0, 260], "xTicks": STAT_HIST_TICKS,
+         "yDomain": [0, 140], "height": 200, "barCategoryGap": 1, "showGrid": True,
+         "series": [{"mark": "Bar", "dataKey": "species", "name": "Species", "colorIndex": color_index}],
+         "margin": {"top": 8, "right": 12, "bottom": 4, "left": 0}},
+        {"x": f"{key}_bin", "y": "species"},
+    )
+
+
+archetypes = tab("archetypes", "Archetypes", [
+    md("md-arch-intro", """
+## Glass cannons and tanks
+
+Two archetypes, defined on **standardized** stats so offense and bulk are compared on the same scale. Each stat is converted to standard deviations (SD) from the mean of the 721 base forms.
+
+- **Offense** = the better of Attack and Sp. Atk. **Bulk** = the mean of HP, Defense, and Sp. Def.
+- **Glass cannon:** offense is at least **1 SD higher than bulk**, and offense is at least 0.5 SD above average (so it really hits hard).
+- **Tank:** bulk is at least **1 SD higher than both offense and Speed**, and bulk is at least 0.5 SD above average.
+
+That flags **61 glass cannons (8.5%)** and **41 tanks (5.7%)** among the 721 species; no species is both. The two groups differ in more than offense: glass cannons are also *fast* (mean Speed 85 vs 66 overall), while tanks average 49.
+"""),
+    comp("comp-arch-scatter",
+        chart("chart-arch-scatter", "Offense vs bulk, by archetype", "Base forms (721 species); hover for name",
+              {"filter": BASE},
+              {"chart": "ScatterChart", "xKey": "offense", "series": [{"mark": "Scatter", "dataKey": "bulk", "name": "Species"}],
+               "colorBy": {"key": "archetype", "levels": ARCH_LEVELS}, "showLegend": True, "height": 420,
+               "xLabel": "Offense = max(Attack, Sp. Atk)", "yLabel": "Bulk = mean(HP, Def, Sp. Def)",
+               "tooltipKeys": ["name", "archetype", "offense", "bulk", "speed"]},
+              {"x": "offense", "y": "bulk", "color": "archetype"},
+              "Shuckle (bulk 160, offense 10) is the extreme tank at the top left; Deoxys, Aegislash (Blade), and Rampardos are the most extreme glass cannons on the right."),
+    ),
+    comp("comp-arch-who",
+        chart("chart-top-glass", "Most extreme glass cannons", "Base forms, top 15 by glass-cannon score (offense SD − bulk SD)",
+              {"filter": BASE + [{"column": "is_glass_cannon", "op": "eq", "value": True}],
+               "orderBy": [{"column": "glass_score", "direction": "desc"}], "limit": 15},
+              {"chart": "BarChart", "layout": "vertical", "xKey": "name", "series": [
+                  {"mark": "Bar", "dataKey": "offense", "name": "Offense", "colorIndex": 5},
+                  {"mark": "Bar", "dataKey": "bulk", "name": "Bulk", "colorIndex": 2}],
+               "xLabel": "Base stat", "categoryWidth": 168, "height": 520, "decimals": 1},
+              {"y": "name", "x": "offense", "color": "measure"},
+              "Many are unevolved or middle-stage (Abra, Gastly, Cranidos, Carvanha): the 'glass' part is often just low HP early in a line."),
+        chart("chart-top-tank", "Most extreme tanks", "Base forms, top 15 by tank score (bulk SD − max(offense, Speed) SD)",
+              {"filter": BASE + [{"column": "is_tank", "op": "eq", "value": True}],
+               "orderBy": [{"column": "tank_score", "direction": "desc"}], "limit": 15},
+              {"chart": "BarChart", "layout": "vertical", "xKey": "name", "series": [
+                  {"mark": "Bar", "dataKey": "bulk", "name": "Bulk", "colorIndex": 2},
+                  {"mark": "Bar", "dataKey": "offense", "name": "Offense", "colorIndex": 5},
+                  {"mark": "Bar", "dataKey": "speed", "name": "Speed", "colorIndex": 3}],
+               "xLabel": "Base stat", "categoryWidth": 168, "height": 520, "decimals": 1},
+              {"y": "name", "x": "bulk", "color": "measure"},
+              "8 of the 41 tanks are legendary (Registeel, Regirock, Regice, Giratina, and others), compared with 8 of the 61 glass cannons."),
+    ),
+    md("md-arch-where", """
+### Which types and generations produce them
+
+Shares are per type, counting both type slots, so read them against small denominators: the top type for each archetype has only 7–11 such species.
+
+- **Glass cannons come from Ghost (20%), Dark (18%), Fighting (16%), and Psychic (15%).** Fairy has none.
+- **Tanks come from Rock (16%) and Steel (15%).** Fire, Poison, Fighting, Electric, and Dragon almost never qualify (one each).
+- **Ghost is unusual: it is high on both lists** (7 glass cannons, such as Gastly → Gengar, and 5 tanks, such as Dusclops and Cofagrigus).
+- **By generation, Gen 2 is the tank generation** (8 tanks vs 2 glass cannons: Shuckle, Blissey, Steelix, Umbreon, and others). Gens 1 and 3–5 lean glass cannon (9–11%). Gen 6 has few of either (2 each, 2.8%).
+"""),
+    comp("comp-arch-type",
+        chart("chart-glass-by-type", "Glass-cannon share by type", "Base forms, both type slots",
+              {"filter": BASE_ANY, "groupBy": ["type"],
+               "aggregate": [{"fn": "mean", "column": "is_glass_cannon", "as": "glass_share", "label": "Glass-cannon share"}],
+               "orderBy": [{"column": "glass_share", "direction": "desc"}]},
+              {"chart": "BarChart", "layout": "vertical", "xKey": "type", "series": [{"mark": "Bar", "dataKey": "glass_share", "name": "Glass cannons", "colorIndex": 5}],
+               "xLabel": "Share of the type's species", "categoryWidth": 72, "height": 520, "valueFormat": "percent", "decimals": 1},
+              {"y": "type", "x": "glass_share"}),
+        chart("chart-tank-by-type", "Tank share by type", "Base forms, both type slots",
+              {"filter": BASE_ANY, "groupBy": ["type"],
+               "aggregate": [{"fn": "mean", "column": "is_tank", "as": "tank_share", "label": "Tank share"}],
+               "orderBy": [{"column": "tank_share", "direction": "desc"}]},
+              {"chart": "BarChart", "layout": "vertical", "xKey": "type", "series": [{"mark": "Bar", "dataKey": "tank_share", "name": "Tanks", "colorIndex": 2}],
+               "xLabel": "Share of the type's species", "categoryWidth": 72, "height": 520, "valueFormat": "percent", "decimals": 1},
+              {"y": "type", "x": "tank_share"}),
+    ),
+    comp("comp-arch-gen",
+        chart("chart-arch-by-gen", "Archetype share by generation", "Base forms, share of each generation's species",
+              {"filter": BASE, "groupBy": ["generation"],
+               "aggregate": [{"fn": "mean", "column": "is_glass_cannon", "as": "glass_share", "label": "Glass-cannon share"},
+                             {"fn": "mean", "column": "is_tank", "as": "tank_share", "label": "Tank share"}]},
+              {"chart": "BarChart", "xKey": "generation", "series": [
+                  {"mark": "Bar", "dataKey": "glass_share", "name": "Glass cannons", "colorIndex": 5},
+                  {"mark": "Bar", "dataKey": "tank_share", "name": "Tanks", "colorIndex": 2}],
+               "yLabel": "Share of species", "valueFormat": "percent", "decimals": 1},
+              {"x": "generation", "y": "glass_share", "color": "archetype"}, flex=2),
+        chart("chart-arch-mega", "Archetype of Mega/Primal forms", "50 Mega/Primal forms, scored on the base-form scale",
+              {"filter": [{"column": "type_slot", "op": "eq", "value": "Primary"}, {"column": "form_kind", "op": "eq", "value": "Mega/Primal"}],
+               "groupBy": ["archetype"], "aggregate": [{"fn": "count", "as": "forms", "label": "Forms"}]},
+              {"chart": "BarChart", "xKey": "archetype", "series": [{"mark": "Bar", "dataKey": "forms", "name": "Mega/Primal forms", "colorIndex": 1}],
+               "yLabel": "Forms"},
+              {"x": "archetype", "y": "forms"},
+              "28 of 50 Megas are glass cannons: Mega Evolution adds offense and never HP.", flex=1),
+    ),
+    md("md-stat-spreads", """
+### Distribution of each stat (small multiples)
+
+Six histograms of the 721 base forms, with the **same X axis (0–260) and Y axis (0–140 species)** so the shapes compare directly. All six have a similar spread (SD 26–29), but the shapes differ:
+
+- **HP is the most right-skewed** (skew 1.7). Most species sit at 50–80, with a long tail out to Blissey (255).
+- **Defense and Sp. Def are next** (skew about 1.0–1.1), with tails to Shuckle's 230.
+- **Attack and Speed are the most symmetric** (skew about 0.3), and the two attacking stats top out lowest (Attack 165, Sp. Atk 154). Offense varies a lot but has no freak outliers; bulk is where the extremes live.
+
+*Layout note:* the scaffold has no multi-panel chart block (one chart block = one query = one Recharts chart). This grid is **two component rows of three chart blocks each**, which is the scaffold's small-multiples primitive.
+"""),
+    comp("comp-hist-1", stat_hist("hp", "HP", 0), stat_hist("attack", "Attack", 1), stat_hist("defense", "Defense", 2)),
+    comp("comp-hist-2", stat_hist("sp_atk", "Sp. Atk", 3), stat_hist("sp_def", "Sp. Def", 4), stat_hist("speed", "Speed", 5)),
+])
+
 book = {
     "title": "Pokémon base stats",
     "experimentId": "Gen 1–6 · 721 species",
@@ -294,7 +417,7 @@ book = {
     "defaultTabId": "overview",
     "tabs": [],
 }
-for i, t in enumerate([overview, legendary, types, gens, stats]):
+for i, t in enumerate([overview, legendary, types, gens, stats, archetypes]):
     t["order"] = i
     book["tabs"].append({"id": t["id"], "label": t["label"], "order": i, "rows": t["rows"]})
 

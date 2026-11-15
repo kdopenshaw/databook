@@ -1581,6 +1581,1013 @@
           "order": 4
         }
       ]
+    },
+    {
+      "id": "archetypes",
+      "label": "Archetypes",
+      "order": 5,
+      "rows": [
+        {
+          "id": "md-arch-intro",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "## Glass cannons and tanks\n\nTwo archetypes, defined on **standardized** stats so offense and bulk are compared on the same scale. Each stat is converted to standard deviations (SD) from the mean of the 721 base forms.\n\n- **Offense** = the better of Attack and Sp. Atk. **Bulk** = the mean of HP, Defense, and Sp. Def.\n- **Glass cannon:** offense is at least **1 SD higher than bulk**, and offense is at least 0.5 SD above average (so it really hits hard).\n- **Tank:** bulk is at least **1 SD higher than both offense and Speed**, and bulk is at least 0.5 SD above average.\n\nThat flags **61 glass cannons (8.5%)** and **41 tanks (5.7%)** among the 721 species; no species is both. The two groups differ in more than offense: glass cannons are also *fast* (mean Speed 85 vs 66 overall), while tanks average 49.",
+          "order": 0
+        },
+        {
+          "id": "comp-arch-scatter",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-arch-scatter",
+              "title": "Offense vs bulk, by archetype",
+              "subtitle": "Base forms (721 species); hover for name",
+              "query": {
+                "label": "Offense vs bulk, by archetype",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "offense",
+                "y": "bulk",
+                "color": "archetype"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "ScatterChart",
+                "xKey": "offense",
+                "series": [
+                  {
+                    "mark": "Scatter",
+                    "dataKey": "bulk",
+                    "name": "Species"
+                  }
+                ],
+                "colorBy": {
+                  "key": "archetype",
+                  "levels": [
+                    {
+                      "value": "Neither",
+                      "colorIndex": 7
+                    },
+                    {
+                      "value": "Glass cannon",
+                      "colorIndex": 5
+                    },
+                    {
+                      "value": "Tank",
+                      "colorIndex": 2
+                    }
+                  ]
+                },
+                "showLegend": true,
+                "height": 420,
+                "xLabel": "Offense = max(Attack, Sp. Atk)",
+                "yLabel": "Bulk = mean(HP, Def, Sp. Def)",
+                "tooltipKeys": [
+                  "name",
+                  "archetype",
+                  "offense",
+                  "bulk",
+                  "speed"
+                ]
+              },
+              "flex": 1,
+              "notes": "Shuckle (bulk 160, offense 10) is the extreme tank at the top left; Deoxys, Aegislash (Blade), and Rampardos are the most extreme glass cannons on the right."
+            }
+          ],
+          "order": 1
+        },
+        {
+          "id": "comp-arch-who",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-top-glass",
+              "title": "Most extreme glass cannons",
+              "subtitle": "Base forms, top 15 by glass-cannon score (offense SD − bulk SD)",
+              "query": {
+                "label": "Most extreme glass cannons",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "is_glass_cannon",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "glass_score",
+                    "direction": "desc"
+                  }
+                ],
+                "limit": 15
+              },
+              "encoding": {
+                "y": "name",
+                "x": "offense",
+                "color": "measure"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "name",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "offense",
+                    "name": "Offense",
+                    "colorIndex": 5
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "bulk",
+                    "name": "Bulk",
+                    "colorIndex": 2
+                  }
+                ],
+                "xLabel": "Base stat",
+                "categoryWidth": 168,
+                "height": 520,
+                "decimals": 1
+              },
+              "flex": 1,
+              "notes": "Many are unevolved or middle-stage (Abra, Gastly, Cranidos, Carvanha): the 'glass' part is often just low HP early in a line."
+            },
+            {
+              "id": "chart-top-tank",
+              "title": "Most extreme tanks",
+              "subtitle": "Base forms, top 15 by tank score (bulk SD − max(offense, Speed) SD)",
+              "query": {
+                "label": "Most extreme tanks",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "is_tank",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "tank_score",
+                    "direction": "desc"
+                  }
+                ],
+                "limit": 15
+              },
+              "encoding": {
+                "y": "name",
+                "x": "bulk",
+                "color": "measure"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "name",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "bulk",
+                    "name": "Bulk",
+                    "colorIndex": 2
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "offense",
+                    "name": "Offense",
+                    "colorIndex": 5
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "speed",
+                    "name": "Speed",
+                    "colorIndex": 3
+                  }
+                ],
+                "xLabel": "Base stat",
+                "categoryWidth": 168,
+                "height": 520,
+                "decimals": 1
+              },
+              "flex": 1,
+              "notes": "8 of the 41 tanks are legendary (Registeel, Regirock, Regice, Giratina, and others), compared with 8 of the 61 glass cannons."
+            }
+          ],
+          "order": 2
+        },
+        {
+          "id": "md-arch-where",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "### Which types and generations produce them\n\nShares are per type, counting both type slots, so read them against small denominators: the top type for each archetype has only 7–11 such species.\n\n- **Glass cannons come from Ghost (20%), Dark (18%), Fighting (16%), and Psychic (15%).** Fairy has none.\n- **Tanks come from Rock (16%) and Steel (15%).** Fire, Poison, Fighting, Electric, and Dragon almost never qualify (one each).\n- **Ghost is unusual: it is high on both lists** (7 glass cannons, such as Gastly → Gengar, and 5 tanks, such as Dusclops and Cofagrigus).\n- **By generation, Gen 2 is the tank generation** (8 tanks vs 2 glass cannons: Shuckle, Blissey, Steelix, Umbreon, and others). Gens 1 and 3–5 lean glass cannon (9–11%). Gen 6 has few of either (2 each, 2.8%).",
+          "order": 3
+        },
+        {
+          "id": "comp-arch-type",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-glass-by-type",
+              "title": "Glass-cannon share by type",
+              "subtitle": "Base forms, both type slots",
+              "query": {
+                "label": "Glass-cannon share by type",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "is_glass_cannon",
+                    "as": "glass_share",
+                    "label": "Glass-cannon share"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "glass_share",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "y": "type",
+                "x": "glass_share"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "glass_share",
+                    "name": "Glass cannons",
+                    "colorIndex": 5
+                  }
+                ],
+                "xLabel": "Share of the type's species",
+                "categoryWidth": 72,
+                "height": 520,
+                "valueFormat": "percent",
+                "decimals": 1
+              },
+              "flex": 1
+            },
+            {
+              "id": "chart-tank-by-type",
+              "title": "Tank share by type",
+              "subtitle": "Base forms, both type slots",
+              "query": {
+                "label": "Tank share by type",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "is_tank",
+                    "as": "tank_share",
+                    "label": "Tank share"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "tank_share",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "y": "type",
+                "x": "tank_share"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "tank_share",
+                    "name": "Tanks",
+                    "colorIndex": 2
+                  }
+                ],
+                "xLabel": "Share of the type's species",
+                "categoryWidth": 72,
+                "height": 520,
+                "valueFormat": "percent",
+                "decimals": 1
+              },
+              "flex": 1
+            }
+          ],
+          "order": 4
+        },
+        {
+          "id": "comp-arch-gen",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-arch-by-gen",
+              "title": "Archetype share by generation",
+              "subtitle": "Base forms, share of each generation's species",
+              "query": {
+                "label": "Archetype share by generation",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "generation"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "is_glass_cannon",
+                    "as": "glass_share",
+                    "label": "Glass-cannon share"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "is_tank",
+                    "as": "tank_share",
+                    "label": "Tank share"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation",
+                "y": "glass_share",
+                "color": "archetype"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "generation",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "glass_share",
+                    "name": "Glass cannons",
+                    "colorIndex": 5
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "tank_share",
+                    "name": "Tanks",
+                    "colorIndex": 2
+                  }
+                ],
+                "yLabel": "Share of species",
+                "valueFormat": "percent",
+                "decimals": 1
+              },
+              "flex": 2
+            },
+            {
+              "id": "chart-arch-mega",
+              "title": "Archetype of Mega/Primal forms",
+              "subtitle": "50 Mega/Primal forms, scored on the base-form scale",
+              "query": {
+                "label": "Archetype of Mega/Primal forms",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "form_kind",
+                    "op": "eq",
+                    "value": "Mega/Primal"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "forms",
+                    "label": "Forms"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "archetype",
+                "y": "forms"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "forms",
+                    "name": "Mega/Primal forms",
+                    "colorIndex": 1
+                  }
+                ],
+                "yLabel": "Forms"
+              },
+              "flex": 1,
+              "notes": "28 of 50 Megas are glass cannons: Mega Evolution adds offense and never HP."
+            }
+          ],
+          "order": 5
+        },
+        {
+          "id": "md-stat-spreads",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "### Distribution of each stat (small multiples)\n\nSix histograms of the 721 base forms, with the **same X axis (0–260) and Y axis (0–140 species)** so the shapes compare directly. All six have a similar spread (SD 26–29), but the shapes differ:\n\n- **HP is the most right-skewed** (skew 1.7). Most species sit at 50–80, with a long tail out to Blissey (255).\n- **Defense and Sp. Def are next** (skew about 1.0–1.1), with tails to Shuckle's 230.\n- **Attack and Speed are the most symmetric** (skew about 0.3), and the two attacking stats top out lowest (Attack 165, Sp. Atk 154). Offense varies a lot but has no freak outliers; bulk is where the extremes live.\n\n*Layout note:* the scaffold has no multi-panel chart block (one chart block = one query = one Recharts chart). This grid is **two component rows of three chart blocks each**, which is the scaffold's small-multiples primitive.",
+          "order": 6
+        },
+        {
+          "id": "comp-hist-1",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-hist-hp",
+              "title": "HP",
+              "subtitle": "Species per 10-point bin",
+              "query": {
+                "label": "HP",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "bin": [
+                  {
+                    "column": "hp",
+                    "step": 10,
+                    "as": "hp_bin"
+                  }
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "species",
+                    "label": "Species"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "hp_bin",
+                "y": "species"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "hp_bin",
+                "xType": "number",
+                "xDomain": [
+                  0,
+                  260
+                ],
+                "xTicks": [
+                  0,
+                  50,
+                  100,
+                  150,
+                  200,
+                  250
+                ],
+                "yDomain": [
+                  0,
+                  140
+                ],
+                "height": 200,
+                "barCategoryGap": 1,
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "species",
+                    "name": "Species",
+                    "colorIndex": 0
+                  }
+                ],
+                "margin": {
+                  "top": 8,
+                  "right": 12,
+                  "bottom": 4,
+                  "left": 0
+                }
+              },
+              "flex": 1
+            },
+            {
+              "id": "chart-hist-attack",
+              "title": "Attack",
+              "subtitle": "Species per 10-point bin",
+              "query": {
+                "label": "Attack",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "bin": [
+                  {
+                    "column": "attack",
+                    "step": 10,
+                    "as": "attack_bin"
+                  }
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "species",
+                    "label": "Species"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "attack_bin",
+                "y": "species"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "attack_bin",
+                "xType": "number",
+                "xDomain": [
+                  0,
+                  260
+                ],
+                "xTicks": [
+                  0,
+                  50,
+                  100,
+                  150,
+                  200,
+                  250
+                ],
+                "yDomain": [
+                  0,
+                  140
+                ],
+                "height": 200,
+                "barCategoryGap": 1,
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "species",
+                    "name": "Species",
+                    "colorIndex": 1
+                  }
+                ],
+                "margin": {
+                  "top": 8,
+                  "right": 12,
+                  "bottom": 4,
+                  "left": 0
+                }
+              },
+              "flex": 1
+            },
+            {
+              "id": "chart-hist-defense",
+              "title": "Defense",
+              "subtitle": "Species per 10-point bin",
+              "query": {
+                "label": "Defense",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "bin": [
+                  {
+                    "column": "defense",
+                    "step": 10,
+                    "as": "defense_bin"
+                  }
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "species",
+                    "label": "Species"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "defense_bin",
+                "y": "species"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "defense_bin",
+                "xType": "number",
+                "xDomain": [
+                  0,
+                  260
+                ],
+                "xTicks": [
+                  0,
+                  50,
+                  100,
+                  150,
+                  200,
+                  250
+                ],
+                "yDomain": [
+                  0,
+                  140
+                ],
+                "height": 200,
+                "barCategoryGap": 1,
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "species",
+                    "name": "Species",
+                    "colorIndex": 2
+                  }
+                ],
+                "margin": {
+                  "top": 8,
+                  "right": 12,
+                  "bottom": 4,
+                  "left": 0
+                }
+              },
+              "flex": 1
+            }
+          ],
+          "order": 7
+        },
+        {
+          "id": "comp-hist-2",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-hist-sp_atk",
+              "title": "Sp. Atk",
+              "subtitle": "Species per 10-point bin",
+              "query": {
+                "label": "Sp. Atk",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "bin": [
+                  {
+                    "column": "sp_atk",
+                    "step": 10,
+                    "as": "sp_atk_bin"
+                  }
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "species",
+                    "label": "Species"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "sp_atk_bin",
+                "y": "species"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "sp_atk_bin",
+                "xType": "number",
+                "xDomain": [
+                  0,
+                  260
+                ],
+                "xTicks": [
+                  0,
+                  50,
+                  100,
+                  150,
+                  200,
+                  250
+                ],
+                "yDomain": [
+                  0,
+                  140
+                ],
+                "height": 200,
+                "barCategoryGap": 1,
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "species",
+                    "name": "Species",
+                    "colorIndex": 3
+                  }
+                ],
+                "margin": {
+                  "top": 8,
+                  "right": 12,
+                  "bottom": 4,
+                  "left": 0
+                }
+              },
+              "flex": 1
+            },
+            {
+              "id": "chart-hist-sp_def",
+              "title": "Sp. Def",
+              "subtitle": "Species per 10-point bin",
+              "query": {
+                "label": "Sp. Def",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "bin": [
+                  {
+                    "column": "sp_def",
+                    "step": 10,
+                    "as": "sp_def_bin"
+                  }
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "species",
+                    "label": "Species"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "sp_def_bin",
+                "y": "species"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "sp_def_bin",
+                "xType": "number",
+                "xDomain": [
+                  0,
+                  260
+                ],
+                "xTicks": [
+                  0,
+                  50,
+                  100,
+                  150,
+                  200,
+                  250
+                ],
+                "yDomain": [
+                  0,
+                  140
+                ],
+                "height": 200,
+                "barCategoryGap": 1,
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "species",
+                    "name": "Species",
+                    "colorIndex": 4
+                  }
+                ],
+                "margin": {
+                  "top": 8,
+                  "right": 12,
+                  "bottom": 4,
+                  "left": 0
+                }
+              },
+              "flex": 1
+            },
+            {
+              "id": "chart-hist-speed",
+              "title": "Speed",
+              "subtitle": "Species per 10-point bin",
+              "query": {
+                "label": "Speed",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "bin": [
+                  {
+                    "column": "speed",
+                    "step": 10,
+                    "as": "speed_bin"
+                  }
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "species",
+                    "label": "Species"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "speed_bin",
+                "y": "species"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "speed_bin",
+                "xType": "number",
+                "xDomain": [
+                  0,
+                  260
+                ],
+                "xTicks": [
+                  0,
+                  50,
+                  100,
+                  150,
+                  200,
+                  250
+                ],
+                "yDomain": [
+                  0,
+                  140
+                ],
+                "height": 200,
+                "barCategoryGap": 1,
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "species",
+                    "name": "Species",
+                    "colorIndex": 5
+                  }
+                ],
+                "margin": {
+                  "top": 8,
+                  "right": 12,
+                  "bottom": 4,
+                  "left": 0
+                }
+              },
+              "flex": 1
+            }
+          ],
+          "order": 8
+        }
+      ]
     }
   ]
 }

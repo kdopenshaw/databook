@@ -9,12 +9,28 @@
   ],
   "params": {
     "grain": "form x type slot",
-    "base_form_rule": "first CSV row per dex number"
+    "base_form_rule": "first CSV row per dex number",
+    "archetype_gap_sd": 1.0,
+    "archetype_floor_sd": 0.5,
+    "archetype_scale": {
+      "offense": {
+        "mean": 84.825,
+        "sd": 28.357
+      },
+      "bulk": {
+        "mean": 69.418,
+        "sd": 20.759
+      },
+      "speed": {
+        "mean": 65.714,
+        "sd": 27.259
+      }
+    }
   },
   "output": {
     "path": "src/data/canonical.json",
     "rows": 1214,
-    "hash": "6de475dbe32f"
+    "hash": "81133f6758ad"
   },
-  "builtAt": "2026-11-15T05:34:15Z"
+  "builtAt": "2026-11-15T05:52:27Z"
 }
