@@ -12,6 +12,7 @@
     "lint:charts": "vitest run src/data/chartLint.test.ts",
     "check": "node scripts/check-book.mjs",
     "check:visual": "node scripts/check-book.mjs --visual",
+    "smoke:insert": "node scripts/smoke-markdown-insert.mjs",
     "extend-check": "node scripts/extend-check.mjs"
   },
   "dependencies": {
