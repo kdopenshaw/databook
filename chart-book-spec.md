@@ -12,7 +12,7 @@ Related research context: Cursor canvases cannot host Recharts (sandbox = `curso
 
 ### 1.1 What it is
 
-A **chart book** is a fixed-shape React application that presents one experiment’s analysis as an ordered stack of **rows**: full-width markdown rows and **component rows** that can hold one or more charts side by side. An **AI skill** (agent skill / prompt pack) drives creation:
+A **chart book** is a fixed-shape React application that presents one experiment’s analysis as **tabbed sections of rows**: full-width markdown rows and **component rows** that can hold one or more charts side by side, with a **sidebar** for jumping between sections when the book grows large. An **AI skill** (agent skill / prompt pack) drives creation:
 
 1. **Init** the scaffold automatically (built into skill invocation — see §7.5).
 2. **Profile** unknown data (from a repo path, uploaded files, or a user description of sources).
@@ -28,10 +28,11 @@ The skill is **experiment-agnostic**: it does not hard-code domain workflows (fi
 | Goal | Meaning |
 |------|---------|
 | Correct by construction | Charts declare *queries* against sitting data; they do not own private CSV forks that drift. |
-| One scaffold | Every book is the same React app shell; only content (rows + which Recharts pieces are used) changes. |
+| One scaffold | Every book is the same React app shell; only content (tabs, rows, which Recharts pieces are used) changes. |
 | Narrative + viz | Markdown rows explain aggregations and decisions; component rows show one or more charts. |
 | Flexible composition | The agent chooses per row: a full-width markdown row, or a flex component row with N charts side by side. |
-| Minimal UI | Quiet dark-first chrome via CSS variables + root class toggle; consistent across all books. |
+| Sectioned navigation | **Tabs** (Geist) group rows into sections; a **sidebar** jumps between tab groups/sections to tame sprawl (e.g. ~25 charts). |
+| Minimal UI | Quiet dark-first chrome on **Geist** typography/spacing tokens + CSS variables + root class toggle; consistent across all books. |
 | Skill-first authoring | Humans rarely hand-edit chart wiring; invoking the skill runs init and owns profiling → emission. |
 
 ### 1.3 Non-goals (v1)
@@ -66,10 +67,10 @@ Sources (repo files | user description)
    Emit / update rows (queries inlined in each chart block)
         │  ├── src/data/canonical.json
         │  ├── src/data/understanding.md
-        │  ├── src/data/rows.json
-        │  └── src/components/… (fixed React shell)
+        │  ├── src/data/rows.json   # tabs → sections → rows
+        │  └── src/components/… (fixed shell: sidebar, tabs, rows)
         ▼
-   User opens chart book (dark UI via .dark on root, top-to-bottom rows)
+   User opens chart book (sidebar + Geist tabs + rows; dark via .dark on root)
 ```
 
 ---
@@ -152,8 +153,8 @@ This is inputs for later markdown rows and for human review—not only chat ephe
   chart-book-spec.md        # product repo
   references/               # Anthropic bundles (product repo; skill routes here)
   src/
-    components/             # React UI: layout, rows, charts, theme toggle
-    data/                   # canonical.json, rows.json, understanding.md, transforms/
+    components/             # React UI: sidebar, Geist tabs, layout, rows, charts, theme toggle
+    data/                   # canonical.json, rows.json (tabs→rows), understanding.md, transforms/
 ```
 
 Emitted books in other projects get `src/` (and whatever the scaffold needs to run) **without** a generated README. Document how to use DataBook in **this** repo’s root README only (§10).
@@ -162,18 +163,20 @@ Emitted books in other projects get `src/` (and whatever the scaffold needs to r
 
 ## 3. Document model
 
-### 3.1 Row-based layout (not strict markdown↔chart alternation)
+### 3.1 Tabbed sections of rows (not strict markdown↔chart alternation)
 
-The chart book is a **linear document of rows**, conceptually like Jupyter, but **not** limited to alternating markdown and a single chart:
+The chart book is a **document of tabbed sections**, each section a **linear stack of rows**, conceptually like Jupyter, but **not** limited to alternating markdown and a single chart:
 
-- Typed **rows** with an explicit **order index**  
-- Rendered **top to bottom**  
+- Top level: **tabs** (sections); each tab owns an ordered list of rows  
+- Typed **rows** with an explicit **order index** within a tab  
+- Rows render **top to bottom** inside the active tab  
 - **Two row types** in v1: `markdown` and `component`  
+- **Sidebar** lists tabs / sections for jump navigation (scaffold primitive)  
 - No free-form floating canvas layout in v1  
 
 **There is no requirement** that markdown and charts alternate one-for-one. Outside any component row, markdown is its own full-width row. Inside a component row, multiple charts can sit **side by side** in a flex container (e.g. three charts touching horizontally).
 
-The agent **decides per row** which type to emit when building a set of charts—based on narrative needs and whether comparisons read better as small multiples in one flex row vs stacked full-width charts.
+The agent **decides** which tab a set of rows belongs to, and **per row** which type to emit—based on narrative needs and whether comparisons read better as small multiples in one flex row vs stacked full-width charts.
 
 ### 3.2 Row types (v1)
 
@@ -184,12 +187,27 @@ The agent **decides per row** which type to emit when building a set of charts�
 
 Future (out of scope for v1 wiring, reserved ids): `callout`, `table`, `stat_row` as additional row types or as children of `component`.
 
-### 3.3 Row schema
+### 3.3 Book / tab / row schema
+
+Tabs and sidebar are **fixed scaffold primitives**; the skill only supplies tab metadata and which rows belong to which tab—not custom tab/sidebar implementations.
 
 ```ts
+type BookDocument = {
+  tabs: TabSection[];
+  /** Optional default tab id; else first tab */
+  defaultTabId?: string;
+};
+
+type TabSection = {
+  id: string;
+  label: string;           // shown in Geist Tabs + sidebar
+  order: number;
+  rows: Row[];
+};
+
 type RowBase = {
   id: string;
-  order: number;           // contiguous or sortable index
+  order: number;           // contiguous or sortable index within the tab
   createdBy: 'skill' | 'user';
 };
 
@@ -263,14 +281,19 @@ Humans may edit markdown; the skill may regenerate sections marked `<!-- skill:m
 
 ### 3.6 Renderer
 
-`RowRenderer` maps `rows` sorted by `order` → React nodes:
+Scaffold shell (always present):
 
-- `markdown` → `MarkdownRow` via **react-markdown**, full content width  
-- `component` → `ComponentRow` → horizontal flex of chart slots → each runs its **inlined** query → renders the block’s Recharts composition  
+1. **`Sidebar`** — navigates among tab groups / sections (labels from `tabs[]`); solves sprawl when a book has many charts (e.g. ~25).  
+2. **`BookTabs`** — wraps **Geist’s Tabs** component; switching tabs shows that section’s rows.  
+3. **`RowRenderer`** — maps the active tab’s `rows` sorted by `order` → React nodes:
+   - `markdown` → `MarkdownRow` via **react-markdown**, full content width  
+   - `component` → `ComponentRow` → horizontal flex of chart slots → each runs its **inlined** query → renders the block’s Recharts composition  
 
 Empty query results: omit that chart slot (reflow remaining flex children) and show a short inline note *or* omit the whole component row if every slot is empty (prefer skill-side omission of empty charts).
 
-On narrow viewports, `ComponentRow` may wrap or stack while keeping the same row identity—responsive behavior is scaffold-owned, not per-book CSS.
+On narrow viewports, `ComponentRow` may wrap or stack while keeping the same row identity; sidebar may collapse to a drawer—responsive behavior is scaffold-owned, not per-book CSS.
+
+Init sample may use a **single** tab (still mounting Tabs + Sidebar so every book exercises the primitives).
 
 ---
 
@@ -327,37 +350,52 @@ See §8 open questions.
 ### 5.1 Visual direction
 
 - Quiet chrome, strong typography hierarchy, generous whitespace; no heavy card stacks.  
-- **Dark mode default** via **CSS variables** and a **class toggle on the root element** (e.g. `class="dark"` on `<html>` or app root).  
+- **Geist** (open-source design system) supplies **typography and spacing tokens** plus selected components (**Tabs**).  
+- The **rest of the primitive set is custom-built on top of Geist tokens**: page shell, sidebar, row container, markdown block, chart slot. Do not pull an entire third-party app shell; compose DataBook chrome from Geist foundations + these custom primitives.  
+- **Dark mode default** via **CSS variables** (aligned with Geist where applicable) and a **class toggle on the root element** (e.g. `class="dark"` on `<html>` or app root).  
 - **No theme-provider library** (no ThemeProvider package, no CSS-in-JS theme context library). Persist preference in `localStorage` and set/remove the root class.  
 - Same tokens for every chart book so books feel like one product.
 
 ### 5.2 Layout
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│  Book title · experiment id                    [theme]  │
-├─────────────────────────────────────────────────────────┤
-│  Markdown row (full width) …                            │
-├─────────────────────────────────────────────────────────┤
-│  Component row │ Chart A │ Chart B │ Chart C │  (flex)  │
-├─────────────────────────────────────────────────────────┤
-│  Markdown row …                                         │
-├─────────────────────────────────────────────────────────┤
-│  Component row │           Chart D (full)      │        │
-│  …                                                      │
-└─────────────────────────────────────────────────────────┘
+┌──────────┬──────────────────────────────────────────────┐
+│ Sidebar  │  Book title · experiment id         [theme]  │
+│          ├──────────────────────────────────────────────┤
+│ Overview │  [ Geist Tabs: Overview | Results | … ]      │
+│ Results  ├──────────────────────────────────────────────┤
+│ Appendix │  Markdown row (full width) …                 │
+│   …      │  Component row │ A │ B │ C │  (flex)         │
+│          │  …                                           │
+└──────────┴──────────────────────────────────────────────┘
 ```
 
-- Vertical stack of rows; max readable width (~720–880px) for **markdown** rows.  
+- **Sidebar** (scaffold primitive): navigates among tab groups / sections; always part of the shell so large books (many charts) stay scannable.  
+- **Tabs** (Geist Tabs, scaffold primitive): group rows into sections; expected **default feature of every data book** (even a single-tab init sample mounts them).  
+- Vertical stack of rows **inside the active tab**; max readable width (~720–880px) for **markdown** rows.  
 - **Component** rows may use the same content width or a slightly wider chart band so multi-chart flex layouts remain usable.  
 - Within a component row, children share horizontal space (equal by default); gap defaults to **0** so adjacent charts can touch.  
-- No app sidebar in v1.  
-- Sticky compact header with title + theme toggle only (toggle flips root class).
+- Sticky compact header with title + theme toggle (toggle flips root class).
 
-### 5.3 Theme tokens
+### 5.3 Tabs (Geist)
 
-Expose CSS variables on `:root` / `.dark` consumed by Recharts via `stroke`/`fill` props (and by layout chrome):
+- Use Geist’s **Tabs** component from the open-source Geist design system (e.g. `@vercel/geistcn` / published Geist Tabs API).  
+- Skill emits `tabs[]` with `id` / `label` / `rows`; scaffold wires labels into Geist Tabs and syncs selection with the sidebar.  
+- Prefer reflecting the active tab in the URL (query or hash) so refresh restores state — scaffold-owned.  
+- Tabs are **not** generated as one-off per-book UI; only labels and row membership vary.
 
+### 5.4 Sidebar
+
+- Fixed scaffold **Sidebar** lists the same sections as the tabs (and may later nest anchors within a long tab if needed).  
+- Clicking a sidebar item selects that tab (and scrolls to top of section content).  
+- Purpose: jump navigation when a book has many charts (e.g. 25) so users are not trapped in one endless scroll.  
+- Implementation is custom DataBook chrome on Geist tokens—not a per-book generated nav tree of arbitrary widgets.
+
+### 5.5 Theme tokens
+
+Expose CSS variables on `:root` / `.dark`, preferring **Geist typography/spacing** foundations, consumed by layout chrome and by Recharts via `stroke`/`fill` props:
+
+- Geist-aligned type/spacing scale (as provided by the Geist package / tokens)  
 - `--cb-bg`, `--cb-fg`, `--cb-muted`, `--cb-border`  
 - `--cb-accent`  
 - `--cb-series-1` … `--cb-series-n` (colorblind-safe categorical)  
@@ -365,9 +403,9 @@ Expose CSS variables on `:root` / `.dark` consumed by Recharts via `stroke`/`fil
 
 Chart gridlines and axes use muted tokens; never hard-code pure `#000` / `#fff` in chart components.
 
-### 5.4 Consistency rule
+### 5.6 Consistency rule
 
-The scaffold owns all chrome. Skills **must not** emit custom CSS themes per experiment. Branding variance is limited to book title and markdown content.
+The scaffold owns all chrome (sidebar, tabs, page shell, row/chart primitives). Skills **must not** emit custom CSS themes or alternate tab/sidebar implementations per experiment. Branding variance is limited to book title, tab labels, and markdown content.
 
 ---
 
@@ -375,20 +413,32 @@ The scaffold owns all chrome. Skills **must not** emit custom CSS themes per exp
 
 ### 6.1 One fixed React app (nested layout)
 
-The skill **always emits the same application shell** under the nested structure in §2.5. Per-book variance is data + `rows.json` (+ which Recharts compositions appear), not a new architecture.
+The skill **always emits the same application shell** under the nested structure in §2.5. Per-book variance is data + `rows.json` (tabs/sections/rows + which Recharts compositions appear), not a new architecture.
+
+**Primitive split:**
+
+| From Geist | Custom on Geist tokens |
+|------------|-------------------------|
+| Typography & spacing tokens | Page shell (`PageLayout`) |
+| **Tabs** component | **Sidebar** |
+| | Row container / `RowRenderer` |
+| | Markdown block (`MarkdownRow`) |
+| | Chart slot (`ChartSlot`) + Recharts helpers |
 
 **Fixed entry point** (illustrative):
 
 ```text
 src/
   main.tsx
-  App.tsx                      # loads rows + canonical.json; applies root dark class
+  App.tsx                      # loads book doc + canonical.json; applies root dark class
   components/
     theme/
-      theme.css                # CSS variables for :root and .dark
+      theme.css                # Geist-aligned + --cb-* variables for :root and .dark
       ThemeToggle.tsx          # sets/removes root class; localStorage — not a theme library
     layout/
-      PageLayout.tsx           # header + scroll column
+      PageLayout.tsx           # header + sidebar + main column
+      Sidebar.tsx              # FIXED primitive — jump between tab groups / sections
+      BookTabs.tsx             # FIXED primitive — wraps Geist Tabs; groups rows into sections
     rows/
       RowRenderer.tsx
       MarkdownRow.tsx          # react-markdown
@@ -398,21 +448,23 @@ src/
       # thin helpers only (e.g. ResponsiveFrame) — no starter type catalog
   data/
     canonical.json             # normalized rows (one file)
-    rows.json                  # ordered rows; queries inlined in chart blocks
+    rows.json                  # BookDocument: tabs → rows; queries inlined in chart blocks
     understanding.md
     loadCanonical.ts
     runQuery.ts
 ```
 
-Dependencies include at least: `react`, `recharts`, `react-markdown`.
+Dependencies include at least: `react`, `recharts`, `react-markdown`, and the **Geist** package that provides Tabs + typography/spacing tokens (e.g. `@vercel/geistcn` / current Geist open-source distribution).
 
 ### 6.2 Standard components (required)
 
 | Component | Responsibility |
 |-----------|----------------|
 | `ThemeToggle` | Dark default, light via root class + CSS variables; no theme-provider library |
-| `PageLayout` | Header (title, toggle), main column |
-| `RowRenderer` | Sort by `order`, dispatch by row `type` |
+| `PageLayout` | Header (title, toggle), **sidebar**, main column with tabs + rows |
+| `Sidebar` | **Fixed** nav among tab groups / sections; not generated per book |
+| `BookTabs` | **Fixed** wrapper around **Geist Tabs**; every book includes it |
+| `RowRenderer` | Sort by `order`, dispatch by row `type` (inside active tab) |
 | `MarkdownRow` | **react-markdown**, full width |
 | `ComponentRow` | Flex layout for one or more chart blocks |
 | `ChartSlot` | Title/subtitle/notes + run **inlined** query + render Recharts spec |
@@ -420,15 +472,16 @@ Dependencies include at least: `react`, `recharts`, `react-markdown`.
 
 ### 6.3 What the skill may change per book
 
-- `src/data/rows.json` (self-describing chart blocks with inlined queries)  
+- `src/data/rows.json` (tab labels/membership + self-describing chart blocks with inlined queries)  
 - `src/data/canonical.json` and `src/data/understanding.md`  
 - Book metadata: title, description, generated_at  
 - Recharts compositions referenced by those blocks  
-- **Not** a fork of `PageLayout` / token architecture / init sample pattern  
+- **Not** a fork of `PageLayout` / `Sidebar` / `BookTabs` / token architecture / init sample pattern  
 
 ### 6.4 Emission modes and init sample
 
 1. **Init (automatic on skill invoke)** — see §7.5: copy scaffold → write **minimal sample book**:
+   - One tab (e.g. label “Overview”) so **Geist Tabs** + **Sidebar** still mount.  
    - One **markdown** row whose body is effectively **“hello world”** (deliberately trivial).  
    - One **component** row with a single chart: an **exponential curve** over trivial synthetic points in `canonical.json`.  
    - Purpose: prove the pipeline boots. **Do not** make the sample rich enough to bias later experiment books.  
@@ -454,10 +507,10 @@ The **DataBook / Chart Book skill** (`skill.md` at repo root) teaches an agent t
 5. Write `understanding.md`.  
 6. Design and run transforms → write **one** `canonical.json` of normalized rows.  
 7. Choose Recharts compositions from data relationships + routed viz guidance.  
-8. Decide **row types**: markdown vs flex component rows.  
+8. Decide **tabs/sections** (group related rows) and **row types**: markdown vs flex component rows.  
 9. Write **self-describing** chart blocks with **inlined** query objects + encodings.  
 10. Write markdown rows (react-markdown content) that explain aggregations and findings.  
-11. Replace the trivial init sample with real content; sanity-check non-empty queries and coherent multi-chart rows.
+11. Replace the trivial init sample with real content; sanity-check non-empty queries, coherent multi-chart rows, and sidebar/tab labels that scale for large books.
 
 ### 7.2 Skill structure (standard)
 
@@ -492,6 +545,7 @@ Bundled Anthropic references are **required package contents**, but they are **n
 - Do not target Cursor canvas as the host for Recharts.  
 - Do not invent a third row type without a scaffold change.  
 - Do not emit ad-hoc CSS grid/float layouts instead of `component` rows.  
+- Do not replace or fork **Sidebar** / **BookTabs** (Geist) with per-book custom nav.  
 - Do not generate a README inside emitted books in other projects.  
 - Do not require the user to run a separate init command.
 
@@ -524,7 +578,10 @@ If a book scaffold already exists, init is a no-op or a version-aware refresh �
 ## 9. Acceptance criteria (implementer checklist)
 
 - [ ] Fixed scaffold boots with dark default via CSS variables + root class toggle (no theme-provider library).  
-- [ ] `rows.json` renders markdown rows (**react-markdown**) and component rows in order.  
+- [ ] **Geist Tabs** (`BookTabs`) and **Sidebar** mount on every book (including single-tab init).  
+- [ ] Tabs group rows into sections; sidebar jumps between those sections.  
+- [ ] Geist provides typography/spacing tokens + Tabs; page shell, sidebar, row container, markdown block, chart slot are custom on those tokens.  
+- [ ] `rows.json` (`BookDocument`) renders markdown rows (**react-markdown**) and component rows in order inside the active tab.  
 - [ ] A component row can hold multiple charts side by side in a flex layout (including equal-width, touching / zero-gap).  
 - [ ] Chart blocks carry **inlined** query objects; no separate queries/recipe file.  
 - [ ] Canonical data is **one JSON file** of normalized rows; queries shape data at read time.  
@@ -603,4 +660,5 @@ When bumping vendored content, update each folder’s `UPSTREAM.md` and note int
 - Cursor canvas constraint: import only from `cursor/canvas`; no npm/Recharts in canvases.  
 - Recharts: [recharts.org](https://recharts.org/) (locked charting library; full API available to the skill).  
 - react-markdown: [github.com/remarkjs/react-markdown](https://github.com/remarkjs/react-markdown).  
+- Geist design system (typography/spacing tokens + Tabs): [vercel.com/geist](https://vercel.com/geist) / Tabs docs (e.g. [geist/tabs](https://vercel.com/geist/tabs)).  
 - Anthropic knowledge-work-plugins `data/`: [github.com/anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) (vendored under `references/anthropic-data-plugin/`).

@@ -20,9 +20,9 @@ description: >
 
 1. Profile sources → write `src/data/understanding.md`.
 2. Transform → write **`src/data/canonical.json`** (normalized rows, one file).
-3. Choose row types (`markdown` | `component`) and Recharts compositions.
-4. Emit **`src/data/rows.json`** with **self-describing chart blocks** (query objects **inlined** — no `queries.json` / recipe file).
-5. Sanity-check: queries return rows; multi-chart rows have a clear comparison purpose.
+3. Choose **tabs/sections**, row types (`markdown` | `component`), and Recharts compositions.
+4. Emit **`src/data/rows.json`** (`BookDocument`: tabs → rows) with **self-describing chart blocks** (query objects **inlined** — no `queries.json` / recipe file).
+5. Sanity-check: queries return rows; multi-chart rows have a clear comparison purpose; tab/sidebar labels stay scannable for large books.
 
 Follow `chart-book-spec.md` for schemas and invariants.
 
@@ -42,6 +42,7 @@ Do **not** dump all of `references/` into context at start.
 
 - Chart library: **Recharts** (full API; no closed starter catalog).
 - Markdown: **react-markdown**.
+- Chrome: **Geist** Tabs + typography/spacing tokens; custom **Sidebar**, page shell, row/markdown/chart primitives on those tokens.
 - Theme: CSS variables + **root class toggle** (no theme-provider library).
 - Queries: **inlined** on each chart block.
 - Canonical data: **one JSON file** of normalized rows; queries shape at read time.

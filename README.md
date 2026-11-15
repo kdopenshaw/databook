@@ -2,7 +2,7 @@
 
 Repo-local **chart books**: a fixed React scaffold plus an AI skill that profiles experiment data, writes one canonical JSON of normalized rows, and emits a row-based document (markdown + side-by-side charts).
 
-Charts use **[Recharts](https://recharts.org/)** (locked). Markdown uses **[react-markdown](https://github.com/remarkjs/react-markdown)**. Dark mode is CSS variables + a class on the root element — no theme-provider library.
+Charts use **[Recharts](https://recharts.org/)** (locked). Markdown uses **[react-markdown](https://github.com/remarkjs/react-markdown)**. Chrome uses **[Geist](https://vercel.com/geist)** for typography/spacing tokens and **Tabs**; sidebar, page shell, row container, markdown block, and chart slot are custom primitives on those tokens. Dark mode is CSS variables + a class on the root element — no theme-provider library.
 
 ## What’s in this repo
 
@@ -27,6 +27,8 @@ When the skill initializes a chart book **inside another project**, it does **no
 
 ## Document model (short)
 
+- **Tabs** (Geist) — group rows into sections; every book includes them.
+- **Sidebar** — jump between tab groups/sections when the book grows large.
 - **Markdown row** — full width, react-markdown.
 - **Component row** — flex container for one or more chart blocks (charts may sit side by side).
 - Each chart block is **self-describing**: title, Recharts wiring, encoding, and **query object inlined** (no separate query/recipe file).
