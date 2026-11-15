@@ -12,6 +12,7 @@ Usage (from the book root):  python3 src/data/transforms/build_rows.py
 
 import copy
 import json
+import statistics
 from pathlib import Path
 
 BASE = [{"column": "type_slot", "op": "eq", "value": "Primary"}, {"column": "is_primary_form", "op": "eq", "value": True}]
@@ -20,6 +21,57 @@ NONLEG = {"column": "legendary", "op": "eq", "value": False}
 STATS = [("hp", "HP"), ("attack", "Attack"), ("defense", "Defense"), ("sp_atk", "Sp. Atk"), ("sp_def", "Sp. Def"), ("speed", "Speed")]
 STAT_AGGS = [{"fn": "mean", "column": k, "as": f"mean_{k}", "label": f"Mean {l}"} for k, l in STATS]
 STAT_SERIES = [{"mark": "Bar", "dataKey": f"mean_{k}", "name": l} for k, l in STATS]
+
+
+CANONICAL = json.loads((Path(__file__).resolve().parents[1] / "canonical.json").read_text(encoding="utf-8"))
+SPECIES = [r for r in CANONICAL["rows"] if r["type_slot"] == "Primary" and r["is_primary_form"]]
+
+
+def pearson(xs, ys):
+    mx, my = statistics.fmean(xs), statistics.fmean(ys)
+    sxy = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    sxx = sum((x - mx) ** 2 for x in xs)
+    syy = sum((y - my) ** 2 for y in ys)
+    return sxy / (sxx * syy) ** 0.5
+
+
+def corr_table():
+    """GFM correlation matrix over base forms; values must match book.test.ts's recomputation."""
+    keys = [k for k, _ in STATS] + ["total"]
+    labels = [l for _, l in STATS] + ["Total"]
+    head = "| | " + " | ".join(labels) + " |\n|---|" + "---:|" * len(labels)
+    lines = [head]
+    for k, l in zip(keys, labels):
+        cells = []
+        for k2 in keys:
+            if k2 == k:
+                cells.append("—")
+                continue
+            r = pearson([s[k] for s in SPECIES], [s[k2] for s in SPECIES])
+            txt = f"{r:.2f}".replace("-", "−")
+            cells.append(f"**{txt}**" if k2 != "total" and k != "total" and abs(r) >= 0.45 else txt)
+        lines.append(f"| **{l}** | " + " | ".join(cells) + " |")
+    return "\n".join(lines)
+
+
+def top_by_type_table(n=5):
+    """Top-n base forms by total per primary type; ties broken by dex number."""
+    lines = ["| Primary type | # | Name | Types | Total | Gen |", "|---|---:|---|---|---:|---|"]
+    by_type = {}
+    for r in SPECIES:
+        by_type.setdefault(r["type1"], []).append(r)
+    for t in sorted(by_type):
+        full = sorted(by_type[t], key=lambda r: (-r["total"], r["dex"]))
+        ranked = full[:n]
+        cut_tie = len(full) > n and full[n]["total"] == ranked[-1]["total"]
+        for i, r in enumerate(ranked, start=1):
+            types = r["type1"] if r["type2"] == "None" else f"{r['type1']} / {r['type2']}"
+            name = f"{r['name']} ★" if r["legendary"] else r["name"]
+            if cut_tie and r["total"] == ranked[-1]["total"]:
+                tied_out = sum(1 for x in full[n:] if x["total"] == r["total"])
+                name += f" † (+{tied_out} more at {r['total']})"
+            lines.append(f"| {t if i == 1 else ''} | {i} | {name} | {types} | {r['total']} | {r['generation'].replace('Gen ', '')} |")
+    return "\n".join(lines)
 
 
 def md(id, body):
@@ -82,7 +134,8 @@ The book now carries the **team-building pool** as a column (`in_team_pool`: non
               {"chart": "BarChart", "xKey": "total_bin", "series": [
                   {"mark": "Bar", "dataKey": "non_legendary", "name": "Non-legendary", "stackId": "status"},
                   {"mark": "Bar", "dataKey": "legendary", "name": "Legendary", "stackId": "status"}],
-               "xLabel": "Base stat total (bin start)", "yLabel": "Species", "barCategoryGap": 1},
+               "xType": "number", "xShift": 10, "xDomain": [160, 800], "xTicks": [200, 300, 400, 500, 600, 700, 800],
+               "xLabel": "Base stat total", "yLabel": "Species", "barCategoryGap": 1},
               {"x": "total_bin", "y": "non_legendary", "color": "status", "stack": True},
               "Legendaries start at 580; the non-legendary tail above 580 is mostly pseudo-legendaries and mythicals.", flex=2),
         chart("chart-gen-counts", "Species per generation", "Base forms, stacked by legendary status",
@@ -120,10 +173,10 @@ legendary = tab("legendary", "Legendary status", [
         chart("chart-leg-by-type", "Legendary species per type", "Base forms; both type slots count",
               {"filter": BASE_ANY, "groupBy": ["type"], "aggregate": [{"fn": "sum", "column": "legendary", "as": "legendary_species", "label": "Legendary species"}],
                "orderBy": [{"column": "legendary_species", "direction": "desc"}]},
-              {"chart": "BarChart", "layout": "vertical", "xKey": "type", "series": [{"mark": "Bar", "dataKey": "legendary_species", "name": "Legendary species"}],
+              {"chart": "BarChart", "layout": "vertical", "xKey": "type", "series": [{"mark": "Bar", "dataKey": "legendary_species", "name": "Legendary species", "colorIndex": 1}],
                "xLabel": "Legendary species", "categoryWidth": 72, "height": 460},
               {"y": "type", "x": "legendary_species"},
-              "Psychic and Dragon dominate; Bug and Poison have none.", flex=1),
+              "Raw counts: big types (Psychic 74 species) get more. Types → Legendary share by type normalizes. Bug and Poison have none.", flex=1),
     ),
     md("md-leg-boundary", """
 ### The 580 line
@@ -143,7 +196,8 @@ Legendaries have a hard floor: **no base-form legendary is below 580**, and 16 o
         chart("chart-leg-total-values", "Legendary species by base stat total", "Base forms; each bar is one exact total value",
               {"filter": BASE + [{"column": "legendary", "op": "eq", "value": True}], "groupBy": ["total"], "aggregate": [{"fn": "count", "as": "species", "label": "Legendary species"}]},
               {"chart": "BarChart", "xKey": "total", "series": [{"mark": "Bar", "dataKey": "species", "name": "Legendary species", "colorIndex": 1}],
-               "xLabel": "Base stat total", "yLabel": "Species", "height": 460},
+               "xType": "number", "xDomain": [560, 740], "xTicks": [580, 600, 620, 640, 660, 680, 700, 720],
+               "xLabel": "Base stat total", "yLabel": "Species", "height": 460, "barCategoryGap": 2},
               {"x": "total", "y": "species"},
               "Two spikes: 580 (the trios) and 600 (Latias/Latios, Heatran, Landorus, Zygarde, and flagged mythicals such as Jirachi, Darkrai, and Victini). Nothing is below 580."),
     ),
@@ -185,7 +239,7 @@ Each species counts toward **every type it has** (1,071 type memberships across 
               {"filter": BASE_ANY, "groupBy": ["type"], "aggregate": [{"fn": "mean", "column": "legendary", "as": "legendary_share", "label": "Legendary share"}],
                "orderBy": [{"column": "legendary_share", "direction": "desc"}]},
               {"chart": "BarChart", "layout": "vertical", "xKey": "type", "series": [{"mark": "Bar", "dataKey": "legendary_share", "name": "Legendary share", "colorIndex": 1}],
-               "xLabel": "Share of species that are legendary", "categoryWidth": 72, "height": 520, "valueFormat": "percent"},
+               "xLabel": "Share of species that are legendary", "categoryWidth": 72, "height": 520, "valueFormat": "percent", "valueTicks": [0, 0.1, 0.2, 0.3]},
               {"y": "type", "x": "legendary_share"}),
     ),
     md("md-types-identity", """
@@ -207,7 +261,7 @@ The total says how strong a type is; the split says *how*. **Attack − Sp. Atk*
                "orderBy": [{"column": "mean_defense", "direction": "desc"}]},
               {"chart": "BarChart", "layout": "vertical", "xKey": "type", "series": [
                   {"mark": "Bar", "dataKey": "mean_defense", "name": "Defense", "colorIndex": 2},
-                  {"mark": "Bar", "dataKey": "mean_speed", "name": "Speed", "colorIndex": 4}],
+                  {"mark": "Bar", "dataKey": "mean_speed", "name": "Speed", "colorIndex": 5}],
                "xLabel": "Mean base stat", "categoryWidth": 72, "height": 520, "decimals": 1},
               {"y": "type", "x": "mean_defense", "color": "stat"}),
     ),
@@ -231,7 +285,7 @@ Electric, Flying, and Psychic are the fast types overall. Rock is the slowest: 7
                   {"mark": "Bar", "dataKey": "tier_60_79", "name": "60–79", "stackId": "tier", "colorIndex": 6},
                   {"mark": "Bar", "dataKey": "tier_80_99", "name": "80–99", "stackId": "tier", "colorIndex": 0},
                   {"mark": "Bar", "dataKey": "tier_100plus", "name": "100+", "stackId": "tier", "colorIndex": 1}],
-               "xLabel": "Share of the type's species", "categoryWidth": 72, "height": 560, "valueFormat": "percent", "yDomain": [0, 1]},
+               "xLabel": "Share of the type's species", "categoryWidth": 72, "height": 560, "valueFormat": "percent", "yDomain": [0, 1], "valueTicks": [0, 0.25, 0.5, 0.75, 1]},
               {"y": "type", "x": "tier_100plus", "color": "speed_tier", "stack": True},
               "Sorted by the 100+ share. Bars sum to 100% per type.", flex=3),
         chart("chart-pool-fast-by-type", "Fast options in the team pool", "Non-legendary, total ≥ 500, Speed ≥ 100; both type slots",
@@ -260,9 +314,9 @@ Without evolution-stage data this is a proxy argument. Total band stands in for 
               {"chart": "BarChart", "xKey": "generation", "series": [
                   {"mark": "Bar", "dataKey": "mean_mono", "name": "Mono-type", "colorIndex": 7},
                   {"mark": "Bar", "dataKey": "mean_dual", "name": "Dual-type", "colorIndex": 0}],
-               "yLabel": "Mean base stat total", "yDomain": [300, 460], "decimals": 1},
+               "yLabel": "Mean base stat total", "decimals": 1},
               {"x": "generation", "y": "mean_dual", "color": "typing"},
-              "Y axis starts at 300."),
+              "Gaps of 15–40 points per generation, before controlling for total band."),
         chart("chart-dual-by-band", "Mono vs dual-type, within total bands", "Non-legendary base forms; mean total inside each band",
               {"filter": BASE + [NONLEG], "groupBy": ["total_band"],
                "aggregate": [{"fn": "mean", "column": "total_mono", "as": "mean_mono", "label": "Mono-type"},
@@ -300,17 +354,17 @@ Is there power creep? **Not a steady one.** Non-legendary strength dips in Gen 3
                   {"mark": "Line", "dataKey": "median_nonleg", "name": "Non-legendary median", "dot": True, "type": "linear", "strokeDasharray": "4 3", "colorIndex": 0},
                   {"mark": "Line", "dataKey": "mean_leg", "name": "Legendary mean", "dot": True, "type": "linear", "colorIndex": 1}],
                "yLabel": "Base stat total", "yDomain": [300, 700], "decimals": 1},
-              {"x": "generation", "y": "mean_nonleg", "color": "series"}, flex=2),
-        chart("chart-gen-shares", "Legendary and dual-type share", "Base forms, share of species per generation",
+              {"x": "generation", "y": "mean_nonleg", "color": "series"},
+              "Legendary means rest on only 4–11 species per generation, so treat their wiggles as noise.", flex=2),
+        chart("chart-gen-shares", "Legendary share by generation", "Base forms, share of each generation's species",
               {"filter": BASE, "groupBy": ["generation"],
                "aggregate": [{"fn": "mean", "column": "legendary", "as": "legendary_share", "label": "Legendary share"},
-                             {"fn": "mean", "column": "is_dual_type", "as": "dual_share", "label": "Dual-type share"}]},
+                             {"fn": "sum", "column": "legendary", "as": "legendary_species", "label": "Legendary species"}]},
               {"chart": "BarChart", "xKey": "generation", "series": [
-                  {"mark": "Bar", "dataKey": "legendary_share", "name": "Legendary", "colorIndex": 1},
-                  {"mark": "Bar", "dataKey": "dual_share", "name": "Dual-type", "colorIndex": 2}],
-               "yLabel": "Share of species", "valueFormat": "percent"},
-              {"x": "generation", "y": "legendary_share", "color": "metric"},
-              "Gen 4 has the most legendaries per species (10%); Gen 6 is the most dual-typed (57%)."),
+                  {"mark": "Bar", "dataKey": "legendary_share", "name": "Legendary share", "colorIndex": 1}],
+               "yLabel": "Share of species", "valueFormat": "percent", "decimals": 1, "valueTicks": [0, 0.04, 0.08, 0.12]},
+              {"x": "generation", "y": "legendary_share"},
+              "Gen 4 has the most legendaries per species (10%). Dual-type share by generation is in Types → Does dual typing buy stats?"),
     ),
     comp("comp-gen-stats",
         chart("chart-gen-stat-lines", "Mean of each stat by generation, non-legendaries", "Base forms, non-legendary only",
@@ -327,6 +381,17 @@ stats = tab("stats", "Stats & Megas", [
 ## How the six stats relate
 
 Every stat correlates positively with total (r = 0.55 for Speed up to 0.72 for Sp. Atk), but the stats are only loosely tied to each other. The weakest pair is **Defense and Speed (r = −0.01)**: heavily armored Pokémon (Shuckle, Steelix, Aggron) are rarely fast. Attack and Sp. Atk are only moderately linked (r = 0.34), which is why "physical" and "special" attackers are distinct archetypes.
+"""),
+    md("md-corr-matrix", f"""
+### Correlation matrix: every pair at once
+
+Pearson r between base stats across the 721 base forms. **Bold** marks the strongest stat pairs (|r| ≥ 0.45). The last column/row is the base stat total.
+
+{corr_table()}
+
+How to read it: no pair of stats is strongly tied (all |r| ≤ 0.49), so knowing one stat says little about another. The strongest links are *within* a side: **Sp. Atk–Sp. Def 0.49** and **Defense–Sp. Def 0.48**. The weakest is **Defense–Speed (−0.01)**. Every stat is moderately tied to the total (0.55–0.72), with Sp. Atk the most.
+
+*Why a table, not a heatmap:* the query engine cannot compute correlations or reshape data into (stat, stat, r) rows, and the renderer has no heatmap mark. The table is generated from `canonical.json` by `build_rows.py`, and `book.test.ts` recomputes every cell, so it cannot drift from the data.
 """),
     comp("comp-scatter",
         chart("chart-def-speed", "Defense vs Speed", "Base forms (721 species)",
@@ -362,7 +427,7 @@ Mega/Primal forms add **exactly +100** to the base total in 49 of 50 cases (Mega
               "Means over 48 base forms vs 50 Mega/Primal forms (Charizard and Mewtwo have two Megas each)."),
         chart("chart-mega-top", "Strongest forms overall", "All 800 forms, top 12 by base stat total",
               {"filter": [{"column": "type_slot", "op": "eq", "value": "Primary"}], "orderBy": [{"column": "total", "direction": "desc"}, {"column": "dex", "direction": "asc"}], "limit": 12},
-              {"chart": "BarChart", "layout": "vertical", "xKey": "name", "series": [{"mark": "Bar", "dataKey": "total", "name": "Base stat total", "colorIndex": 1}],
+              {"chart": "BarChart", "layout": "vertical", "xKey": "name", "series": [{"mark": "Bar", "dataKey": "total", "name": "Base stat total"}],
                "xLabel": "Base stat total", "categoryWidth": 132, "height": 380},
               {"y": "name", "x": "total"}, "Megas and Primals hold 11 of the top 12 spots; Arceus (720) is the only base form. Ties at 700 are broken by dex number (Black/White Kyurem and Mega Diancie also have 700)."),
     ),
@@ -382,7 +447,7 @@ def stat_hist(key, label, color_index):
         {"filter": BASE, "bin": [{"column": key, "step": 10, "as": f"{key}_bin"}],
          "aggregate": [{"fn": "count", "as": "species", "label": "Species"}]},
         {"chart": "BarChart", "xKey": f"{key}_bin", "xType": "number", "xDomain": [0, 260], "xTicks": STAT_HIST_TICKS,
-         "yDomain": [0, 140], "height": 200, "barCategoryGap": 1, "showGrid": True,
+         "xShift": 5, "yDomain": [0, 140], "valueTicks": [0, 35, 70, 105, 140], "height": 200, "barCategoryGap": 1, "showGrid": True,
          "series": [{"mark": "Bar", "dataKey": "species", "name": "Species", "colorIndex": color_index}],
          "margin": {"top": 8, "right": 12, "bottom": 4, "left": 0}},
         {"x": f"{key}_bin", "y": "species"},
@@ -427,7 +492,7 @@ That flags **61 glass cannons (8.5%)** and **41 tanks (5.7%)** among the 721 spe
               {"chart": "BarChart", "layout": "vertical", "xKey": "name", "series": [
                   {"mark": "Bar", "dataKey": "bulk", "name": "Bulk", "colorIndex": 2},
                   {"mark": "Bar", "dataKey": "offense", "name": "Offense", "colorIndex": 5},
-                  {"mark": "Bar", "dataKey": "speed", "name": "Speed", "colorIndex": 3}],
+                  {"mark": "Bar", "dataKey": "speed", "name": "Speed", "colorIndex": 6}],
                "xLabel": "Base stat", "categoryWidth": 168, "height": 520, "decimals": 1},
               {"y": "name", "x": "bulk", "color": "measure"},
               "8 of the 41 tanks are legendary (Registeel, Regirock, Regice, Giratina, and others), compared with 8 of the 61 glass cannons."),
@@ -448,14 +513,14 @@ Shares are per type, counting both type slots, so read them against small denomi
                "aggregate": [{"fn": "mean", "column": "is_glass_cannon", "as": "glass_share", "label": "Glass-cannon share"}],
                "orderBy": [{"column": "glass_share", "direction": "desc"}]},
               {"chart": "BarChart", "layout": "vertical", "xKey": "type", "series": [{"mark": "Bar", "dataKey": "glass_share", "name": "Glass cannons", "colorIndex": 5}],
-               "xLabel": "Share of the type's species", "categoryWidth": 72, "height": 520, "valueFormat": "percent", "decimals": 1},
+               "xLabel": "Share of the type's species", "categoryWidth": 72, "height": 520, "valueFormat": "percent", "decimals": 1, "valueTicks": [0, 0.05, 0.1, 0.15, 0.2]},
               {"y": "type", "x": "glass_share"}),
         chart("chart-tank-by-type", "Tank share by type", "Base forms, both type slots",
               {"filter": BASE_ANY, "groupBy": ["type"],
                "aggregate": [{"fn": "mean", "column": "is_tank", "as": "tank_share", "label": "Tank share"}],
                "orderBy": [{"column": "tank_share", "direction": "desc"}]},
               {"chart": "BarChart", "layout": "vertical", "xKey": "type", "series": [{"mark": "Bar", "dataKey": "tank_share", "name": "Tanks", "colorIndex": 2}],
-               "xLabel": "Share of the type's species", "categoryWidth": 72, "height": 520, "valueFormat": "percent", "decimals": 1},
+               "xLabel": "Share of the type's species", "categoryWidth": 72, "height": 520, "valueFormat": "percent", "decimals": 1, "valueTicks": [0, 0.05, 0.1, 0.15, 0.2]},
               {"y": "type", "x": "tank_share"}),
     ),
     comp("comp-arch-gen",
@@ -468,13 +533,18 @@ Shares are per type, counting both type slots, so read them against small denomi
                   {"mark": "Bar", "dataKey": "tank_share", "name": "Tanks", "colorIndex": 2}],
                "yLabel": "Share of species", "valueFormat": "percent", "decimals": 1},
               {"x": "generation", "y": "glass_share", "color": "archetype"}, flex=2),
-        chart("chart-arch-mega", "Archetype of Mega/Primal forms", "50 Mega/Primal forms, scored on the base-form scale",
-              {"filter": [{"column": "type_slot", "op": "eq", "value": "Primary"}, {"column": "form_kind", "op": "eq", "value": "Mega/Primal"}],
-               "groupBy": ["archetype"], "aggregate": [{"fn": "count", "as": "forms", "label": "Forms"}]},
-              {"chart": "BarChart", "xKey": "archetype", "series": [{"mark": "Bar", "dataKey": "forms", "name": "Mega/Primal forms", "colorIndex": 1}],
-               "yLabel": "Forms"},
-              {"x": "archetype", "y": "forms"},
-              "28 of 50 Megas are glass cannons: Mega Evolution adds offense and never HP.", flex=1),
+        chart("chart-arch-mega", "Archetype share: base forms vs their Megas", "The 48 species with a Mega/Primal; 48 base forms vs 50 Mega/Primal forms",
+              {"filter": [{"column": "type_slot", "op": "eq", "value": "Primary"}, {"column": "has_mega_form", "op": "eq", "value": True},
+                          {"column": "form_kind", "op": "in", "value": ["Base", "Mega/Primal"]}],
+               "groupBy": ["form_kind"],
+               "aggregate": [{"fn": "mean", "column": "is_glass_cannon", "as": "glass_share", "label": "Glass-cannon share"},
+                             {"fn": "mean", "column": "is_tank", "as": "tank_share", "label": "Tank share"}]},
+              {"chart": "BarChart", "xKey": "form_kind", "series": [
+                  {"mark": "Bar", "dataKey": "glass_share", "name": "Glass cannons", "colorIndex": 5},
+                  {"mark": "Bar", "dataKey": "tank_share", "name": "Tanks", "colorIndex": 2}],
+               "yLabel": "Share of forms", "valueFormat": "percent", "valueTicks": [0, 0.2, 0.4, 0.6]},
+              {"x": "form_kind", "y": "glass_share", "color": "archetype"},
+              "28 of 50 Mega/Primal forms are glass cannons, versus 11 of the same 48 species' base forms. Mega Evolution adds offense and never HP.", flex=1),
     ),
     md("md-stat-spreads", """
 ### Distribution of each stat (small multiples)
@@ -491,7 +561,19 @@ Six histograms of the 721 base forms, with the **same X axis (0–260) and Y axi
     comp("comp-hist-2", stat_hist("sp_atk", "Sp. Atk", 3), stat_hist("sp_def", "Sp. Def", 4), stat_hist("speed", "Speed", 5)),
 ])
 
-DEEP_DIVE = [overview, legendary, types, gens, stats, archetypes]
+lookup = tab("lookup", "Lookup", [
+    md("md-top-by-type", f"""
+## Top 5 by base stat total, per primary type
+
+Base forms only (no Megas or alternate forms), grouped by **primary** type (`Type 1`). Ties are broken by National Dex number; † marks a 5th-place tie that continues past the cut. ★ = flagged legendary in the source. Flying has only 3 primary-type species, so it lists 3.
+
+{top_by_type_table()}
+
+*Why a markdown table:* the scaffold has no table row type (the spec reserves `table` for later), and the query engine has no per-group top-N (`limit` applies to the whole result). The table is generated from `canonical.json` by `build_rows.py`, and `book.test.ts` checks it against the data.
+"""),
+])
+
+DEEP_DIVE = [overview, legendary, types, gens, stats, archetypes, lookup]
 _blocks = {b["id"]: b for t in DEEP_DIVE for r in t["rows"] for b in r.get("components", [])}
 
 
@@ -525,7 +607,7 @@ What separates strong Pokémon from weak ones, across 721 species from generatio
     md("md-summary-next", """
 **Caveats.** Stats ignore abilities and movepools (Slaking's 670 comes with Truant). The source's legendary flag is inconsistent for mythicals.
 
-**Deep dive:** *Overview* · *Legendary status* · *Types* (incl. speed tiers and dual typing) · *Generations* · *Stats & Megas* · *Archetypes*.
+**Deep dive:** *Overview* · *Legendary status* · *Types* (incl. speed tiers and dual typing) · *Generations* · *Stats & Megas* (incl. the correlation matrix) · *Archetypes* · *Lookup* (top 5 per type).
 """),
 ])
 

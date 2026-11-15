@@ -68,6 +68,59 @@ describe.each(blocks.map((b) => [b.id, b] as const))('chart %s', (_id, block) =>
   });
 });
 
+const mdBody = (tabId: string, rowId: string): string => {
+  const row = book.tabs.find((t) => t.id === tabId)?.rows.find((r) => r.id === rowId);
+  return row && row.type === 'markdown' ? row.body : '';
+};
+const tableRows = (body: string): string[][] =>
+  body
+    .split('\n')
+    .filter((l) => l.startsWith('|') && !/^\|[-|: ]+\|$/.test(l))
+    .slice(1)
+    .map((l) => l.slice(1, -1).split('|').map((c) => c.trim().replace(/\*/g, '')));
+
+describe('markdown tables match canonical.json', () => {
+  const species = runQuery(table, { filter: BASE });
+
+  it('correlation matrix cells equal Pearson r over base forms', () => {
+    const keys = ['hp', 'attack', 'defense', 'sp_atk', 'sp_def', 'speed', 'total'];
+    const col = (k: string) => species.map((r) => r[k] as number);
+    const pearson = (x: number[], y: number[]) => {
+      const mx = x.reduce((a, b) => a + b, 0) / x.length;
+      const my = y.reduce((a, b) => a + b, 0) / y.length;
+      let sxy = 0, sxx = 0, syy = 0;
+      for (let i = 0; i < x.length; i++) {
+        sxy += (x[i] - mx) * (y[i] - my);
+        sxx += (x[i] - mx) ** 2;
+        syy += (y[i] - my) ** 2;
+      }
+      return sxy / Math.sqrt(sxx * syy);
+    };
+    const rows = tableRows(mdBody('stats', 'md-corr-matrix'));
+    expect(rows).toHaveLength(keys.length);
+    rows.forEach((cells, i) =>
+      cells.slice(1).forEach((cell, j) => {
+        if (i === j) return expect(cell).toBe('—');
+        expect(Number(cell.replace('−', '-'))).toBeCloseTo(pearson(col(keys[i]), col(keys[j])), 2);
+      }),
+    );
+  });
+
+  it('top-5 table lists the highest totals per primary type', () => {
+    const rows = tableRows(mdBody('lookup', 'md-top-by-type'));
+    let type = '';
+    const listed = new Map<string, number[]>();
+    for (const [t, , , , total] of rows) {
+      if (t) type = t;
+      listed.set(type, [...(listed.get(type) ?? []), Number(total)]);
+    }
+    const byType = new Map<string, number[]>();
+    for (const r of species) byType.set(r.type1 as string, [...(byType.get(r.type1 as string) ?? []), r.total as number]);
+    expect([...listed.keys()].sort()).toEqual([...byType.keys()].sort());
+    for (const [t, totals] of byType) expect(listed.get(t)).toEqual(totals.sort((a, b) => b - a).slice(0, 5));
+  });
+});
+
 describe('canonical sanity (numbers quoted in markdown)', () => {
   const one = (q: Parameters<typeof runQuery>[1]): DataRow => runQuery(table, q)[0];
 

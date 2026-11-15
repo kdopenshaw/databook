@@ -92,7 +92,22 @@
                     "stackId": "status"
                   }
                 ],
-                "xLabel": "Base stat total (bin start)",
+                "xType": "number",
+                "xShift": 10,
+                "xDomain": [
+                  160,
+                  800
+                ],
+                "xTicks": [
+                  200,
+                  300,
+                  400,
+                  500,
+                  600,
+                  700,
+                  800
+                ],
+                "xLabel": "Base stat total",
                 "yLabel": "Species",
                 "barCategoryGap": 1
               },
@@ -343,7 +358,7 @@
           "id": "md-summary-next",
           "type": "markdown",
           "createdBy": "skill",
-          "body": "**Caveats.** Stats ignore abilities and movepools (Slaking's 670 comes with Truant). The source's legendary flag is inconsistent for mythicals.\n\n**Deep dive:** *Overview* · *Legendary status* · *Types* (incl. speed tiers and dual typing) · *Generations* · *Stats & Megas* · *Archetypes*.",
+          "body": "**Caveats.** Stats ignore abilities and movepools (Slaking's 670 comes with Truant). The source's legendary flag is inconsistent for mythicals.\n\n**Deep dive:** *Overview* · *Legendary status* · *Types* (incl. speed tiers and dual typing) · *Generations* · *Stats & Megas* (incl. the correlation matrix) · *Archetypes* · *Lookup* (top 5 per type).",
           "order": 3
         }
       ]
@@ -449,7 +464,22 @@
                     "stackId": "status"
                   }
                 ],
-                "xLabel": "Base stat total (bin start)",
+                "xType": "number",
+                "xShift": 10,
+                "xDomain": [
+                  160,
+                  800
+                ],
+                "xTicks": [
+                  200,
+                  300,
+                  400,
+                  500,
+                  600,
+                  700,
+                  800
+                ],
+                "xLabel": "Base stat total",
                 "yLabel": "Species",
                 "barCategoryGap": 1
               },
@@ -714,7 +744,8 @@
                   {
                     "mark": "Bar",
                     "dataKey": "legendary_species",
-                    "name": "Legendary species"
+                    "name": "Legendary species",
+                    "colorIndex": 1
                   }
                 ],
                 "xLabel": "Legendary species",
@@ -722,7 +753,7 @@
                 "height": 460
               },
               "flex": 1,
-              "notes": "Psychic and Dragon dominate; Bug and Poison have none."
+              "notes": "Raw counts: big types (Psychic 74 species) get more. Types → Legendary share by type normalizes. Bug and Poison have none."
             }
           ],
           "order": 1
@@ -853,9 +884,25 @@
                     "colorIndex": 1
                   }
                 ],
+                "xType": "number",
+                "xDomain": [
+                  560,
+                  740
+                ],
+                "xTicks": [
+                  580,
+                  600,
+                  620,
+                  640,
+                  660,
+                  680,
+                  700,
+                  720
+                ],
                 "xLabel": "Base stat total",
                 "yLabel": "Species",
-                "height": 460
+                "height": 460,
+                "barCategoryGap": 2
               },
               "flex": 1,
               "notes": "Two spikes: 580 (the trios) and 600 (Latias/Latios, Heatran, Landorus, Zygarde, and flagged mythicals such as Jirachi, Darkrai, and Victini). Nothing is below 580."
@@ -1095,7 +1142,13 @@
                 "xLabel": "Share of species that are legendary",
                 "categoryWidth": 72,
                 "height": 520,
-                "valueFormat": "percent"
+                "valueFormat": "percent",
+                "valueTicks": [
+                  0,
+                  0.1,
+                  0.2,
+                  0.3
+                ]
               },
               "flex": 1
             }
@@ -1233,7 +1286,7 @@
                     "mark": "Bar",
                     "dataKey": "mean_speed",
                     "name": "Speed",
-                    "colorIndex": 4
+                    "colorIndex": 5
                   }
                 ],
                 "xLabel": "Mean base stat",
@@ -1360,6 +1413,13 @@
                 "valueFormat": "percent",
                 "yDomain": [
                   0,
+                  1
+                ],
+                "valueTicks": [
+                  0,
+                  0.25,
+                  0.5,
+                  0.75,
                   1
                 ]
               },
@@ -1517,14 +1577,10 @@
                   }
                 ],
                 "yLabel": "Mean base stat total",
-                "yDomain": [
-                  300,
-                  460
-                ],
                 "decimals": 1
               },
               "flex": 1,
-              "notes": "Y axis starts at 300."
+              "notes": "Gaps of 15–40 points per generation, before controlling for total band."
             },
             {
               "id": "chart-dual-by-band",
@@ -1771,14 +1827,15 @@
                 ],
                 "decimals": 1
               },
-              "flex": 2
+              "flex": 2,
+              "notes": "Legendary means rest on only 4–11 species per generation, so treat their wiggles as noise."
             },
             {
               "id": "chart-gen-shares",
-              "title": "Legendary and dual-type share",
-              "subtitle": "Base forms, share of species per generation",
+              "title": "Legendary share by generation",
+              "subtitle": "Base forms, share of each generation's species",
               "query": {
-                "label": "Legendary and dual-type share",
+                "label": "Legendary share by generation",
                 "filter": [
                   {
                     "column": "type_slot",
@@ -1802,17 +1859,16 @@
                     "label": "Legendary share"
                   },
                   {
-                    "fn": "mean",
-                    "column": "is_dual_type",
-                    "as": "dual_share",
-                    "label": "Dual-type share"
+                    "fn": "sum",
+                    "column": "legendary",
+                    "as": "legendary_species",
+                    "label": "Legendary species"
                   }
                 ]
               },
               "encoding": {
                 "x": "generation",
-                "y": "legendary_share",
-                "color": "metric"
+                "y": "legendary_share"
               },
               "recharts": {
                 "showGrid": true,
@@ -1823,21 +1879,22 @@
                   {
                     "mark": "Bar",
                     "dataKey": "legendary_share",
-                    "name": "Legendary",
+                    "name": "Legendary share",
                     "colorIndex": 1
-                  },
-                  {
-                    "mark": "Bar",
-                    "dataKey": "dual_share",
-                    "name": "Dual-type",
-                    "colorIndex": 2
                   }
                 ],
                 "yLabel": "Share of species",
-                "valueFormat": "percent"
+                "valueFormat": "percent",
+                "decimals": 1,
+                "valueTicks": [
+                  0,
+                  0.04,
+                  0.08,
+                  0.12
+                ]
               },
               "flex": 1,
-              "notes": "Gen 4 has the most legendaries per species (10%); Gen 6 is the most dual-typed (57%)."
+              "notes": "Gen 4 has the most legendaries per species (10%). Dual-type share by generation is in Types → Does dual typing buy stats?"
             }
           ],
           "order": 1
@@ -1999,6 +2056,13 @@
           "order": 0
         },
         {
+          "id": "md-corr-matrix",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "### Correlation matrix: every pair at once\n\nPearson r between base stats across the 721 base forms. **Bold** marks the strongest stat pairs (|r| ≥ 0.45). The last column/row is the base stat total.\n\n| | HP | Attack | Defense | Sp. Atk | Sp. Def | Speed | Total |\n|---|---:|---:|---:|---:|---:|---:|---:|\n| **HP** | — | 0.43 | 0.23 | 0.36 | 0.38 | 0.17 | 0.64 |\n| **Attack** | 0.43 | — | 0.43 | 0.34 | 0.21 | 0.33 | 0.70 |\n| **Defense** | 0.23 | 0.43 | — | 0.20 | **0.48** | −0.01 | 0.61 |\n| **Sp. Atk** | 0.36 | 0.34 | 0.20 | — | **0.49** | 0.44 | 0.72 |\n| **Sp. Def** | 0.38 | 0.21 | **0.48** | **0.49** | — | 0.24 | 0.71 |\n| **Speed** | 0.17 | 0.33 | −0.01 | 0.44 | 0.24 | — | 0.55 |\n| **Total** | 0.64 | 0.70 | 0.61 | 0.72 | 0.71 | 0.55 | — |\n\nHow to read it: no pair of stats is strongly tied (all |r| ≤ 0.49), so knowing one stat says little about another. The strongest links are *within* a side: **Sp. Atk–Sp. Def 0.49** and **Defense–Sp. Def 0.48**. The weakest is **Defense–Speed (−0.01)**. Every stat is moderately tied to the total (0.55–0.72), with Sp. Atk the most.\n\n*Why a table, not a heatmap:* the query engine cannot compute correlations or reshape data into (stat, stat, r) rows, and the renderer has no heatmap mark. The table is generated from `canonical.json` by `build_rows.py`, and `book.test.ts` recomputes every cell, so it cannot drift from the data.",
+          "order": 1
+        },
+        {
           "id": "comp-scatter",
           "type": "component",
           "createdBy": "skill",
@@ -2102,7 +2166,7 @@
               "notes": "r = 0.34. Points far from the diagonal are specialists; the diagonal band is mixed attackers."
             }
           ],
-          "order": 1
+          "order": 2
         },
         {
           "id": "comp-top-stat",
@@ -2165,14 +2229,14 @@
               "notes": "Attack is the most common peak stat (192 species); Sp. Def the rarest (65). Ties go to the earlier stat in HP → Speed order."
             }
           ],
-          "order": 2
+          "order": 3
         },
         {
           "id": "md-mega",
           "type": "markdown",
           "createdBy": "skill",
           "body": "## Mega Evolution: a flat +100, spent on offense\n\nMega/Primal forms add **exactly +100** to the base total in 49 of 50 cases (Mega Alakazam is +90). The chart compares the 48 species that have a Mega/Primal against their own Mega/Primal forms. Attack (+29), Sp. Atk (+24), and Defense (+21) absorb most of the boost; **HP never changes**.",
-          "order": 3
+          "order": 4
         },
         {
           "id": "comp-mega",
@@ -2339,8 +2403,7 @@
                   {
                     "mark": "Bar",
                     "dataKey": "total",
-                    "name": "Base stat total",
-                    "colorIndex": 1
+                    "name": "Base stat total"
                   }
                 ],
                 "xLabel": "Base stat total",
@@ -2351,7 +2414,7 @@
               "notes": "Megas and Primals hold 11 of the top 12 spots; Arceus (720) is the only base form. Ties at 700 are broken by dex number (Black/White Kyurem and Mega Diancie also have 700)."
             }
           ],
-          "order": 4
+          "order": 5
         }
       ]
     },
@@ -2581,7 +2644,7 @@
                     "mark": "Bar",
                     "dataKey": "speed",
                     "name": "Speed",
-                    "colorIndex": 3
+                    "colorIndex": 6
                   }
                 ],
                 "xLabel": "Base stat",
@@ -2665,7 +2728,14 @@
                 "categoryWidth": 72,
                 "height": 520,
                 "valueFormat": "percent",
-                "decimals": 1
+                "decimals": 1,
+                "valueTicks": [
+                  0,
+                  0.05,
+                  0.1,
+                  0.15,
+                  0.2
+                ]
               },
               "flex": 1
             },
@@ -2722,7 +2792,14 @@
                 "categoryWidth": 72,
                 "height": 520,
                 "valueFormat": "percent",
-                "decimals": 1
+                "decimals": 1,
+                "valueTicks": [
+                  0,
+                  0.05,
+                  0.1,
+                  0.15,
+                  0.2
+                ]
               },
               "flex": 1
             }
@@ -2807,10 +2884,10 @@
             },
             {
               "id": "chart-arch-mega",
-              "title": "Archetype of Mega/Primal forms",
-              "subtitle": "50 Mega/Primal forms, scored on the base-form scale",
+              "title": "Archetype share: base forms vs their Megas",
+              "subtitle": "The 48 species with a Mega/Primal; 48 base forms vs 50 Mega/Primal forms",
               "query": {
-                "label": "Archetype of Mega/Primal forms",
+                "label": "Archetype share: base forms vs their Megas",
                 "filter": [
                   {
                     "column": "type_slot",
@@ -2818,43 +2895,72 @@
                     "value": "Primary"
                   },
                   {
-                    "column": "form_kind",
+                    "column": "has_mega_form",
                     "op": "eq",
-                    "value": "Mega/Primal"
+                    "value": true
+                  },
+                  {
+                    "column": "form_kind",
+                    "op": "in",
+                    "value": [
+                      "Base",
+                      "Mega/Primal"
+                    ]
                   }
                 ],
                 "groupBy": [
-                  "archetype"
+                  "form_kind"
                 ],
                 "aggregate": [
                   {
-                    "fn": "count",
-                    "as": "forms",
-                    "label": "Forms"
+                    "fn": "mean",
+                    "column": "is_glass_cannon",
+                    "as": "glass_share",
+                    "label": "Glass-cannon share"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "is_tank",
+                    "as": "tank_share",
+                    "label": "Tank share"
                   }
                 ]
               },
               "encoding": {
-                "x": "archetype",
-                "y": "forms"
+                "x": "form_kind",
+                "y": "glass_share",
+                "color": "archetype"
               },
               "recharts": {
                 "showGrid": true,
                 "showTooltip": true,
                 "chart": "BarChart",
-                "xKey": "archetype",
+                "xKey": "form_kind",
                 "series": [
                   {
                     "mark": "Bar",
-                    "dataKey": "forms",
-                    "name": "Mega/Primal forms",
-                    "colorIndex": 1
+                    "dataKey": "glass_share",
+                    "name": "Glass cannons",
+                    "colorIndex": 5
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "tank_share",
+                    "name": "Tanks",
+                    "colorIndex": 2
                   }
                 ],
-                "yLabel": "Forms"
+                "yLabel": "Share of forms",
+                "valueFormat": "percent",
+                "valueTicks": [
+                  0,
+                  0.2,
+                  0.4,
+                  0.6
+                ]
               },
               "flex": 1,
-              "notes": "28 of 50 Megas are glass cannons: Mega Evolution adds offense and never HP."
+              "notes": "28 of 50 Mega/Primal forms are glass cannons, versus 11 of the same 48 species' base forms. Mega Evolution adds offense and never HP."
             }
           ],
           "order": 5
@@ -2931,8 +3037,16 @@
                   200,
                   250
                 ],
+                "xShift": 5,
                 "yDomain": [
                   0,
+                  140
+                ],
+                "valueTicks": [
+                  0,
+                  35,
+                  70,
+                  105,
                   140
                 ],
                 "height": 200,
@@ -3009,8 +3123,16 @@
                   200,
                   250
                 ],
+                "xShift": 5,
                 "yDomain": [
                   0,
+                  140
+                ],
+                "valueTicks": [
+                  0,
+                  35,
+                  70,
+                  105,
                   140
                 ],
                 "height": 200,
@@ -3087,8 +3209,16 @@
                   200,
                   250
                 ],
+                "xShift": 5,
                 "yDomain": [
                   0,
+                  140
+                ],
+                "valueTicks": [
+                  0,
+                  35,
+                  70,
+                  105,
                   140
                 ],
                 "height": 200,
@@ -3178,8 +3308,16 @@
                   200,
                   250
                 ],
+                "xShift": 5,
                 "yDomain": [
                   0,
+                  140
+                ],
+                "valueTicks": [
+                  0,
+                  35,
+                  70,
+                  105,
                   140
                 ],
                 "height": 200,
@@ -3256,8 +3394,16 @@
                   200,
                   250
                 ],
+                "xShift": 5,
                 "yDomain": [
                   0,
+                  140
+                ],
+                "valueTicks": [
+                  0,
+                  35,
+                  70,
+                  105,
                   140
                 ],
                 "height": 200,
@@ -3334,8 +3480,16 @@
                   200,
                   250
                 ],
+                "xShift": 5,
                 "yDomain": [
                   0,
+                  140
+                ],
+                "valueTicks": [
+                  0,
+                  35,
+                  70,
+                  105,
                   140
                 ],
                 "height": 200,
@@ -3359,6 +3513,20 @@
             }
           ],
           "order": 8
+        }
+      ]
+    },
+    {
+      "id": "lookup",
+      "label": "Lookup",
+      "order": 7,
+      "rows": [
+        {
+          "id": "md-top-by-type",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "## Top 5 by base stat total, per primary type\n\nBase forms only (no Megas or alternate forms), grouped by **primary** type (`Type 1`). Ties are broken by National Dex number; † marks a 5th-place tie that continues past the cut. ★ = flagged legendary in the source. Flying has only 3 primary-type species, so it lists 3.\n\n| Primary type | # | Name | Types | Total | Gen |\n|---|---:|---|---|---:|---|\n| Bug | 1 | Genesect | Bug / Steel | 600 | 5 |\n|  | 2 | Volcarona | Bug / Fire | 550 | 5 |\n|  | 3 | Yanmega | Bug / Flying | 515 | 4 |\n|  | 4 | Shuckle | Bug / Rock | 505 | 2 |\n|  | 5 | Scyther † (+4 more at 500) | Bug / Flying | 500 | 1 |\n| Dark | 1 | Yveltal ★ | Dark / Flying | 680 | 6 |\n|  | 2 | Darkrai ★ | Dark | 600 | 4 |\n|  | 3 | Hydreigon | Dark / Dragon | 600 | 5 |\n|  | 4 | Umbreon | Dark | 525 | 2 |\n|  | 5 | Weavile † (+2 more at 510) | Dark / Ice | 510 | 4 |\n| Dragon | 1 | Rayquaza ★ | Dragon / Flying | 680 | 3 |\n|  | 2 | Reshiram ★ | Dragon / Fire | 680 | 5 |\n|  | 3 | Zekrom ★ | Dragon / Electric | 680 | 5 |\n|  | 4 | Kyurem ★ | Dragon / Ice | 660 | 5 |\n|  | 5 | Dragonite † (+6 more at 600) | Dragon / Flying | 600 | 1 |\n| Electric | 1 | Zapdos ★ | Electric / Flying | 580 | 1 |\n|  | 2 | Raikou ★ | Electric | 580 | 2 |\n|  | 3 | Thundurus (Incarnate Forme) ★ | Electric / Flying | 580 | 5 |\n|  | 4 | Electivire | Electric | 540 | 4 |\n|  | 5 | Magnezone | Electric / Steel | 535 | 4 |\n| Fairy | 1 | Xerneas ★ | Fairy | 680 | 6 |\n|  | 2 | Florges | Fairy | 552 | 6 |\n|  | 3 | Togekiss | Fairy / Flying | 545 | 4 |\n|  | 4 | Sylveon | Fairy | 525 | 6 |\n|  | 5 | Clefable | Fairy | 483 | 1 |\n| Fighting | 1 | Lucario | Fighting / Steel | 525 | 4 |\n|  | 2 | Mienshao | Fighting | 510 | 5 |\n|  | 3 | Machamp | Fighting | 505 | 1 |\n|  | 4 | Conkeldurr | Fighting | 505 | 5 |\n|  | 5 | Hawlucha | Fighting / Flying | 500 | 6 |\n| Fire | 1 | Ho-oh ★ | Fire / Flying | 680 | 2 |\n|  | 2 | Heatran ★ | Fire / Steel | 600 | 4 |\n|  | 3 | Volcanion ★ | Fire / Water | 600 | 6 |\n|  | 4 | Moltres ★ | Fire / Flying | 580 | 1 |\n|  | 5 | Entei ★ | Fire | 580 | 2 |\n| Flying | 1 | Tornadus (Incarnate Forme) ★ | Flying | 580 | 5 |\n|  | 2 | Noivern | Flying / Dragon | 535 | 6 |\n|  | 3 | Noibat | Flying / Dragon | 245 | 6 |\n| Ghost | 1 | Giratina (Altered Forme) ★ | Ghost / Dragon | 680 | 4 |\n|  | 2 | Dusknoir | Ghost | 525 | 4 |\n|  | 3 | Chandelure | Ghost / Fire | 520 | 5 |\n|  | 4 | Gengar | Ghost / Poison | 500 | 1 |\n|  | 5 | Drifblim | Ghost / Flying | 498 | 4 |\n| Grass | 1 | Shaymin (Land Forme) ★ | Grass | 600 | 4 |\n|  | 2 | Virizion ★ | Grass / Fighting | 580 | 5 |\n|  | 3 | Tangrowth | Grass | 535 | 4 |\n|  | 4 | Gogoat | Grass | 531 | 6 |\n|  | 5 | Sceptile † (+1 more at 530) | Grass | 530 | 3 |\n| Ground | 1 | Groudon ★ | Ground | 670 | 3 |\n|  | 2 | Landorus (Incarnate Forme) ★ | Ground / Flying | 600 | 5 |\n|  | 3 | Rhyperior | Ground / Rock | 535 | 4 |\n|  | 4 | Hippowdon | Ground | 525 | 4 |\n|  | 5 | Flygon | Ground / Dragon | 520 | 3 |\n| Ice | 1 | Articuno ★ | Ice / Flying | 580 | 1 |\n|  | 2 | Regice ★ | Ice | 580 | 3 |\n|  | 3 | Vanilluxe | Ice | 535 | 5 |\n|  | 4 | Walrein | Ice / Water | 530 | 3 |\n|  | 5 | Mamoswine | Ice / Ground | 530 | 4 |\n| Normal | 1 | Arceus ★ | Normal | 720 | 4 |\n|  | 2 | Slaking | Normal | 670 | 3 |\n|  | 3 | Regigigas ★ | Normal | 670 | 4 |\n|  | 4 | Meloetta (Aria Forme) | Normal / Psychic | 600 | 5 |\n|  | 5 | Snorlax † (+1 more at 540) | Normal | 540 | 1 |\n| Poison | 1 | Crobat | Poison / Flying | 535 | 2 |\n|  | 2 | Nidoqueen | Poison / Ground | 505 | 1 |\n|  | 3 | Nidoking | Poison / Ground | 505 | 1 |\n|  | 4 | Muk | Poison | 500 | 1 |\n|  | 5 | Drapion | Poison / Dark | 500 | 4 |\n| Psychic | 1 | Mewtwo ★ | Psychic | 680 | 1 |\n|  | 2 | Lugia ★ | Psychic / Flying | 680 | 2 |\n|  | 3 | Mew † (+3 more at 600) | Psychic | 600 | 1 |\n|  | 4 | Celebi † (+3 more at 600) | Psychic / Grass | 600 | 2 |\n|  | 5 | Deoxys (Normal Forme) ★ † (+3 more at 600) | Psychic | 600 | 3 |\n| Rock | 1 | Tyranitar | Rock / Dark | 600 | 2 |\n|  | 2 | Diancie ★ | Rock / Fairy | 600 | 6 |\n|  | 3 | Regirock ★ | Rock | 580 | 3 |\n|  | 4 | Terrakion ★ | Rock / Fighting | 580 | 5 |\n|  | 5 | Archeops | Rock / Flying | 567 | 5 |\n| Steel | 1 | Dialga ★ | Steel / Dragon | 680 | 4 |\n|  | 2 | Metagross | Steel / Psychic | 600 | 3 |\n|  | 3 | Jirachi ★ | Steel / Psychic | 600 | 3 |\n|  | 4 | Registeel ★ | Steel | 580 | 3 |\n|  | 5 | Cobalion ★ | Steel / Fighting | 580 | 5 |\n| Water | 1 | Palkia ★ | Water / Dragon | 680 | 4 |\n|  | 2 | Kyogre ★ | Water | 670 | 3 |\n|  | 3 | Manaphy | Water | 600 | 4 |\n|  | 4 | Suicune ★ | Water | 580 | 2 |\n|  | 5 | Keldeo (Ordinary Forme) | Water / Fighting | 580 | 5 |\n\n*Why a markdown table:* the scaffold has no table row type (the spec reserves `table` for later), and the query engine has no per-group top-N (`limit` applies to the whole result). The table is generated from `canonical.json` by `build_rows.py`, and `book.test.ts` checks it against the data.",
+          "order": 0
         }
       ]
     }
