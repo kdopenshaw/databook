@@ -37,6 +37,50 @@ POOL_COUNT_DOMAIN = [0, 50]
 # Team-building pool: primary form + primary slot + in_team_pool (implies non-leg, BST≥500).
 TEAM_POOL = SPECIES + [{"column": "in_team_pool", "op": "eq", "value": True}]
 
+# Last-stage base forms of each gen's Grass / Fire / Water starter line (National Dex, Gen 1–6).
+STARTER_FINALS: list[tuple[int, str, list[str]]] = [
+    (1, "Gen 1", ["Venusaur", "Charizard", "Blastoise"]),
+    (2, "Gen 2", ["Meganium", "Typhlosion", "Feraligatr"]),
+    (3, "Gen 3", ["Sceptile", "Blaziken", "Swampert"]),
+    (4, "Gen 4", ["Torterra", "Infernape", "Empoleon"]),
+    (5, "Gen 5", ["Serperior", "Emboar", "Samurott"]),
+    (6, "Gen 6", ["Chesnaught", "Delphox", "Greninja"]),
+]
+
+STARTER_STAT_SERIES = [
+    {"dataKey": "hp", "name": "HP", "colorIndex": 0},
+    {"dataKey": "attack", "name": "Attack", "colorIndex": 1},
+    {"dataKey": "defense", "name": "Defense", "colorIndex": 2},
+    {"dataKey": "sp_atk", "name": "Sp. Atk", "colorIndex": 3},
+    {"dataKey": "sp_def", "name": "Sp. Def", "colorIndex": 4},
+    {"dataKey": "speed", "name": "Speed", "colorIndex": 5},
+]
+
+
+def starter_final_chart(gen: int, gen_label: str, names: list[str]) -> dict:
+    trio = " · ".join(names)
+    return bar_v(
+        f"chart-gen-starters-{gen}",
+        f"{gen_label} starter finals — six base stats",
+        x_key="name",
+        series=STARTER_STAT_SERIES,
+        query={
+            "label": f"starter finals stats {gen_label}",
+            "filter": SPECIES
+            + [
+                {"column": "generation", "op": "eq", "value": gen},
+                {"column": "name", "op": "in", "value": names},
+            ],
+            "orderBy": [{"column": "dex_number", "direction": "asc"}],
+        },
+        subtitle=f"{trio} · primary slot · axis includes 0",
+        notes="Dex order = Grass → Fire → Water starter line.",
+        y_domain=STAT_DOMAIN,
+        height=300,
+        y_label="Base stat",
+        decimals=0,
+    )
+
 
 def bar_h(
     chart_id: str,
@@ -588,6 +632,10 @@ def build_document() -> dict:
         y_domain=STAT_GEN_DOMAIN,
     )
 
+    starter_charts = [starter_final_chart(g, label, names) for g, label, names in STARTER_FINALS]
+    starter_gens_1_3 = starter_charts[:3]
+    starter_gens_4_6 = starter_charts[3:]
+
     # ---- Legendary ----
     leg_means = bar_v(
         "chart-leg-means",
@@ -1050,6 +1098,15 @@ Species grain (`type_slot=Primary`). Means exclude legendaries; stacked counts i
 Offense vs bulk lines — both include 0 on the value axis.""",
                     ),
                     component("comp-gen-stats", 4, [gen_offense, gen_bulk]),
+                    md(
+                        "md-gen-starters",
+                        5,
+                        """### Starter trio stat profiles
+
+Final-stage **base forms** of each generation’s Grass / Fire / Water starter lines (18 species; primary slot). Grouped bars compare the six stats per Pokémon; panels share a **0–130** axis. Dex order left-to-right = Grass → Fire → Water.""",
+                    ),
+                    component("comp-gen-starters-1-3", 6, starter_gens_1_3, wrap=True, gap=12),
+                    component("comp-gen-starters-4-6", 7, starter_gens_4_6, wrap=True, gap=12),
                 ],
             },
             {

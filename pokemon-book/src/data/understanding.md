@@ -52,6 +52,21 @@ Fit on 721 primary forms: offense = max(Attack, Sp. Atk); bulk = mean(HP, Defens
 - Counts are **not** siblings of means / BST totals without a matching scale.
 - Type-1-only traps: primary-slot panels are labeled; both-slot is the default for type identity.
 
+## Starter finals (Gen 1–6)
+
+Last-stage **base forms** of each gen’s Grass / Fire / Water starter line (primary form, primary type slot). Curated by National Dex identity (not type filters alone — e.g. other Grass types are excluded).
+
+| Gen | Grass | Fire | Water |
+|-----|-------|------|-------|
+| 1 | Venusaur (#3) | Charizard (#6) | Blastoise (#9) |
+| 2 | Meganium (#154) | Typhlosion (#157) | Feraligatr (#160) |
+| 3 | Sceptile (#254) | Blaziken (#257) | Swampert (#260) |
+| 4 | Torterra (#389) | Infernape (#392) | Empoleon (#395) |
+| 5 | Serperior (#497) | Emboar (#500) | Samurott (#503) |
+| 6 | Chesnaught (#652) | Delphox (#655) | Greninja (#658) |
+
+Charts on **By generation** compare raw six stats (not BST creep across gens).
+
 ## Caveats
 
 - Legendary/mythical flag inconsistency in the CSV.

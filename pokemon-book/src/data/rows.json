@@ -2,7 +2,7 @@
   "title": "Pok\u00e9mon base stats \u2014 Gen 1\u20136",
   "experimentId": "pokemon-gen1-6-reaudit-r3",
   "description": "Base stats by type slots, generation, legendary status, archetypes, and team-pool speed tiers.",
-  "generatedAt": "2026-11-15T07:44:37.770Z",
+  "generatedAt": "2026-11-15T07:47:29.603Z",
   "defaultTabId": "summary",
   "pages": [
     {
@@ -1309,6 +1309,633 @@
               },
               "flex": 1,
               "subtitle": "Non-legendary \u00b7 primary slot \u00b7 axis includes 0"
+            }
+          ]
+        },
+        {
+          "id": "md-gen-starters",
+          "type": "markdown",
+          "order": 5,
+          "createdBy": "skill",
+          "body": "### Starter trio stat profiles\n\nFinal-stage **base forms** of each generation\u2019s Grass / Fire / Water starter lines (18 species; primary slot). Grouped bars compare the six stats per Pok\u00e9mon; panels share a **0\u2013130** axis. Dex order left-to-right = Grass \u2192 Fire \u2192 Water."
+        },
+        {
+          "id": "comp-gen-starters-1-3",
+          "type": "component",
+          "order": 6,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 12,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-gen-starters-1",
+              "title": "Gen 1 starter finals \u2014 six base stats",
+              "query": {
+                "label": "starter finals stats Gen 1",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "generation",
+                    "op": "eq",
+                    "value": 1
+                  },
+                  {
+                    "column": "name",
+                    "op": "in",
+                    "value": [
+                      "Venusaur",
+                      "Charizard",
+                      "Blastoise"
+                    ]
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "dex_number",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "name",
+                "y": "hp"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "name",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "hp",
+                    "name": "HP",
+                    "colorIndex": 0
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "attack",
+                    "name": "Attack",
+                    "colorIndex": 1
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "defense",
+                    "name": "Defense",
+                    "colorIndex": 2
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_atk",
+                    "name": "Sp. Atk",
+                    "colorIndex": 3
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_def",
+                    "name": "Sp. Def",
+                    "colorIndex": 4
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "speed",
+                    "name": "Speed",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 300,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": true,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Venusaur \u00b7 Charizard \u00b7 Blastoise \u00b7 primary slot \u00b7 axis includes 0",
+              "notes": "Dex order = Grass \u2192 Fire \u2192 Water starter line."
+            },
+            {
+              "id": "chart-gen-starters-2",
+              "title": "Gen 2 starter finals \u2014 six base stats",
+              "query": {
+                "label": "starter finals stats Gen 2",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "generation",
+                    "op": "eq",
+                    "value": 2
+                  },
+                  {
+                    "column": "name",
+                    "op": "in",
+                    "value": [
+                      "Meganium",
+                      "Typhlosion",
+                      "Feraligatr"
+                    ]
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "dex_number",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "name",
+                "y": "hp"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "name",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "hp",
+                    "name": "HP",
+                    "colorIndex": 0
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "attack",
+                    "name": "Attack",
+                    "colorIndex": 1
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "defense",
+                    "name": "Defense",
+                    "colorIndex": 2
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_atk",
+                    "name": "Sp. Atk",
+                    "colorIndex": 3
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_def",
+                    "name": "Sp. Def",
+                    "colorIndex": 4
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "speed",
+                    "name": "Speed",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 300,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": true,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Meganium \u00b7 Typhlosion \u00b7 Feraligatr \u00b7 primary slot \u00b7 axis includes 0",
+              "notes": "Dex order = Grass \u2192 Fire \u2192 Water starter line."
+            },
+            {
+              "id": "chart-gen-starters-3",
+              "title": "Gen 3 starter finals \u2014 six base stats",
+              "query": {
+                "label": "starter finals stats Gen 3",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "generation",
+                    "op": "eq",
+                    "value": 3
+                  },
+                  {
+                    "column": "name",
+                    "op": "in",
+                    "value": [
+                      "Sceptile",
+                      "Blaziken",
+                      "Swampert"
+                    ]
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "dex_number",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "name",
+                "y": "hp"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "name",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "hp",
+                    "name": "HP",
+                    "colorIndex": 0
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "attack",
+                    "name": "Attack",
+                    "colorIndex": 1
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "defense",
+                    "name": "Defense",
+                    "colorIndex": 2
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_atk",
+                    "name": "Sp. Atk",
+                    "colorIndex": 3
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_def",
+                    "name": "Sp. Def",
+                    "colorIndex": 4
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "speed",
+                    "name": "Speed",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 300,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": true,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Sceptile \u00b7 Blaziken \u00b7 Swampert \u00b7 primary slot \u00b7 axis includes 0",
+              "notes": "Dex order = Grass \u2192 Fire \u2192 Water starter line."
+            }
+          ]
+        },
+        {
+          "id": "comp-gen-starters-4-6",
+          "type": "component",
+          "order": 7,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 12,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-gen-starters-4",
+              "title": "Gen 4 starter finals \u2014 six base stats",
+              "query": {
+                "label": "starter finals stats Gen 4",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "generation",
+                    "op": "eq",
+                    "value": 4
+                  },
+                  {
+                    "column": "name",
+                    "op": "in",
+                    "value": [
+                      "Torterra",
+                      "Infernape",
+                      "Empoleon"
+                    ]
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "dex_number",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "name",
+                "y": "hp"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "name",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "hp",
+                    "name": "HP",
+                    "colorIndex": 0
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "attack",
+                    "name": "Attack",
+                    "colorIndex": 1
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "defense",
+                    "name": "Defense",
+                    "colorIndex": 2
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_atk",
+                    "name": "Sp. Atk",
+                    "colorIndex": 3
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_def",
+                    "name": "Sp. Def",
+                    "colorIndex": 4
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "speed",
+                    "name": "Speed",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 300,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": true,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Torterra \u00b7 Infernape \u00b7 Empoleon \u00b7 primary slot \u00b7 axis includes 0",
+              "notes": "Dex order = Grass \u2192 Fire \u2192 Water starter line."
+            },
+            {
+              "id": "chart-gen-starters-5",
+              "title": "Gen 5 starter finals \u2014 six base stats",
+              "query": {
+                "label": "starter finals stats Gen 5",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "generation",
+                    "op": "eq",
+                    "value": 5
+                  },
+                  {
+                    "column": "name",
+                    "op": "in",
+                    "value": [
+                      "Serperior",
+                      "Emboar",
+                      "Samurott"
+                    ]
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "dex_number",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "name",
+                "y": "hp"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "name",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "hp",
+                    "name": "HP",
+                    "colorIndex": 0
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "attack",
+                    "name": "Attack",
+                    "colorIndex": 1
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "defense",
+                    "name": "Defense",
+                    "colorIndex": 2
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_atk",
+                    "name": "Sp. Atk",
+                    "colorIndex": 3
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_def",
+                    "name": "Sp. Def",
+                    "colorIndex": 4
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "speed",
+                    "name": "Speed",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 300,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": true,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Serperior \u00b7 Emboar \u00b7 Samurott \u00b7 primary slot \u00b7 axis includes 0",
+              "notes": "Dex order = Grass \u2192 Fire \u2192 Water starter line."
+            },
+            {
+              "id": "chart-gen-starters-6",
+              "title": "Gen 6 starter finals \u2014 six base stats",
+              "query": {
+                "label": "starter finals stats Gen 6",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "generation",
+                    "op": "eq",
+                    "value": 6
+                  },
+                  {
+                    "column": "name",
+                    "op": "in",
+                    "value": [
+                      "Chesnaught",
+                      "Delphox",
+                      "Greninja"
+                    ]
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "dex_number",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "name",
+                "y": "hp"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "name",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "hp",
+                    "name": "HP",
+                    "colorIndex": 0
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "attack",
+                    "name": "Attack",
+                    "colorIndex": 1
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "defense",
+                    "name": "Defense",
+                    "colorIndex": 2
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_atk",
+                    "name": "Sp. Atk",
+                    "colorIndex": 3
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_def",
+                    "name": "Sp. Def",
+                    "colorIndex": 4
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "speed",
+                    "name": "Speed",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 300,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": true,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Base stat"
+              },
+              "flex": 1,
+              "subtitle": "Chesnaught \u00b7 Delphox \u00b7 Greninja \u00b7 primary slot \u00b7 axis includes 0",
+              "notes": "Dex order = Grass \u2192 Fire \u2192 Water starter line."
             }
           ]
         }
