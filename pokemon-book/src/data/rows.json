@@ -1729,7 +1729,7 @@
           "id": "md-gen-intro",
           "type": "markdown",
           "createdBy": "skill",
-          "body": "## Generations\n\nIs there power creep? **Not a steady one.** Non-legendary strength dips in Gen 3, **jumps in Gen 4** (mean 424, median 453; Gen 4 added many evolutions of older lines, such as Magnezone, Rhyperior, and Togekiss), and settles back around 412 afterwards. Legendaries hover around 605–634 in every generation.",
+          "body": "## Generations\n\nIs there power creep? **Not a steady one.** Non-legendary strength dips in Gen 3, **jumps in Gen 4** (mean 424, median 453; Gen 4 added many evolutions of older lines, such as Magnezone, Rhyperior, and Togekiss), and settles back around 412 afterwards. Legendaries hover around 605–634 in every generation. Further down: how each generation's starter trio is built.",
           "order": 0
         },
         {
@@ -2045,11 +2045,11 @@
           "id": "md-gen-starters",
           "type": "markdown",
           "createdBy": "skill",
-          "body": "### Starter final evolutions\n\nEach generation ships a **Grass / Fire / Water** trio. Here we compare their **final stages only** (18 species): the stat profile bars show all six base stats side by side; the line chart tracks how each role's total moves across gens 1–6.\n\nAcross all six generations, **role averages cluster tightly** (Grass 527, Fire 532, Water 530; the entire band from min to max is only 10 points). **Gen 1** has the widest within-gen gap between its three finals (most gens are within 5–9 points; **Gen 5** ties all three at 528). Fire finals nudge slightly higher on average, but no starter line breaks out of the ~525–535 window Game Freak has used since Gen 1.",
+          "body": "### Starter final evolutions\n\nEvery generation's Grass, Fire, and Water starter lines end in a fully evolved species. This section compares those 18 base forms (Megas excluded).\n\n**The totals are fixed; the shapes are not.** All 18 finals total between **525 and 535** (role means: Grass 527, Fire 532, Water 530). That is just above the median of the other 116 non-legendary team-pool species (520): solid, not exceptional. The differences are in how the points are spent:\n\n- **Fire finals are fast, frail special attackers:** on average Sp. Atk 108 and Speed 93, but Defense 72, against 95 for Grass and 88 for Water. Gens 3–5 all made the Fire final part Fighting (Blaziken, Infernape, Emboar).\n- **Grass finals are the most defensive** (Defense 95, Sp. Def 90). Water finals have the most HP (86) and the least Speed (78).\n- **Gen 2 reused Gen 1's stat lines.** Typhlosion's six stats are identical to Charizard's, Meganium is Venusaur with Defense and Sp. Atk swapped, and Feraligatr is Blastoise's six numbers reshuffled toward Attack.\n- Starters are built as generalists: 1 qualifies as a glass cannon (Blaziken) and none as a tank.\n\nWith 6 species per role, read the role averages as a description of design choices, not a trend.\n\n| Generation | Grass | Fire | Water |\n|---|---|---|---|\n| Gen 1 | Venusaur 525 | Charizard 534 | Blastoise 530 |\n| Gen 2 | Meganium 525 | Typhlosion 534 | Feraligatr 530 |\n| Gen 3 | Sceptile 530 | Blaziken 530 | Swampert 535 |\n| Gen 4 | Torterra 525 | Infernape 534 | Empoleon 530 |\n| Gen 5 | Serperior 528 | Emboar 528 | Samurott 528 |\n| Gen 6 | Chesnaught 530 | Delphox 534 | Greninja 530 |",
           "order": 3
         },
         {
-          "id": "comp-starter-totals",
+          "id": "comp-starter-profile",
           "type": "component",
           "createdBy": "skill",
           "layout": {
@@ -2059,109 +2059,11 @@
           },
           "components": [
             {
-              "id": "chart-starter-total-lines",
-              "title": "Starter final base stat total by generation",
-              "subtitle": "One point per generation for each starter role",
+              "id": "chart-starter-role-profile",
+              "title": "Average stat profile by starter role",
+              "subtitle": "18 starter finals (6 per role), mean of each base stat",
               "query": {
-                "label": "Starter final base stat total by generation",
-                "filter": [
-                  {
-                    "column": "type_slot",
-                    "op": "eq",
-                    "value": "Primary"
-                  },
-                  {
-                    "column": "is_primary_form",
-                    "op": "eq",
-                    "value": true
-                  },
-                  {
-                    "column": "is_starter_final",
-                    "op": "eq",
-                    "value": true
-                  }
-                ],
-                "groupBy": [
-                  "generation"
-                ],
-                "aggregate": [
-                  {
-                    "fn": "mean",
-                    "column": "total_starter_grass",
-                    "as": "grass",
-                    "label": "Grass"
-                  },
-                  {
-                    "fn": "mean",
-                    "column": "total_starter_fire",
-                    "as": "fire",
-                    "label": "Fire"
-                  },
-                  {
-                    "fn": "mean",
-                    "column": "total_starter_water",
-                    "as": "water",
-                    "label": "Water"
-                  }
-                ],
-                "orderBy": [
-                  {
-                    "column": "generation"
-                  }
-                ]
-              },
-              "encoding": {
-                "x": "generation",
-                "y": "fire",
-                "color": "starter_type"
-              },
-              "recharts": {
-                "showGrid": true,
-                "showTooltip": true,
-                "chart": "LineChart",
-                "xKey": "generation",
-                "series": [
-                  {
-                    "mark": "Line",
-                    "dataKey": "grass",
-                    "name": "Grass",
-                    "dot": true,
-                    "type": "linear",
-                    "colorIndex": 0
-                  },
-                  {
-                    "mark": "Line",
-                    "dataKey": "fire",
-                    "name": "Fire",
-                    "dot": true,
-                    "type": "linear",
-                    "colorIndex": 3
-                  },
-                  {
-                    "mark": "Line",
-                    "dataKey": "water",
-                    "name": "Water",
-                    "dot": true,
-                    "type": "linear",
-                    "colorIndex": 4
-                  }
-                ],
-                "yLabel": "Base stat total",
-                "yDomain": [
-                  500,
-                  630
-                ],
-                "decimals": 0
-              },
-              "flex": 2,
-              "notes": "Lines stay flat: every final sits between 525 and 535; Gen 5 is a perfect three-way tie."
-            },
-            {
-              "id": "chart-starter-total-bars",
-              "title": "Starter finals: mean total by role",
-              "subtitle": "Averaged across gens 1–6",
-              "query": {
-                "label": "Starter finals: mean total by role",
+                "label": "Average stat profile by starter role",
                 "filter": [
                   {
                     "column": "type_slot",
@@ -2185,9 +2087,39 @@
                 "aggregate": [
                   {
                     "fn": "mean",
-                    "column": "total",
-                    "as": "mean_total",
-                    "label": "Mean total"
+                    "column": "hp",
+                    "as": "mean_hp",
+                    "label": "Mean HP"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "attack",
+                    "as": "mean_attack",
+                    "label": "Mean Attack"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "defense",
+                    "as": "mean_defense",
+                    "label": "Mean Defense"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "sp_atk",
+                    "as": "mean_sp_atk",
+                    "label": "Mean Sp. Atk"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "sp_def",
+                    "as": "mean_sp_def",
+                    "label": "Mean Sp. Def"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "speed",
+                    "as": "mean_speed",
+                    "label": "Mean Speed"
                   }
                 ],
                 "orderBy": [
@@ -2198,7 +2130,8 @@
               },
               "encoding": {
                 "x": "starter_type",
-                "y": "mean_total"
+                "y": "mean_defense",
+                "color": "stat"
               },
               "recharts": {
                 "showGrid": true,
@@ -2208,19 +2141,50 @@
                 "series": [
                   {
                     "mark": "Bar",
-                    "dataKey": "mean_total",
-                    "name": "Mean base stat total"
+                    "dataKey": "mean_hp",
+                    "name": "HP"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_attack",
+                    "name": "Attack"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_defense",
+                    "name": "Defense"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_sp_atk",
+                    "name": "Sp. Atk"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_sp_def",
+                    "name": "Sp. Def"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_speed",
+                    "name": "Speed"
                   }
                 ],
-                "yLabel": "Mean base stat total",
+                "yLabel": "Mean base stat",
+                "decimals": 1,
                 "yDomain": [
-                  520,
-                  540
+                  0,
+                  130
                 ],
-                "decimals": 0
+                "valueTicks": [
+                  0,
+                  40,
+                  80,
+                  120
+                ]
               },
               "flex": 1,
-              "notes": "Y axis is zoomed to the 520–540 band where most finals live."
+              "notes": "Same scale as the per-generation panels below. Fire gives up Defense for Sp. Atk and Speed; Grass is the most defensive."
             }
           ],
           "order": 4
@@ -2237,10 +2201,10 @@
           "components": [
             {
               "id": "chart-starter-gen1",
-              "title": "Starter finals · Gen 1",
-              "subtitle": "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
+              "title": "Gen 1 starter finals",
+              "subtitle": "Grass, Fire, Water final; base stats",
               "query": {
-                "label": "Starter finals · Gen 1",
+                "label": "Gen 1 starter finals",
                 "filter": [
                   {
                     "column": "type_slot",
@@ -2265,20 +2229,20 @@
                 ],
                 "orderBy": [
                   {
-                    "column": "starter_type"
+                    "column": "dex"
                   }
                 ]
               },
               "encoding": {
-                "x": "starter_type",
-                "y": "hp",
+                "x": "name",
+                "y": "attack",
                 "color": "stat"
               },
               "recharts": {
                 "showGrid": true,
                 "showTooltip": true,
                 "chart": "BarChart",
-                "xKey": "starter_type",
+                "xKey": "name",
                 "series": [
                   {
                     "mark": "Bar",
@@ -2312,16 +2276,28 @@
                   }
                 ],
                 "yLabel": "Base stat",
-                "decimals": 0
+                "height": 260,
+                "decimals": 0,
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "valueTicks": [
+                  0,
+                  40,
+                  80,
+                  120
+                ]
               },
-              "flex": 1
+              "flex": 1,
+              "notes": "Charizard leads Sp. Atk (109) and Speed (100); Blastoise leads the defences (Defense 100, Sp. Def 105)."
             },
             {
               "id": "chart-starter-gen2",
-              "title": "Starter finals · Gen 2",
-              "subtitle": "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
+              "title": "Gen 2 starter finals",
+              "subtitle": "Grass, Fire, Water final; base stats",
               "query": {
-                "label": "Starter finals · Gen 2",
+                "label": "Gen 2 starter finals",
                 "filter": [
                   {
                     "column": "type_slot",
@@ -2346,20 +2322,20 @@
                 ],
                 "orderBy": [
                   {
-                    "column": "starter_type"
+                    "column": "dex"
                   }
                 ]
               },
               "encoding": {
-                "x": "starter_type",
-                "y": "hp",
+                "x": "name",
+                "y": "attack",
                 "color": "stat"
               },
               "recharts": {
                 "showGrid": true,
                 "showTooltip": true,
                 "chart": "BarChart",
-                "xKey": "starter_type",
+                "xKey": "name",
                 "series": [
                   {
                     "mark": "Bar",
@@ -2393,16 +2369,28 @@
                   }
                 ],
                 "yLabel": "Base stat",
-                "decimals": 0
+                "height": 260,
+                "decimals": 0,
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "valueTicks": [
+                  0,
+                  40,
+                  80,
+                  120
+                ]
               },
-              "flex": 1
+              "flex": 1,
+              "notes": "Gen 1's numbers, reused: Typhlosion's six stats equal Charizard's, and Meganium is Venusaur with Defense and Sp. Atk swapped."
             },
             {
               "id": "chart-starter-gen3",
-              "title": "Starter finals · Gen 3",
-              "subtitle": "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
+              "title": "Gen 3 starter finals",
+              "subtitle": "Grass, Fire, Water final; base stats",
               "query": {
-                "label": "Starter finals · Gen 3",
+                "label": "Gen 3 starter finals",
                 "filter": [
                   {
                     "column": "type_slot",
@@ -2427,20 +2415,20 @@
                 ],
                 "orderBy": [
                   {
-                    "column": "starter_type"
+                    "column": "dex"
                   }
                 ]
               },
               "encoding": {
-                "x": "starter_type",
-                "y": "hp",
+                "x": "name",
+                "y": "attack",
                 "color": "stat"
               },
               "recharts": {
                 "showGrid": true,
                 "showTooltip": true,
                 "chart": "BarChart",
-                "xKey": "starter_type",
+                "xKey": "name",
                 "series": [
                   {
                     "mark": "Bar",
@@ -2474,9 +2462,21 @@
                   }
                 ],
                 "yLabel": "Base stat",
-                "decimals": 0
+                "height": 260,
+                "decimals": 0,
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "valueTicks": [
+                  0,
+                  40,
+                  80,
+                  120
+                ]
               },
-              "flex": 1
+              "flex": 1,
+              "notes": "The most specialised trio: Sceptile is fast (Speed 120), Blaziken is the only starter final that qualifies as a glass cannon, and Swampert is the bulkiest (HP 100)."
             }
           ],
           "order": 5
@@ -2493,10 +2493,10 @@
           "components": [
             {
               "id": "chart-starter-gen4",
-              "title": "Starter finals · Gen 4",
-              "subtitle": "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
+              "title": "Gen 4 starter finals",
+              "subtitle": "Grass, Fire, Water final; base stats",
               "query": {
-                "label": "Starter finals · Gen 4",
+                "label": "Gen 4 starter finals",
                 "filter": [
                   {
                     "column": "type_slot",
@@ -2521,20 +2521,20 @@
                 ],
                 "orderBy": [
                   {
-                    "column": "starter_type"
+                    "column": "dex"
                   }
                 ]
               },
               "encoding": {
-                "x": "starter_type",
-                "y": "hp",
+                "x": "name",
+                "y": "attack",
                 "color": "stat"
               },
               "recharts": {
                 "showGrid": true,
                 "showTooltip": true,
                 "chart": "BarChart",
-                "xKey": "starter_type",
+                "xKey": "name",
                 "series": [
                   {
                     "mark": "Bar",
@@ -2568,16 +2568,28 @@
                   }
                 ],
                 "yLabel": "Base stat",
-                "decimals": 0
+                "height": 260,
+                "decimals": 0,
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "valueTicks": [
+                  0,
+                  40,
+                  80,
+                  120
+                ]
               },
-              "flex": 1
+              "flex": 1,
+              "notes": "Torterra trades Speed (56) for Attack and Defense; Infernape is fast and frail (Speed 108, Defense 71); Empoleon leads Sp. Atk (111)."
             },
             {
               "id": "chart-starter-gen5",
-              "title": "Starter finals · Gen 5",
-              "subtitle": "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
+              "title": "Gen 5 starter finals",
+              "subtitle": "Grass, Fire, Water final; base stats",
               "query": {
-                "label": "Starter finals · Gen 5",
+                "label": "Gen 5 starter finals",
                 "filter": [
                   {
                     "column": "type_slot",
@@ -2602,20 +2614,20 @@
                 ],
                 "orderBy": [
                   {
-                    "column": "starter_type"
+                    "column": "dex"
                   }
                 ]
               },
               "encoding": {
-                "x": "starter_type",
-                "y": "hp",
+                "x": "name",
+                "y": "attack",
                 "color": "stat"
               },
               "recharts": {
                 "showGrid": true,
                 "showTooltip": true,
                 "chart": "BarChart",
-                "xKey": "starter_type",
+                "xKey": "name",
                 "series": [
                   {
                     "mark": "Bar",
@@ -2649,16 +2661,28 @@
                   }
                 ],
                 "yLabel": "Base stat",
-                "decimals": 0
+                "height": 260,
+                "decimals": 0,
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "valueTicks": [
+                  0,
+                  40,
+                  80,
+                  120
+                ]
               },
-              "flex": 1
+              "flex": 1,
+              "notes": "All three total exactly 528. Emboar has the highest Attack of any starter final (123); Serperior is a Speed build (113)."
             },
             {
               "id": "chart-starter-gen6",
-              "title": "Starter finals · Gen 6",
-              "subtitle": "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
+              "title": "Gen 6 starter finals",
+              "subtitle": "Grass, Fire, Water final; base stats",
               "query": {
-                "label": "Starter finals · Gen 6",
+                "label": "Gen 6 starter finals",
                 "filter": [
                   {
                     "column": "type_slot",
@@ -2683,20 +2707,20 @@
                 ],
                 "orderBy": [
                   {
-                    "column": "starter_type"
+                    "column": "dex"
                   }
                 ]
               },
               "encoding": {
-                "x": "starter_type",
-                "y": "hp",
+                "x": "name",
+                "y": "attack",
                 "color": "stat"
               },
               "recharts": {
                 "showGrid": true,
                 "showTooltip": true,
                 "chart": "BarChart",
-                "xKey": "starter_type",
+                "xKey": "name",
                 "series": [
                   {
                     "mark": "Bar",
@@ -2730,9 +2754,21 @@
                   }
                 ],
                 "yLabel": "Base stat",
-                "decimals": 0
+                "height": 260,
+                "decimals": 0,
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "valueTicks": [
+                  0,
+                  40,
+                  80,
+                  120
+                ]
               },
-              "flex": 1
+              "flex": 1,
+              "notes": "Greninja is the fastest starter final (Speed 122) and Chesnaught has the highest Defense (122)."
             }
           ],
           "order": 6

@@ -13,6 +13,26 @@
     "archetype_gap_sd": 1.0,
     "archetype_floor_sd": 0.5,
     "team_pool_min_total": 500,
+    "starter_finals": {
+      "Venusaur": "Grass",
+      "Charizard": "Fire",
+      "Blastoise": "Water",
+      "Meganium": "Grass",
+      "Typhlosion": "Fire",
+      "Feraligatr": "Water",
+      "Sceptile": "Grass",
+      "Blaziken": "Fire",
+      "Swampert": "Water",
+      "Torterra": "Grass",
+      "Infernape": "Fire",
+      "Empoleon": "Water",
+      "Serperior": "Grass",
+      "Emboar": "Fire",
+      "Samurott": "Water",
+      "Chesnaught": "Grass",
+      "Delphox": "Fire",
+      "Greninja": "Water"
+    },
     "archetype_scale": {
       "offense": {
         "mean": 84.825,
@@ -31,7 +51,7 @@
   "output": {
     "path": "src/data/canonical.json",
     "rows": 1214,
-    "hash": "da263f866077"
+    "hash": "0cdf50bfc6af"
   },
-  "builtAt": "2026-11-15T06:11:14Z"
+  "builtAt": "2026-11-15T06:15:37Z"
 }

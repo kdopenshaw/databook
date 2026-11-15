@@ -167,6 +167,36 @@ describe('canonical sanity (numbers quoted in markdown)', () => {
     }
   });
 
+  it('starter finals: one per generation × role, totals 525–535, claims in the prose and notes hold', () => {
+    const starters = runQuery(table, { filter: [...BASE, { column: 'is_starter_final', op: 'eq', value: true }], orderBy: [{ column: 'dex' }] });
+    expect(starters).toHaveLength(18);
+    const slots = new Set(starters.map((r) => `${r.generation}|${r.starter_type}`));
+    expect(slots.size).toBe(18);
+    const by = (name: string) => starters.find((r) => r.name === name)!;
+    const stats = (r: DataRow) => ['hp', 'attack', 'defense', 'sp_atk', 'sp_def', 'speed'].map((k) => r[k] as number);
+    expect(Math.min(...starters.map((r) => r.total as number))).toBe(525);
+    expect(Math.max(...starters.map((r) => r.total as number))).toBe(535);
+    expect(starters.filter((r) => r.generation === 'Gen 5').map((r) => r.total)).toEqual([528, 528, 528]);
+    expect(stats(by('Typhlosion'))).toEqual(stats(by('Charizard')));
+    const [v, m] = [stats(by('Venusaur')), stats(by('Meganium'))];
+    expect(m).toEqual([v[0], v[1], v[3], v[2], v[4], v[5]]);
+    const sorted = (xs: number[]) => [...xs].sort((a, b) => a - b);
+    expect(sorted(stats(by('Feraligatr')))).toEqual(sorted(stats(by('Blastoise'))));
+    const top = (k: string) => [...starters].sort((a, b) => (b[k] as number) - (a[k] as number))[0].name;
+    expect([top('attack'), top('speed'), top('defense')]).toEqual(['Emboar', 'Greninja', 'Chesnaught']);
+    expect(starters.filter((r) => r.is_glass_cannon).map((r) => r.name)).toEqual(['Blaziken']);
+    expect(starters.filter((r) => r.is_tank)).toHaveLength(0);
+
+    const grid = tableRows(mdBody('generations', 'md-gen-starters'));
+    expect(grid).toHaveLength(6);
+    for (const [gen, ...cells] of grid) {
+      cells.forEach((cell, i) => {
+        const r = starters.find((s) => s.generation === gen && s.starter_type === ['Grass', 'Fire', 'Water'][i])!;
+        expect(cell).toBe(`${r.name} ${r.total}`);
+      });
+    }
+  });
+
   it('Mega/Primal uplift is +100 except one +90', () => {
     const rows = runQuery(table, {
       filter: [BASE[0], { column: 'mega_uplift', op: 'not_null' }],
@@ -177,5 +207,57 @@ describe('canonical sanity (numbers quoted in markdown)', () => {
       { mega_uplift: 90, n: 1 },
       { mega_uplift: 100, n: 49 },
     ]);
+  });
+});
+
+// House rules from the round-4 data-viz review; a new chart that breaks one fails here.
+describe('book conventions', () => {
+  const STAT_INDEX: Record<string, number> = { hp: 0, attack: 1, defense: 2, sp_atk: 3, sp_def: 4, speed: 5 };
+  const statOf = (dataKey: string) => dataKey.replace(/^mean_/, '');
+  const rowsWithCharts = book.tabs.flatMap((t) => t.rows.flatMap((r) => (r.type === 'component' ? [r] : [])));
+
+  it('bar charts start their value axis at zero', () => {
+    for (const b of blocks) {
+      if (b.recharts.chart !== 'BarChart' || !b.recharts.yDomain) continue;
+      expect(Number(b.recharts.yDomain[0]), b.id).toBeLessThanOrEqual(0);
+    }
+  });
+
+  it('line charts that do not start at zero say so', () => {
+    for (const b of blocks) {
+      const d = b.recharts.yDomain;
+      if (b.recharts.chart !== 'LineChart' || !d || Number(d[0]) <= 0) continue;
+      expect(`${b.subtitle ?? ''} ${b.notes ?? ''}`, b.id).toMatch(/axis starts at/i);
+    }
+  });
+
+  it('side-by-side charts of the same measures share a fixed value scale', () => {
+    for (const row of rowsWithCharts) {
+      const groups = new Map<string, ChartBlock[]>();
+      for (const b of row.components) {
+        const sig = `${b.recharts.chart}|${b.recharts.xKey}|${(b.recharts.series ?? []).map((s) => s.dataKey).join(',')}`;
+        groups.set(sig, [...(groups.get(sig) ?? []), b]);
+      }
+      for (const group of groups.values()) {
+        if (group.length < 2) continue;
+        for (const b of group) {
+          expect(b.recharts.yDomain, `${b.id} needs a fixed yDomain`).toBeDefined();
+          expect(b.recharts.yDomain, b.id).toEqual(group[0].recharts.yDomain);
+          expect(b.recharts.xDomain, b.id).toEqual(group[0].recharts.xDomain);
+        }
+      }
+    }
+  });
+
+  it('in stat-only charts each stat keeps its colour (HP, Attack, Defense, Sp. Atk, Sp. Def, Speed = palette 1–6)', () => {
+    for (const b of blocks) {
+      const series = b.recharts.series ?? [];
+      if (b.recharts.chart === 'ScatterChart' || !series.length || !series.every((s) => statOf(s.dataKey) in STAT_INDEX)) continue;
+      series.forEach((s, i) => expect(s.colorIndex ?? i, `${b.id} → ${s.dataKey}`).toBe(STAT_INDEX[statOf(s.dataKey)]));
+    }
+  });
+
+  it('starter charts carry a takeaway note', () => {
+    for (const b of blocks.filter((x) => x.id.startsWith('chart-starter-'))) expect((b.notes ?? '').length, b.id).toBeGreaterThan(20);
   });
 });

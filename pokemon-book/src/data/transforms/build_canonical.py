@@ -184,10 +184,7 @@ def main() -> None:
 
         st = STARTER_FINAL_SPECIES.get(row["species"]) if row["is_primary_form"] else None
         row["is_starter_final"] = st is not None
-        row["starter_type"] = st if st else None
-        for role in STARTER_TYPES:
-            col = f"total_starter_{role.lower()}"
-            row[col] = t if st == role else None
+        row["starter_type"] = st
 
     q = lambda name, label, unit=None, **kw: {"name": name, "type": "quantitative", "label": label, "nullable": False, **({"unit": unit} if unit else {}), **kw}
     c = lambda name, label, levels=None, **kw: {"name": name, "type": "categorical", "label": label, "nullable": False, **({"levels": levels} if levels else {}), **kw}
@@ -233,12 +230,12 @@ def main() -> None:
         q("total_dual", "Total (dual-type only)", "points", nullable=True, description="Pivot helper: total if dual-type else null"),
         b("is_starter_final", "Starter final evolution", description="Base form of a Gen 1–6 starter's last stage (18 species)"),
         c("starter_type", "Starter type", STARTER_TYPES, nullable=True, description="Grass / Fire / Water role; null outside starter finals"),
-        *[
-            q(f"total_starter_{role.lower()}", f"Total (starter {role.lower()} only)", "points", nullable=True,
-              description=f"Pivot helper: total if starter_type = {role} else null")
-            for role in STARTER_TYPES
-        ],
     ]
+
+    starter_slots = sorted((r["generation"], r["starter_type"]) for r in species_rows if r["is_starter_final"])
+    expected_slots = sorted((g, role) for g in {r["generation"] for r in species_rows} for role in STARTER_TYPES)
+    if starter_slots != expected_slots:
+        raise SystemExit(f"starter finals must be one per (generation, role); got {starter_slots}")
 
     built_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     body = json.dumps(out, ensure_ascii=False, separators=(",", ":"))
@@ -264,6 +261,7 @@ def main() -> None:
                     "archetype_gap_sd": ARCHETYPE_GAP,
                     "archetype_floor_sd": ARCHETYPE_FLOOR,
                     "team_pool_min_total": TEAM_POOL_MIN_TOTAL,
+                    "starter_finals": STARTER_FINAL_SPECIES,
                     "archetype_scale": {k: {"mean": round(m, 3), "sd": round(s, 3)} for k, (m, s) in scale.items()},
                 },
                 "output": {"path": "src/data/canonical.json", "rows": len(out), "hash": dataset["hash"]},

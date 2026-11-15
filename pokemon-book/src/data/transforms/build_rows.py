@@ -8,6 +8,19 @@ places them between generated rows). Run build_canonical.py first if canonical
 columns changed.
 
 Usage (from the book root):  python3 src/data/transforms/build_rows.py
+Then: npm test (book.test.ts enforces the conventions below and the numbers quoted in prose).
+
+House conventions (read before adding a section; AGENT_NOTES.md has the history):
+- Population: per-species charts filter BASE (721 base forms, one row each). Megas get their own section.
+- Bars start at zero. A line chart may zoom its y-axis, but its subtitle or note must say "Y axis starts at N".
+- Small multiples (same chart type, x, and series in one row) share a fixed yDomain (and xDomain), and name
+  what each panel shows on its axis (e.g. species names, not a role label shared by every panel).
+- Colours: stats are fixed (HP, Attack, Defense, Sp. Atk, Sp. Def, Speed = colorIndex 0–5; STAT_SERIES/STAT_BARS
+  get this by position). Orange (1) otherwise means legendary; archetypes are glass cannon 5, tank 2, neither 7.
+- Every chart has a note with the takeaway. Prose numbers are computed from CANONICAL here, never typed in,
+  and anything that must stay true gets a test in book.test.ts.
+- Tiny groups (n under about 10) get a caveat; a handful of values reads better as a markdown table than as a chart.
+- New canonical columns go in build_canonical.py, src/data/understanding.md (derived columns), and the manifest params.
 """
 
 import copy
@@ -98,34 +111,62 @@ def tab(id, label, rows):
     return {"id": id, "label": label, "rows": rows}
 
 
-def starter_gen_chart(chart_id, gen, title=None):
-    title = title or f"Starter finals · {gen}"
+STARTER_Y = {"yDomain": [0, 130], "valueTicks": [0, 40, 80, 120]}
+STARTER_GEN_NOTES = {
+    "Gen 1": "Charizard leads Sp. Atk (109) and Speed (100); Blastoise leads the defences (Defense 100, Sp. Def 105).",
+    "Gen 2": "Gen 1's numbers, reused: Typhlosion's six stats equal Charizard's, and Meganium is Venusaur with Defense and Sp. Atk swapped.",
+    "Gen 3": "The most specialised trio: Sceptile is fast (Speed 120), Blaziken is the only starter final that qualifies as a glass cannon, and Swampert is the bulkiest (HP 100).",
+    "Gen 4": "Torterra trades Speed (56) for Attack and Defense; Infernape is fast and frail (Speed 108, Defense 71); Empoleon leads Sp. Atk (111).",
+    "Gen 5": "All three total exactly 528. Emboar has the highest Attack of any starter final (123); Serperior is a Speed build (113).",
+    "Gen 6": "Greninja is the fastest starter final (Speed 122) and Chesnaught has the highest Defense (122).",
+}
+
+
+def starter_gen_chart(gen):
+    n = gen.split()[-1]
     return chart(
-        chart_id,
-        title,
-        "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
-        {"filter": BASE + [STARTER, {"column": "generation", "op": "eq", "value": gen}],
-         "orderBy": [{"column": "starter_type"}]},
-        {"chart": "BarChart", "xKey": "starter_type", "series": STAT_BARS, "yLabel": "Base stat", "decimals": 0},
-        {"x": "starter_type", "y": "hp", "color": "stat"},
+        f"chart-starter-gen{n}", f"{gen} starter finals", "Grass, Fire, Water final; base stats",
+        {"filter": BASE + [STARTER, {"column": "generation", "op": "eq", "value": gen}], "orderBy": [{"column": "dex"}]},
+        {"chart": "BarChart", "xKey": "name", "series": STAT_BARS, "yLabel": "Base stat", "height": 260, "decimals": 0, **STARTER_Y},
+        {"x": "name", "y": "attack", "color": "stat"},
+        STARTER_GEN_NOTES[gen],
     )
 
 
+def starter_table():
+    """Gen x role grid of starter finals with totals; checked by book.test.ts."""
+    lines = ["| Generation | Grass | Fire | Water |", "|---|---|---|---|"]
+    for gen in sorted({r["generation"] for r in STARTERS}):
+        cell = {r["starter_type"]: f"{r['name']} {r['total']}" for r in STARTERS if r["generation"] == gen}
+        lines.append(f"| {gen} | {cell['Grass']} | {cell['Fire']} | {cell['Water']} |")
+    return "\n".join(lines)
+
+
 def starter_insights_md():
-    """Short prose for the Generations → starter section (derived from canonical)."""
-    by_gen = {}
-    for r in STARTERS:
-        by_gen.setdefault(r["generation"], []).append(r)
-    totals = {role: [x["total"] for x in STARTERS if x["starter_type"] == role] for role in ("Grass", "Fire", "Water")}
-    role_means = {k: round(statistics.fmean(v)) for k, v in totals.items()}
-    spread = max(r["total"] for r in STARTERS) - min(r["total"] for r in STARTERS)
-    widest = max(by_gen, key=lambda g: max(x["total"] for x in by_gen[g]) - min(x["total"] for x in by_gen[g]))
+    roles = ("Grass", "Fire", "Water")
+    by_role = {role: [r for r in STARTERS if r["starter_type"] == role] for role in roles}
+    mean = lambda rs, k: round(statistics.fmean(r[k] for r in rs))
+    totals = [r["total"] for r in STARTERS]
+    pool = [r["total"] for r in SPECIES if r["in_team_pool"] and not r["is_starter_final"]]
+    fire, grass, water = by_role["Fire"], by_role["Grass"], by_role["Water"]
+    fire_fighting = [r["name"] for r in sorted(fire, key=lambda r: r["dex"]) if r["type2"] == "Fighting"]
+    glass = [r["name"] for r in STARTERS if r["is_glass_cannon"]]
+    tanks = [r["name"] for r in STARTERS if r["is_tank"]]
     return f"""
 ### Starter final evolutions
 
-Each generation ships a **Grass / Fire / Water** trio. Here we compare their **final stages only** (18 species): the stat profile bars show all six base stats side by side; the line chart tracks how each role's total moves across gens 1–6.
+Every generation's Grass, Fire, and Water starter lines end in a fully evolved species. This section compares those {len(STARTERS)} base forms (Megas excluded).
 
-Across all six generations, **role averages cluster tightly** (Grass {role_means['Grass']}, Fire {role_means['Fire']}, Water {role_means['Water']}; the entire band from min to max is only {spread} points). **{widest}** has the widest within-gen gap between its three finals (most gens are within 5–9 points; **Gen 5** ties all three at 528). Fire finals nudge slightly higher on average, but no starter line breaks out of the ~525–535 window Game Freak has used since Gen 1.
+**The totals are fixed; the shapes are not.** All {len(STARTERS)} finals total between **{min(totals)} and {max(totals)}** (role means: Grass {mean(grass, 'total')}, Fire {mean(fire, 'total')}, Water {mean(water, 'total')}). That is just above the median of the other {len(pool)} non-legendary team-pool species ({statistics.median(pool):.0f}): solid, not exceptional. The differences are in how the points are spent:
+
+- **Fire finals are fast, frail special attackers:** on average Sp. Atk {mean(fire, 'sp_atk')} and Speed {mean(fire, 'speed')}, but Defense {mean(fire, 'defense')}, against {mean(grass, 'defense')} for Grass and {mean(water, 'defense')} for Water. Gens 3–5 all made the Fire final part Fighting ({", ".join(fire_fighting)}).
+- **Grass finals are the most defensive** (Defense {mean(grass, 'defense')}, Sp. Def {mean(grass, 'sp_def')}). Water finals have the most HP ({mean(water, 'hp')}) and the least Speed ({mean(water, 'speed')}).
+- **Gen 2 reused Gen 1's stat lines.** Typhlosion's six stats are identical to Charizard's, Meganium is Venusaur with Defense and Sp. Atk swapped, and Feraligatr is Blastoise's six numbers reshuffled toward Attack.
+- Starters are built as generalists: {len(glass)} qualifies as a glass cannon ({", ".join(glass)}) and {len(tanks) or "none"} as a tank.
+
+With 6 species per role, read the role averages as a description of design choices, not a trend.
+
+{starter_table()}
 """.strip()
 
 
@@ -375,7 +416,7 @@ gens = tab("generations", "Generations", [
     md("md-gen-intro", """
 ## Generations
 
-Is there power creep? **Not a steady one.** Non-legendary strength dips in Gen 3, **jumps in Gen 4** (mean 424, median 453; Gen 4 added many evolutions of older lines, such as Magnezone, Rhyperior, and Togekiss), and settles back around 412 afterwards. Legendaries hover around 605–634 in every generation.
+Is there power creep? **Not a steady one.** Non-legendary strength dips in Gen 3, **jumps in Gen 4** (mean 424, median 453; Gen 4 added many evolutions of older lines, such as Magnezone, Rhyperior, and Togekiss), and settles back around 412 afterwards. Legendaries hover around 605–634 in every generation. Further down: how each generation's starter trio is built.
 """),
     comp("comp-gen-total",
         chart("chart-gen-total", "Base stat total by generation", "Base forms; mean (and non-legendary median) per generation; Y axis starts at 300",
@@ -409,41 +450,16 @@ Is there power creep? **Not a steady one.** Non-legendary strength dips in Gen 3
               "Y axis starts at 50 to show the spread; every stat moves within about 20 points. Gen 4's bump is broad (HP, Attack, Defense, and Sp. Def all rise), and Attack keeps climbing into Gen 5."),
     ),
     md("md-gen-starters", starter_insights_md()),
-    comp("comp-starter-totals",
-        chart("chart-starter-total-lines", "Starter final base stat total by generation", "One point per generation for each starter role",
-              {"filter": BASE + [STARTER], "groupBy": ["generation"],
-               "aggregate": [
-                   {"fn": "mean", "column": "total_starter_grass", "as": "grass", "label": "Grass"},
-                   {"fn": "mean", "column": "total_starter_fire", "as": "fire", "label": "Fire"},
-                   {"fn": "mean", "column": "total_starter_water", "as": "water", "label": "Water"},
-               ],
-               "orderBy": [{"column": "generation"}]},
-              {"chart": "LineChart", "xKey": "generation", "series": [
-                  {"mark": "Line", "dataKey": "grass", "name": "Grass", "dot": True, "type": "linear", "colorIndex": 0},
-                  {"mark": "Line", "dataKey": "fire", "name": "Fire", "dot": True, "type": "linear", "colorIndex": 3},
-                  {"mark": "Line", "dataKey": "water", "name": "Water", "dot": True, "type": "linear", "colorIndex": 4}],
-               "yLabel": "Base stat total", "yDomain": [500, 630], "decimals": 0},
-              {"x": "generation", "y": "fire", "color": "starter_type"},
-              "Lines stay flat: every final sits between 525 and 535; Gen 5 is a perfect three-way tie.", flex=2),
-        chart("chart-starter-total-bars", "Starter finals: mean total by role", "Averaged across gens 1–6",
-              {"filter": BASE + [STARTER], "groupBy": ["starter_type"],
-               "aggregate": [{"fn": "mean", "column": "total", "as": "mean_total", "label": "Mean total"}],
-               "orderBy": [{"column": "starter_type"}]},
-              {"chart": "BarChart", "xKey": "starter_type", "series": [{"mark": "Bar", "dataKey": "mean_total", "name": "Mean base stat total"}],
-               "yLabel": "Mean base stat total", "yDomain": [520, 540], "decimals": 0},
-              {"x": "starter_type", "y": "mean_total"},
-              "Y axis is zoomed to the 520–540 band; all 18 finals fall inside it."),
+    comp("comp-starter-profile",
+        chart("chart-starter-role-profile", "Average stat profile by starter role", "18 starter finals (6 per role), mean of each base stat",
+              {"filter": BASE + [STARTER], "groupBy": ["starter_type"], "aggregate": STAT_AGGS, "orderBy": [{"column": "starter_type"}]},
+              {"chart": "BarChart", "xKey": "starter_type", "series": STAT_SERIES, "yLabel": "Mean base stat", "decimals": 1,
+               "yDomain": [0, 130], "valueTicks": [0, 40, 80, 120]},
+              {"x": "starter_type", "y": "mean_defense", "color": "stat"},
+              "Same scale as the per-generation panels below. Fire gives up Defense for Sp. Atk and Speed; Grass is the most defensive."),
     ),
-    comp("comp-starter-gens-1-3",
-        starter_gen_chart("chart-starter-gen1", "Gen 1"),
-        starter_gen_chart("chart-starter-gen2", "Gen 2"),
-        starter_gen_chart("chart-starter-gen3", "Gen 3"),
-    ),
-    comp("comp-starter-gens-4-6",
-        starter_gen_chart("chart-starter-gen4", "Gen 4"),
-        starter_gen_chart("chart-starter-gen5", "Gen 5"),
-        starter_gen_chart("chart-starter-gen6", "Gen 6"),
-    ),
+    comp("comp-starter-gens-1-3", *(starter_gen_chart(f"Gen {i}") for i in (1, 2, 3))),
+    comp("comp-starter-gens-4-6", *(starter_gen_chart(f"Gen {i}") for i in (4, 5, 6))),
 ])
 
 stats = tab("stats", "Stats & Megas", [
