@@ -2,7 +2,7 @@
 
 Repo-local **chart books**: a fixed React scaffold plus an AI skill that profiles experiment data, writes one canonical JSON of normalized rows, and emits a row-based document (markdown + side-by-side charts).
 
-**Start here:** [`skill.md`](./skill.md) is the product entrypoint. Invoking the skill runs **databook init automatically**, then profiles → charts → emits `rows.json`. Spec: [`chart-book-spec.md`](./chart-book-spec.md).
+**Start here:** [`SKILL.md`](./SKILL.md) is the product entrypoint. Invoking the skill runs **databook init automatically**, then profiles → charts → emits `rows.json`. Spec: [`chart-book-spec.md`](./chart-book-spec.md).
 
 Charts use **[Recharts](https://recharts.org/)** (locked). Markdown uses **[react-markdown](https://github.com/remarkjs/react-markdown)**. Typography uses the **[`geist`](https://www.npmjs.com/package/geist)** font package; **Tabs** are a Geist-styled scaffold primitive (`BookTabs`). Sidebar, page shell, row container, markdown block, and chart slot are custom. Dark mode is CSS variables + class `dark` on `<html>` — no theme-provider library.
 
@@ -10,11 +10,22 @@ Charts use **[Recharts](https://recharts.org/)** (locked). Markdown uses **[reac
 
 | Path | Role |
 |------|------|
-| [`skill.md`](./skill.md) | **Central** skill: auto-init, pipeline, reference router |
+| [`SKILL.md`](./SKILL.md) | **Central** skill: auto-init, pipeline, reference router |
 | [`chart-book-spec.md`](./chart-book-spec.md) | Product & implementation spec |
 | [`references/`](./references/) | Bundled Anthropic data plugin + dataviz (read when the skill routes you there) |
 | `src/components/` | Scaffold UI (layout, rows, theme toggle, Recharts helpers) |
 | `src/data/` | `canonical.json`, `rows.json`, `understanding.md`, `runQuery.ts` |
+| [`scripts/install-skill.sh`](./scripts/install-skill.sh) | Link this repo into Cursor and Codex skill folders |
+
+## Install the skill
+
+The skill package is this repo: `SKILL.md`, `chart-book-spec.md`, `references/`, and the `src/` scaffold. The installer builds `databook/` outside the repo and links those paths in, so the host entry file and the router targets sit side by side.
+
+```bash
+./scripts/install-skill.sh
+```
+
+That writes `~/.cursor/skills/databook` and `~/.codex/skills/databook`. A new chat picks the skill up. Invoke it as `databook`. Edits in this clone are what the skill reads.
 
 ## How to use
 

@@ -149,7 +149,7 @@ This is inputs for later markdown rows and for human review—not only chat ephe
 ```text
 <databook-or-book-root>/
   README.md                 # DataBook product repo ONLY — init must NOT emit this into other projects
-  skill.md                  # top-level skill (router + pipeline); product repo
+  SKILL.md                  # top-level skill (router + pipeline); product repo
   chart-book-spec.md        # product repo
   references/               # Anthropic bundles (product repo; skill routes here)
   src/
@@ -498,7 +498,7 @@ Scaffold version may be pinned (e.g. `scaffold.version`) so skills know when to 
 
 ### 7.1 Role
 
-The **DataBook / Chart Book skill** (`skill.md` at repo root) teaches an agent to:
+The **DataBook / Chart Book skill** (`SKILL.md` at repo root) teaches an agent to:
 
 1. **Run databook init automatically** on invoke (§7.5).  
 2. Follow **routed** reads into `references/` at the right pipeline steps (§11) — not “read everything up front.”  
@@ -515,7 +515,7 @@ The **DataBook / Chart Book skill** (`skill.md` at repo root) teaches an agent t
 ### 7.2 Skill structure (standard)
 
 ```text
-skill.md                       # top-level: triggers, pipeline, init, reference router
+SKILL.md                       # top-level: triggers, pipeline, init, reference router
 references/                    # bundled Anthropic materials (see §11)
   anthropic-data-plugin/
   anthropic-dataviz/
@@ -524,7 +524,7 @@ src/                           # scaffold template + (in product repo) working t
   data/
 ```
 
-Optional skill-local notes may live beside `skill.md` if needed; the **router** that says *when* to open each Anthropic file lives in **`skill.md`**.
+Optional skill-local notes may live beside `SKILL.md` if needed; the **router** that says *when* to open each Anthropic file lives in **`SKILL.md`**.
 
 Triggers (examples): “create a chart book”, “profile this experiment data”, “add charts for …”, “refresh the chart book after cleaning”.
 
@@ -532,7 +532,7 @@ Triggers (examples): “create a chart book”, “profile this experiment data�
 
 Bundled Anthropic references are **required package contents**, but they are **not** ambient background the agent should absorb wholesale at start.
 
-`skill.md` acts as a **router**: it tells the agent **exactly when** to open which reference (examples in §11.4). Guidance remains **advisory for decisions**, not a second renderer. Output must still be Recharts + inlined queries inside the row model.
+`SKILL.md` acts as a **router**: it tells the agent **exactly when** to open which reference (examples in §11.4). Guidance remains **advisory for decisions**, not a second renderer. Output must still be Recharts + inlined queries inside the row model.
 
 ### 7.4 Invariants the skill must not violate
 
@@ -588,9 +588,9 @@ If a book scaffold already exists, init is a no-op or a version-aware refresh �
 - [ ] Skill invoke runs **databook init** automatically and installs the trivial hello-world + exponential sample.  
 - [ ] Init into another project does **not** create a book-local README.  
 - [ ] DataBook product repo has a **root README**.  
-- [ ] `skill.md` routes agents to Anthropic references at the correct pipeline steps (not ambient dump).  
+- [ ] `SKILL.md` routes agents to Anthropic references at the correct pipeline steps (not ambient dump).  
 - [ ] No closed starter chart catalog; agent may use Recharts’ full API.  
-- [ ] Nested layout standard: `src/components`, `src/data`, `references`, top-level `skill.md`.  
+- [ ] Nested layout standard: `src/components`, `src/data`, `references`, top-level `SKILL.md`.  
 - [ ] No dependency on Cursor canvas for rendering.
 
 ---
@@ -605,13 +605,13 @@ This **product repository** (`kdopenshaw/databook`) includes a **root `README.md
 
 ## 11. Bundled references (routed package deal)
 
-Materials under `references/` ship with DataBook. They are **not** ambient background. The agent reads them **when `skill.md` says so**.
+Materials under `references/` ship with DataBook. They are **not** ambient background. The agent reads them **when `SKILL.md` says so**.
 
 ### 11.1 Layout
 
 ```text
 references/
-  README.md                      # short index; skill.md is the router
+  README.md                      # short index; SKILL.md is the router
   anthropic-data-plugin/         # full Anthropic data plugin (vendored)
     UPSTREAM.md
     LICENSE
@@ -636,22 +636,22 @@ Vendored copy of the [`data/`](https://github.com/anthropics/knowledge-work-plug
 
 **Role:** decide *what* to chart and *how* to encode it **during chart selection / encoding**. Runtime still renders Recharts; these files guide decisions.
 
-### 11.4 Router (what `skill.md` must encode)
+### 11.4 Router (what `SKILL.md` must encode)
 
-`skill.md` must include explicit routing, for example:
+`SKILL.md` must include explicit routing, for example:
 
 | Pipeline step | Open |
 |---------------|------|
 | Profiling / exploring unfamiliar sources | `references/anthropic-data-plugin/skills/explore-data/` (and related plugin skills as needed) |
 | Validation / statistical checks | `references/anthropic-data-plugin/skills/validate-data/`, `statistical-analysis/`, etc. |
 | Choosing chart form / encodings | `references/anthropic-dataviz/METHOD.md`, then `create-viz/` / `data-visualization/` as needed |
-| Building the book shell / rows | Chart Book rules in `skill.md` + this spec — not Anthropic dashboard skills as a second layout system |
+| Building the book shell / rows | Chart Book rules in `SKILL.md` + this spec — not Anthropic dashboard skills as a second layout system |
 
 Do **not** instruct the agent to “read all of `references/` before starting.” Do **not** treat Anthropic dashboard builders as a replacement for the Chart Book row model.
 
 ### 11.5 Maintenance
 
-When bumping vendored content, update each folder’s `UPSTREAM.md` and note intentional diffs. Keep `skill.md` router paths in sync with folder names.
+When bumping vendored content, update each folder’s `UPSTREAM.md` and note intentional diffs. Keep `SKILL.md` router paths in sync with folder names.
 
 ---
 
