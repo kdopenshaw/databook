@@ -38,31 +38,31 @@ export function PageLayout({
   const sortedPages = [...pages].sort((a, b) => a.order - b.order);
 
   return (
-    <div className={`cb-shell${showSidebar ? ' cb-shell-with-sidebar' : ' cb-shell-tabs-only'}`}>
+    <div className={`dbk-shell${showSidebar ? ' dbk-shell-with-sidebar' : ' dbk-shell-tabs-only'}`}>
       {showSidebar ? (
         <Sidebar pages={pages} activePageId={activePageId} onSelectPage={onSelectPage!} />
       ) : null}
-      <div className="cb-main-column">
-        <header className="cb-header">
-          <div className="cb-title">
+      <div className="dbk-main-column">
+        <header className="dbk-header">
+          <div className="dbk-title">
             {title}
             {experimentId ? (
               <>
-                <span className="cb-title-sep"> · </span>
-                <span className="cb-experiment">{experimentId}</span>
+                <span className="dbk-title-sep"> · </span>
+                <span className="dbk-experiment">{experimentId}</span>
               </>
             ) : null}
           </div>
           <ThemeToggle />
         </header>
         {showSidebar ? (
-          <div className="cb-page-switcher" role="navigation" aria-label="Book pages">
-            <div className="cb-page-switcher-scroll">
+          <div className="dbk-page-switcher" role="navigation" aria-label="Book pages">
+            <div className="dbk-page-switcher-scroll">
               {sortedPages.map((page) => (
                 <button
                   key={page.id}
                   type="button"
-                  className="cb-page-chip"
+                  className="dbk-page-chip"
                   aria-current={page.id === activePageId ? 'page' : undefined}
                   onClick={() => onSelectPage?.(page.id)}
                 >
@@ -72,12 +72,12 @@ export function PageLayout({
             </div>
           </div>
         ) : null}
-        <main className="cb-content">
+        <main className="dbk-content">
           <BookTabs tabs={tabs} activeTabId={activeTabId} onSelect={onSelectTab}>
             {children}
           </BookTabs>
         </main>
-        {footer ? <footer className="cb-footer">{footer}</footer> : null}
+        {footer ? <footer className="dbk-footer">{footer}</footer> : null}
       </div>
     </div>
   );

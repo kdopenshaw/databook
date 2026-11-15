@@ -1,7 +1,7 @@
 ---
 name: databook
 description: >
-  Create or refresh a DataBook chart book: init scaffold automatically, profile
+  Create or refresh a DataBook: init scaffold automatically, profile
   experiment data, write one canonical JSON of normalized rows, and emit
   row-based markdown + Recharts charts with inlined query objects.
 ---
@@ -9,13 +9,13 @@ description: >
 # DataBook skill
 
 This file is the **product entrypoint**. Invoking the skill *is* running DataBook.
-Follow `chart-book-spec.md` for schemas, invariants, and acceptance criteria.
+Follow `databook-spec.md` for schemas, invariants, and acceptance criteria.
 **`src/data/types.ts` is the live contract** when the prose spec disagrees.
 
 ## On invoke (always)
 
-**Target** = the user’s open workspace (where the chart book belongs).  
-**Skill package** = this install (`SKILL.md`, `chart-book-spec.md`, `references/`, scaffold) — treat as a **read-only template**. **Copy** scaffold files into the target; **never** write experiment data, `canonical.json`, `rows.json`, or analysis into the skill install folder (`~/.cursor/skills/databook`, `.cursor/skills/databook`, or the product clone used only as the template). **Never `npm install` inside the skill install** (symlinks would pollute the product clone).
+**Target** = the user’s open workspace (where the DataBook belongs).  
+**Skill package** = this install (`SKILL.md`, `databook-spec.md`, `references/`, scaffold) — treat as a **read-only template**. **Copy** scaffold files into the target; **never** write experiment data, `canonical.json`, `rows.json`, or analysis into the skill install folder (`~/.cursor/skills/databook`, `.cursor/skills/databook`, or the product clone used only as the template). **Never `npm install` inside the skill install** (symlinks would pollute the product clone).
 
 ### New book vs extend existing
 
@@ -80,7 +80,7 @@ Open bundled references **only at the step that needs them**. Do **not** dump al
 | Profiling / exploring unfamiliar sources | `references/anthropic-data-plugin/skills/explore-data/` and related (`validate-data`, `statistical-analysis`, `sql-queries`, `analyze`, …) |
 | Validation / statistical checks when cutting new analysis | `references/anthropic-data-plugin/skills/validate-data/`, `statistical-analysis/`, plus dataviz zero-baseline / scale guidance |
 | Choosing chart form / encodings | `references/anthropic-dataviz/METHOD.md`, then `create-viz/` / `data-visualization/` |
-| Layout / rows / scaffold rules | This file + `chart-book-spec.md` + `src/data/types.ts` |
+| Layout / rows / scaffold rules | This file + `databook-spec.md` + `src/data/types.ts` |
 
 ## RechartsSpec (stock renderer)
 

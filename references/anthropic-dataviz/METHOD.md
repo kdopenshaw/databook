@@ -20,5 +20,5 @@ Avoid pie/donut for fine comparisons (prefer bar); never 3D; prefer small multip
 
 ## How DataBook uses this
 
-- Chart Book skill reads this method **and** `create-viz/` + `data-visualization/` before choosing chart types or encodings.
-- Runtime still renders via the Chart Book catalog (Recharts by default)—these references guide *decisions*, not a second renderer.
+- DataBook skill reads this method **and** `create-viz/` + `data-visualization/` before choosing chart types or encodings.
+- Runtime still renders via the DataBook catalog (Recharts by default)—these references guide *decisions*, not a second renderer.

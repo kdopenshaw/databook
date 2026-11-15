@@ -1,4 +1,4 @@
 interface:
   display_name: "DataBook"
-  short_description: "Build a chart book from experiment data"
-  default_prompt: "Use $databook to profile this experiment data and emit a chart book."
+  short_description: "Build a DataBook from experiment data"
+  default_prompt: "Use $databook to profile this experiment data and emit a DataBook."

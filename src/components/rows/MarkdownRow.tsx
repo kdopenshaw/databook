@@ -35,19 +35,19 @@ export function MarkdownRow({ row, onSave, startEditing = false }: Props) {
   };
 
   return (
-    <article className={`cb-row cb-markdown${editable ? ' cb-markdown-user' : ''}`}>
+    <article className={`dbk-row dbk-markdown${editable ? ' dbk-markdown-user' : ''}`}>
       {editable && !editing ? (
-        <div className="cb-markdown-toolbar">
-          <button type="button" className="cb-markdown-edit-btn" onClick={() => setEditing(true)}>
+        <div className="dbk-markdown-toolbar">
+          <button type="button" className="dbk-markdown-edit-btn" onClick={() => setEditing(true)}>
             Edit
           </button>
         </div>
       ) : null}
 
       {editing ? (
-        <div className="cb-markdown-editor">
+        <div className="dbk-markdown-editor">
           <textarea
-            className="cb-markdown-textarea"
+            className="dbk-markdown-textarea"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             rows={Math.max(4, draft.split('\n').length + 1)}
@@ -55,11 +55,11 @@ export function MarkdownRow({ row, onSave, startEditing = false }: Props) {
             aria-label="Markdown body"
             autoFocus
           />
-          <div className="cb-markdown-editor-actions">
-            <button type="button" className="cb-btn cb-btn-primary" onClick={save}>
+          <div className="dbk-markdown-editor-actions">
+            <button type="button" className="dbk-btn dbk-btn-primary" onClick={save}>
               Save
             </button>
-            <button type="button" className="cb-btn" onClick={cancel}>
+            <button type="button" className="dbk-btn" onClick={cancel}>
               Cancel
             </button>
           </div>

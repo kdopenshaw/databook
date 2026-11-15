@@ -29,7 +29,7 @@ export function RowRenderer({
     <>
       {canInsert ? <InsertGap onInsert={() => onInsertMarkdown!(null)} label="Insert markdown at start" /> : null}
       {sorted.map((row) => (
-        <div key={row.id} className="cb-row-stack">
+        <div key={row.id} className="dbk-row-stack">
           {row.type === 'markdown' ? (
             <MarkdownRow
               row={row}

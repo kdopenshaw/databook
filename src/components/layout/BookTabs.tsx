@@ -69,19 +69,19 @@ export function BookTabs({ tabs, activeTabId, onSelect, children }: Props) {
   };
 
   const fadeClass = [
-    'cb-tabs-scroll',
-    overflow.left ? 'cb-tabs-scroll-fade-left' : '',
-    overflow.right ? 'cb-tabs-scroll-fade-right' : '',
+    'dbk-tabs-scroll',
+    overflow.left ? 'dbk-tabs-scroll-fade-left' : '',
+    overflow.right ? 'dbk-tabs-scroll-fade-right' : '',
   ]
     .filter(Boolean)
     .join(' ');
 
   return (
-    <div className="cb-tabs">
+    <div className="dbk-tabs">
       <div className={fadeClass} data-overflow={overflow.right || overflow.left ? 'true' : 'false'}>
-        <div className="cb-tabs-scroll-inner" ref={scrollRef}>
+        <div className="dbk-tabs-scroll-inner" ref={scrollRef}>
           <div
-            className="cb-tabs-list"
+            className="dbk-tabs-list"
             role="tablist"
             aria-label="Book tabs"
             ref={listRef}
@@ -98,7 +98,7 @@ export function BookTabs({ tabs, activeTabId, onSelect, children }: Props) {
                   aria-selected={active}
                   aria-controls={`panel-${tab.id}`}
                   tabIndex={active ? 0 : -1}
-                  className="cb-tabs-trigger"
+                  className="dbk-tabs-trigger"
                   data-state={active ? 'active' : 'inactive'}
                   onClick={() => onSelect(tab.id)}
                 >
@@ -109,13 +109,13 @@ export function BookTabs({ tabs, activeTabId, onSelect, children }: Props) {
           </div>
         </div>
         {overflow.right ? (
-          <span className="cb-tabs-scroll-cue" aria-hidden="true">
+          <span className="dbk-tabs-scroll-cue" aria-hidden="true">
             ›
           </span>
         ) : null}
       </div>
       <div
-        className="cb-tabs-panel"
+        className="dbk-tabs-panel"
         role="tabpanel"
         id={`panel-${activeTabId}`}
         aria-labelledby={`tab-${activeTabId}`}
