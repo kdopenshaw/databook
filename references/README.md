@@ -1,10 +1,12 @@
 # Bundled reference materials
 
-Agents working in **DataBook** must treat these folders as required reading—the “package deal” with the Chart Book skill. Do not invent parallel chart conventions.
+These folders ship with DataBook. They are **not** ambient background.
 
-| Path | What it is | Role |
-|------|------------|------|
-| `anthropic-data-plugin/` | Vendored [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) `data/` plugin (Apache-2.0) | Full analyst pipeline: explore, SQL, stats, validate, dashboards, viz |
-| `anthropic-dataviz/` | Anthropic data-viz guidance: `METHOD.md` + copies of `create-viz` and `data-visualization` | Chart-type selection, design method, publication-quality defaults |
+**`skill.md` is the router:** it tells the agent *when* to open which file (e.g. data plugin during profiling, dataviz during chart selection). Do not read this tree wholesale at session start.
 
-See each folder’s `UPSTREAM.md` for pin/provenance. Bump intentionally; do not silently drift from upstream without recording why.
+| Path | What it is | Typical skill route |
+|------|------------|---------------------|
+| `anthropic-data-plugin/` | Vendored [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) `data/` plugin (Apache-2.0) | Profiling, explore, validate, stats, transforms |
+| `anthropic-dataviz/` | `METHOD.md` + `create-viz` / `data-visualization` | Chart form selection and encodings |
+
+See each folder’s `UPSTREAM.md` for pin/provenance. Full routing table: `chart-book-spec.md` §11 and `skill.md`.
