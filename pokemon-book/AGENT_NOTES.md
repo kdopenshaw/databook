@@ -45,3 +45,12 @@ The stock renderer could not draw several of the chosen forms. All extensions ar
 
 23. Headless Chrome screenshots against the Vite dev server never exit (the HMR socket keeps them alive). I used `timeout 25` plus `--user-data-dir` per run.
 24. A row's `order` must be set by hand, and `defaultTabId` / tab `order` duplication is easy to get wrong. The book test checks that ids are unique and order is contiguous.
+
+## Round 2 (archetypes + small multiples)
+
+25. **There is no small-multiples / faceted chart block.** A `ChartBlock` is exactly one inlined query feeding one Recharts chart (`ChartSlot` → `RechartsRenderer`). A single block holding six histograms would need either a scaffold change to `ChartSlot` (per-facet queries) or a long-format "stat × value" grain, and a single canonical file cannot hold a second grain cleanly. What I did instead: two `component` rows of three blocks each, with shared numeric x (0–260) and y (0–140) domains. Spec §3.4 points to component rows as the small-multiples primitive, but caps them softly at 3–4 children. The `ComponentRow` flex wrap cannot form a grid, because children use `flex: <number>` (basis 0), so `wrap: true` never wraps.
+26. **Histograms on a categorical x-axis do not align across small multiples**, since each panel has a different set of non-empty bins. I added `xType: "number"`, `xDomain`, and `xTicks` to the book's renderer, which also makes empty bins show as gaps instead of vanishing.
+27. **Scatter could not colour by category** (round 1, item 21). I added `colorBy: { key, levels[] }`, which splits the query result client-side into one `<Scatter>` per level. The query is unchanged, so this stays within "one query per block".
+28. **Generated rows.json:** the skill does not say whether `rows.json` should be hand-written or generated. Repeated filters (base-form population, stat lists) make hand-editing error-prone, so `src/data/transforms/build_rows.py` is the source of truth and `rows.json` is its output. The skill's "humans may edit markdown" convention (`<!-- skill:managed -->`) does not fit a generated file.
+29. **Archetype thresholds are analyst judgment, not data.** They are kept as named constants in the canonical transform and recorded in the manifest, so they can be tuned and re-run.
+30. Taking per-chart screenshots needed a small Chrome DevTools-protocol script (Node 22 built-in `WebSocket`), because headless `--screenshot` cannot scroll or clip to an element. That script is tooling and is not part of the book.
