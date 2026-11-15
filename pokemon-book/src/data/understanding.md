@@ -2,7 +2,7 @@
 
 ## Question
 
-How do base stats differ across **types** (both slots), **generations**, **legendary status**, **offensive/defensive archetypes**, and what do the **stat distributions** look like in the primary-form species pool?
+How do base stats differ across **types** (both slots), **generations**, **legendary status**, **offensive/defensive archetypes**, and **speed tiers in the team-building pool**?
 
 ## Sources
 
@@ -10,7 +10,7 @@ How do base stats differ across **types** (both slots), **generations**, **legen
 |--------|------|-------|
 | `data/Pokemon.csv` | 800 | Public Gen 1–6 form table (National Dex `#` 1–721). SHA-256 `02eabc49d3c70bc1e150891bdb9acb254910adfdfc12a6020c7b7117b2eca32f`. |
 
-Rebuild: `python3 src/data/transforms/build_canonical.py` then `python3 src/data/transforms/build_rows.py`, then `npm test`. Generators call `mergeUserRows` so `createdBy: "user"` rows survive regen.
+Rebuild: `python3 src/data/transforms/build_canonical.py` then `python3 src/data/transforms/build_rows.py`, then `npm test`. Generators call `mergeUserRows` so `createdBy: "user"` rows (e.g. Summary `md-analyst-speed-tiers`) survive regen.
 
 ## Grain
 
@@ -22,6 +22,7 @@ Rebuild: `python3 src/data/transforms/build_canonical.py` then `python3 src/data
 | Type participation (both slots) | `is_primary_form` (any slot) | **~1,071** | Type identity / type means / archetype rates by type |
 | Type-1 only | `is_primary_form` ∧ `type_slot=Primary` grouped by `type` | 721 | Explicit Type-1 comparisons (undercounts dual-type secondaries) |
 | Secondary slot only | `is_primary_form` ∧ `type_slot=Secondary` | **350** | Dual-types’ Type 2 participation |
+| Team-building pool | `in_team_pool` (+ species filters in charts) | **134** | Speed-tier shares & counts |
 
 `is_primary_form` = first CSV row for each National Dex `#` (base species before Mega/alternate formes).
 
@@ -31,6 +32,14 @@ Rebuild: `python3 src/data/transforms/build_canonical.py` then `python3 src/data
 - **Both-slot participation:** dual-types appear under **both** types. Counts and means are participation-weighted; a Water/Flying species contributes to Water **and** Flying. Default “By type” panels use both slots via column `type`.
 - **Slot split:** Primary vs Secondary `count_if` panels show how much of a type’s participation is first-slot vs second-slot — still both-slot aware, not Type-1-only.
 - Do **not** mix Type-1 and both-slot panels in the same sibling row without matching filters and labels.
+
+## Speed tiers & team pool
+
+Bands on raw Speed: **&lt;60** · **60–79** · **80–99** · **100+** (`speed_tier` + `speed_tier_rank` for sort).
+
+`in_team_pool` = primary form ∧ non-legendary ∧ `total ≥ 500` (analyst definition) → **134** species.
+
+Pool composition shares: `sum(pool_share_unit)` by `speed_tier` where `pool_share_unit = 1/134` on pool species (null elsewhere). Counts and shares are charted on **separate rows** (different scales). Prefer `share` / `count_if` for rates and conditional counts; `pool_share_unit` exists only because long-form tier composition needs a summable unit when `share` is within-group.
 
 ## Archetypes
 
@@ -45,14 +54,17 @@ Fit on **721 primary forms**; scores copy onto every slot row for that form.
 | Neither | Everyone else (mutual exclusivity: larger gap wins if both fire) |
 | Offense lean | Physical / Special if `\|Attack−Sp.Atk\| ≥ 15`, else Balanced |
 
+Physical lean **counts** vs glass **count_if** use different magnitudes — never siblings. Polarity `Attack−Sp.Atk` stays off raw-mean rows.
+
 These are descriptive design clusters, not competitive tier lists.
 
 ## Honesty conventions
 
 - Bar value axes include **0** (`BookDocument.conventions.zeroBaselineBars`).
 - Sibling panels that share a measure family use the same **`scaleGroup`** plus a shared explicit `yDomain`.
-- Counts are **not** siblings of means / BST totals.
+- Counts are **not** siblings of means / BST totals / shares.
 - Polarity metrics (Attack − Sp. Atk) are **not** siblings of raw means.
+- Do not chart near-flat bands as trends without acknowledging flatness.
 - Prefer `share` / `count_if` / `sum_if` / `mean_if` for rates and conditional totals.
 
 ## Caveats
@@ -62,3 +74,4 @@ These are descriptive design clusters, not competitive tier lists.
 - Base stats are design constants (not measured combat outcomes).
 - Generation means of BST vary modestly (~402–446); do not over-claim a strong “power creep” trend from this cut alone.
 - Archetype thresholds are analyst judgment (`gap=1.0`, `floor=0.5`, lean gap `15`).
+- Team-pool BST≥500 cutoff is an analyst definition, not an official competitive rule.

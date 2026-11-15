@@ -25,6 +25,9 @@ SPECIES_LEG = SPECIES + [{"column": "legendary", "op": "eq", "value": True}]
 TYPE_ANY = [{"column": "is_primary_form", "op": "eq", "value": True}]
 TYPE_ANY_NONLEG = TYPE_ANY + [{"column": "legendary", "op": "eq", "value": False}]
 
+# Team-building pool: primary form + primary slot + in_team_pool (implies non-leg, BST≥500).
+TEAM_POOL = SPECIES + [{"column": "in_team_pool", "op": "eq", "value": True}]
+
 STAT_DOMAIN = [0, 130]
 TOTAL_TYPE_DOMAIN = [0, 560]
 TOTAL_GEN_DOMAIN = [0, 500]
@@ -44,6 +47,10 @@ ARCH_STAT_DOMAIN = [0, 140]
 ARCH_SHARE_DOMAIN = [0, 0.25]
 ARCH_LEAN_COUNT = [0, 400]
 SLOT_COUNT_DOMAIN = [0, 130]
+POOL_SHARE_DOMAIN = [0, 0.4]
+POOL_COUNT_DOMAIN = [0, 50]
+POOL_BST_DOMAIN = [0, 700]
+POOL_IN_SHARE = [0, 0.5]
 
 
 def merge_user_rows(previous: dict | None, nxt: dict) -> dict:
@@ -1060,8 +1067,8 @@ def build_book() -> dict:
         "Mean Attack − Sp. Atk by generation",
         x_key="generation_label",
         series=[{"dataKey": "mean_lean", "name": "Attack − Sp. Atk", "colorIndex": 5}],
-        subtitle="Polarity · own row (not sibling to raw means)",
-        notes="Signed polarity metric — zero baseline still required for bars.",
+        subtitle="Polarity bars (not a trend line) · own row · not sibling to raw means",
+        notes="Signed polarity metric — zero baseline required. Modest gen-to-gen shifts; not a growth claim.",
         y_domain=[-40, 40],
         show_legend=False,
         query={
@@ -1362,7 +1369,180 @@ def build_book() -> dict:
         },
     )
 
+    # ---- Team pool / speed tiers ----
+    pool_tier_count = bar_v(
+        "chart-pool-tier-count",
+        "Team-pool species by speed tier",
+        x_key="speed_tier",
+        series=[{"dataKey": "n", "name": "Species", "colorIndex": 0}],
+        subtitle="in_team_pool · primary forms · counts only (shares on next row)",
+        y_domain=POOL_COUNT_DOMAIN,
+        show_legend=False,
+        decimals=0,
+        y_label="Species",
+        query={
+            "filter": TEAM_POOL,
+            "groupBy": ["speed_tier"],
+            "aggregate": [{"fn": "count", "as": "n", "label": "Species"}],
+            "orderBy": [{"column": "speed_tier", "direction": "asc"}],
+        },
+    )
+    pool_tier_share = bar_v(
+        "chart-pool-tier-share",
+        "Team-pool speed-tier shares",
+        x_key="speed_tier",
+        series=[{"dataKey": "pool_share", "name": "Share of pool", "colorIndex": 5}],
+        subtitle="sum(pool_share_unit) by tier · 1/134 on pool species",
+        notes="Composition shares via summable unit (share is within-group). Axis includes 0.",
+        y_domain=POOL_SHARE_DOMAIN,
+        show_legend=False,
+        value_format="percent",
+        decimals=1,
+        y_label="Share of pool",
+        query={
+            "filter": TEAM_POOL,
+            "groupBy": ["speed_tier"],
+            "aggregate": [
+                {
+                    "fn": "sum",
+                    "column": "pool_share_unit",
+                    "as": "pool_share",
+                    "label": "Share of pool",
+                }
+            ],
+            "orderBy": [{"column": "speed_tier", "direction": "asc"}],
+        },
+    )
+    # count_if blistering (100+) and share of pool by generation on all primary forms.
+    pool_count_if_fast = bar_v(
+        "chart-pool-count-if-fast",
+        "100+ Speed count by generation",
+        x_key="generation_label",
+        series=[{"dataKey": "n_fast", "name": "Speed 100+", "colorIndex": 5}],
+        subtitle="count_if(speed_tier=100+) · primary forms",
+        y_domain=[0, 50],
+        show_legend=False,
+        decimals=0,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["generation_label"],
+            "aggregate": [
+                {
+                    "fn": "count_if",
+                    "as": "n_fast",
+                    "label": "Speed 100+",
+                    "where": {"column": "speed_tier", "op": "eq", "value": "100+"},
+                }
+            ],
+            "orderBy": [{"column": "generation_label", "direction": "asc"}],
+        },
+    )
+    pool_share_by_gen = bar_v(
+        "chart-pool-share-by-gen",
+        "Team-pool share by generation",
+        x_key="generation_label",
+        series=[{"dataKey": "pool_share", "name": "In team pool", "colorIndex": 2}],
+        subtitle="share(in_team_pool) · primary forms",
+        y_domain=POOL_IN_SHARE,
+        show_legend=False,
+        value_format="percent",
+        decimals=1,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["generation_label"],
+            "aggregate": [
+                {
+                    "fn": "share",
+                    "as": "pool_share",
+                    "label": "In team pool",
+                    "where": {"column": "in_team_pool", "op": "eq", "value": True},
+                }
+            ],
+            "orderBy": [{"column": "generation_label", "direction": "asc"}],
+        },
+    )
+    pool_share_by_tier_all = bar_v(
+        "chart-pool-share-by-tier",
+        "Share of each speed tier in the team pool",
+        x_key="speed_tier",
+        series=[{"dataKey": "in_pool_share", "name": "In team pool", "colorIndex": 2}],
+        subtitle="share(in_team_pool) within speed_tier · all primary forms",
+        notes="Different question from pool composition shares — fraction of each tier that qualifies.",
+        y_domain=[0, 1],
+        show_legend=False,
+        value_format="percent",
+        decimals=0,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["speed_tier"],
+            "aggregate": [
+                {
+                    "fn": "share",
+                    "as": "in_pool_share",
+                    "label": "In team pool",
+                    "where": {"column": "in_team_pool", "op": "eq", "value": True},
+                }
+            ],
+            "orderBy": [{"column": "speed_tier", "direction": "asc"}],
+        },
+    )
+    pool_bst = bar_v(
+        "chart-pool-bst",
+        "Mean BST by speed tier (team pool)",
+        x_key="speed_tier",
+        series=[{"dataKey": "mean_bst", "name": "Mean BST", "colorIndex": 2}],
+        subtitle="Pool only · own row (not sibling to counts/shares)",
+        y_domain=POOL_BST_DOMAIN,
+        show_legend=False,
+        query={
+            "filter": TEAM_POOL,
+            "groupBy": ["speed_tier"],
+            "aggregate": [{"fn": "mean", "column": "total", "as": "mean_bst"}],
+            "orderBy": [{"column": "speed_tier", "direction": "asc"}],
+        },
+    )
+    pool_count_if_slow = bar_v(
+        "chart-pool-count-if-slow",
+        "Slow (<60) pool members by generation",
+        x_key="generation_label",
+        series=[{"dataKey": "n_slow_pool", "name": "Slow in pool", "colorIndex": 0}],
+        subtitle="count_if(in_team_pool ∧ speed_tier=<60) via nested filter + count_if",
+        notes="Filter to slow tier, count_if in_team_pool — avoids boolean pivot columns.",
+        y_domain=[0, 20],
+        show_legend=False,
+        decimals=0,
+        query={
+            "filter": SPECIES + [{"column": "speed_tier", "op": "eq", "value": "<60"}],
+            "groupBy": ["generation_label"],
+            "aggregate": [
+                {
+                    "fn": "count_if",
+                    "as": "n_slow_pool",
+                    "where": {"column": "in_team_pool", "op": "eq", "value": True},
+                }
+            ],
+            "orderBy": [{"column": "generation_label", "direction": "asc"}],
+        },
+    )
+    all_tier_count = bar_v(
+        "chart-all-tier-count",
+        "All primary forms by speed tier",
+        x_key="speed_tier",
+        series=[{"dataKey": "n", "name": "Species", "colorIndex": 0}],
+        subtitle="Full 721 species · contrast with team-pool counts",
+        y_domain=[0, 250],
+        show_legend=False,
+        decimals=0,
+        query={
+            "filter": SPECIES,
+            "groupBy": ["speed_tier"],
+            "aggregate": [{"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "speed_tier", "direction": "asc"}],
+        },
+    )
+
     # ---- Summary refs ----
+    # Note: md-analyst-speed-tiers (createdBy:user, order 0.5) is preserved by mergeUserRows.
     summary_rows = [
         md(
             "md-summary",
@@ -1374,6 +1554,8 @@ def build_book() -> dict:
 **Type caveats:** default type panels use **both slots** (dual-types counted twice). Type-1-only panels undercount common secondaries (e.g. Flying). See Deep dive → By type and `understanding.md`.
 
 **Archetypes:** glass cannon (61) / tank (41) from z-score gaps on primary forms — Deep dive → Archetypes.
+
+**Team pool:** non-legendary primary forms with BST ≥ 500 (**134**) — Deep dive → Team pool.
 
 Charts below are **refs** into the detail tabs.""",
         ),
@@ -1394,6 +1576,15 @@ Charts below are **refs** into the detail tabs.""",
             [
                 ref_block("ref-hist-total", "chart-hist-total", title="BST distribution (ref)"),
                 ref_block("ref-scatter-arch", "chart-scatter-arch", title="Offense vs bulk (ref)"),
+            ],
+            wrap=True,
+        ),
+        comp(
+            "comp-summary-pool",
+            3,
+            [
+                ref_block("ref-pool-share", "chart-pool-tier-share", title="Pool speed-tier shares (ref)"),
+                ref_block("ref-pool-count", "chart-pool-tier-count", title="Pool speed-tier counts (ref)"),
             ],
             wrap=True,
         ),
@@ -1444,12 +1635,42 @@ Counts stay on separate rows from means. Six-stat means share `scaleGroup: arch-
         comp("comp-arch-gen-rates", 2, [arch_glass_share_gen, arch_tank_share_gen]),
         md("md-arch-stats", 3, "### Mean stats by archetype — `scaleGroup: arch-stats`"),
         comp("comp-arch-stats", 4, [arch_hp, arch_atk, arch_def, arch_spa, arch_spdef, arch_speed]),
-        md("md-arch-lean", 5, "### Physical vs special lean"),
-        comp("comp-lean-count", 6, [lean_count, lean_glass_count_if]),
-        md("md-arch-cond", 7, "### Conditional aggregates (`mean_if` / `sum_if`)"),
-        comp("comp-arch-mean-if", 8, [arch_mean_if_offense]),
-        comp("comp-arch-sum-if", 9, [arch_sum_if_tank_bst]),
-        comp("comp-arch-scatter", 10, [scatter_arch]),
+        md(
+            "md-arch-lean",
+            5,
+            "### Physical vs special lean\n\n"
+            "Species counts (~hundreds) and glass `count_if` (~tens) are **different scales** — "
+            "separate rows, not siblings / not a shared `scaleGroup`.",
+        ),
+        comp("comp-lean-count", 6, [lean_count]),
+        comp("comp-lean-glass", 7, [lean_glass_count_if]),
+        md("md-arch-cond", 8, "### Conditional aggregates (`mean_if` / `sum_if`)"),
+        comp("comp-arch-mean-if", 9, [arch_mean_if_offense]),
+        comp("comp-arch-sum-if", 10, [arch_sum_if_tank_bst]),
+        comp("comp-arch-scatter", 11, [scatter_arch]),
+    ]
+
+    pool_rows = [
+        md(
+            "md-pool",
+            0,
+            """## Team pool / speed tiers
+
+**Pool definition:** primary form ∧ non-legendary ∧ BST ≥ 500 → **134** species (`in_team_pool`).
+
+**Speed tiers:** `<60` · `60–79` · `80–99` · `100+`.
+
+Counts and composition shares use **separate rows** (different scales). Composition shares use `sum(pool_share_unit)`; rates elsewhere use `share` / `count_if`.""",
+        ),
+        comp("comp-pool-counts", 1, [pool_tier_count]),
+        comp("comp-pool-shares", 2, [pool_tier_share]),
+        comp("comp-all-tier", 3, [all_tier_count]),
+        md("md-pool-rates", 4, "### Rates with `share` / `count_if`"),
+        comp("comp-pool-gen", 5, [pool_share_by_gen, pool_count_if_fast]),
+        comp("comp-pool-tier-in", 6, [pool_share_by_tier_all]),
+        comp("comp-pool-slow", 7, [pool_count_if_slow]),
+        md("md-pool-bst", 8, "### Pool mean BST by tier (own scale)"),
+        comp("comp-pool-bst", 9, [pool_bst]),
     ]
 
     gen_rows = [
@@ -1500,10 +1721,10 @@ Histograms over primary forms. Stat panels share `scaleGroup: stat-hist` with id
 
     book = {
         "title": "Pokémon Base Stats (Gen 1–6)",
-        "experimentId": "pokemon-gen1-6-r2",
+        "experimentId": "pokemon-gen1-6-r3",
         "description": (
             "Primary-form base-stat chart book — both-slot types, generations, "
-            "legendary flag, archetypes, and distributions."
+            "legendary flag, archetypes, team-pool speed tiers, and distributions."
         ),
         "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
         "defaultTabId": "summary",
@@ -1513,26 +1734,30 @@ Histograms over primary forms. Stat panels share `scaleGroup: stat-hist` with id
                 "Per-species: is_primary_form && type_slot=Primary (721). "
                 "Type-participation: is_primary_form any slot (dual-types counted twice). "
                 "Archetypes: z-score gap=1.0 floor=0.5 on primary forms (Glass 61 / Tank 41); "
-                "offense lean |Atk−SpA|≥15."
+                "offense lean |Atk−SpA|≥15. "
+                "Team-building pool: primary form, non-legendary, total≥500 (134) — in_team_pool."
             ),
             "palette": {
-                "0": "HP / counts / Neither / non-legendary",
+                "0": "HP / counts / Neither / non-legendary / pool counts",
                 "1": "Attack / legendary / Glass cannon",
-                "2": "Defense / BST",
+                "2": "Defense / BST / pool BST",
                 "3": "Sp. Atk",
                 "4": "Sp. Def / Tank",
-                "5": "Speed / dual-type / Secondary slot / polarity",
+                "5": "Speed / dual-type / Secondary slot / polarity / pool shares",
             },
             "notes": [
                 "Bar charts must include 0 on the value axis (omit yDomain or set yDomain[0] <= 0).",
                 "Sibling panels that share measures use the same scaleGroup + explicit yDomain.",
                 "Do not place polarity metrics (Attack−Sp. Atk) beside raw means in the same component row.",
                 "Do not mix counts and means (or BST totals vs six-stat means) as unlabeled siblings.",
+                "Do not mix species counts with glass count_if as siblings — different magnitudes.",
                 "Canonical grain is form × type slot — filter type_slot=Primary for per-species charts.",
                 "Both-slot type charts use column `type`; they intentionally double-count dual-types.",
                 "Type-1-only panels undercount types that appear mainly as Type 2 — prefer both-slot for identity.",
+                "Team-pool speed shares use sum(pool_share_unit) by speed_tier (axis at 0); counts on a separate row.",
                 "Prefer share / count_if / sum_if / mean_if for rates and conditional totals.",
-                "mergeUserRows preserves createdBy:user rows across regen.",
+                "Do not chart near-flat bands as trends without acknowledging flatness.",
+                "mergeUserRows preserves createdBy:user rows (e.g. md-analyst-speed-tiers) across regen.",
             ],
         },
         "pages": [
@@ -1551,6 +1776,7 @@ Histograms over primary forms. Stat panels share `scaleGroup: stat-hist` with id
                     "generations",
                     "legendary",
                     "archetypes",
+                    "team-pool",
                     "distributions",
                 ],
             },
@@ -1561,7 +1787,8 @@ Histograms over primary forms. Stat panels share `scaleGroup: stat-hist` with id
             {"id": "generations", "label": "By generation", "order": 2, "rows": gen_rows},
             {"id": "legendary", "label": "Legendary", "order": 3, "rows": leg_rows},
             {"id": "archetypes", "label": "Archetypes", "order": 4, "rows": arch_rows},
-            {"id": "distributions", "label": "Distributions", "order": 5, "rows": dist_rows},
+            {"id": "team-pool", "label": "Team pool", "order": 5, "rows": pool_rows},
+            {"id": "distributions", "label": "Distributions", "order": 6, "rows": dist_rows},
         ],
     }
     return book

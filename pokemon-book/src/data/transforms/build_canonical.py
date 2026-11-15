@@ -178,6 +178,19 @@ def main() -> None:
                 n_glass += 1
             if is_tank:
                 n_tank += 1
+        speed = f["speed"]
+        if speed < 60:
+            speed_tier, tier_rank = "<60", 0
+        elif speed < 80:
+            speed_tier, tier_rank = "60-79", 1
+        elif speed < 100:
+            speed_tier, tier_rank = "80-99", 2
+        else:
+            speed_tier, tier_rank = "100+", 3
+
+        # Team-building pool: non-legendary primary form, BST ≥ 500.
+        in_team_pool = bool(f["is_primary_form"] and (not f["legendary"]) and f["total"] >= 500)
+
         f.update(
             {
                 "z_offense": round(z_off, 4),
@@ -188,8 +201,16 @@ def main() -> None:
                 "is_glass_cannon": is_glass,
                 "is_tank": is_tank,
                 "archetype": archetype,
+                "speed_tier": speed_tier,
+                "speed_tier_rank": tier_rank,
+                "in_team_pool": in_team_pool,
             }
         )
+
+    n_pool = sum(1 for f in forms if f["in_team_pool"])
+    pool_share_unit = (1.0 / n_pool) if n_pool else None
+    for f in forms:
+        f["pool_share_unit"] = pool_share_unit if f["in_team_pool"] else None
 
     rows_out: list[dict] = []
     for f in forms:
@@ -229,6 +250,10 @@ def main() -> None:
                     "is_glass_cannon": f["is_glass_cannon"],
                     "is_tank": f["is_tank"],
                     "archetype": f["archetype"],
+                    "speed_tier": f["speed_tier"],
+                    "speed_tier_rank": f["speed_tier_rank"],
+                    "in_team_pool": f["in_team_pool"],
+                    "pool_share_unit": f["pool_share_unit"],
                     "generation": f["generation"],
                     "generation_label": f["generation_label"],
                     "legendary": f["legendary"],
@@ -301,6 +326,26 @@ def main() -> None:
             "nullable": False,
             "description": f"Z-score gap≥{ARCHETYPE_GAP}, floor≥{ARCHETYPE_FLOOR} on primary-form fit.",
         },
+        {
+            "name": "speed_tier",
+            "type": "categorical",
+            "label": "Speed tier",
+            "levels": ["<60", "60-79", "80-99", "100+"],
+            "nullable": False,
+        },
+        {"name": "speed_tier_rank", "type": "quantitative", "nullable": False},
+        {
+            "name": "in_team_pool",
+            "type": "boolean",
+            "nullable": False,
+            "description": "Primary form ∧ non-legendary ∧ BST≥500.",
+        },
+        {
+            "name": "pool_share_unit",
+            "type": "quantitative",
+            "nullable": True,
+            "description": "1/n_pool on team-pool primary forms; null elsewhere. Sum by speed_tier → pool share.",
+        },
         {"name": "generation", "type": "quantitative", "label": "Generation", "nullable": False},
         {
             "name": "generation_label",
@@ -348,6 +393,7 @@ def main() -> None:
             "nCanonicalRows": len(rows_out),
             "nGlassCannonPrimary": n_glass,
             "nTankPrimary": n_tank,
+            "nTeamPool": n_pool,
             "archetypeGap": ARCHETYPE_GAP,
             "archetypeFloor": ARCHETYPE_FLOOR,
             "physSpecGap": PHYS_SPEC_GAP,
@@ -358,7 +404,7 @@ def main() -> None:
     print(
         f"Wrote {OUT_PATH} · forms={len(forms)} · primary={n_primary} · "
         f"type_part={n_type_part} · rows={len(rows_out)} · "
-        f"glass={n_glass} · tank={n_tank}"
+        f"glass={n_glass} · tank={n_tank} · pool={n_pool}"
     )
 
 
