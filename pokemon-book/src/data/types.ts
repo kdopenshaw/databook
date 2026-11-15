@@ -121,6 +121,12 @@ export type RechartsSpec = {
   barCategoryGap?: number | string;
   /** Result columns listed in the scatter tooltip (e.g. a name column). */
   tooltipKeys?: string[];
+  /** Scatter only: split result rows by a categorical column, one coloured series per listed level. */
+  colorBy?: { key: string; levels: { value: string; label?: string; colorIndex?: number }[] };
+  /** "number" puts `xKey` on a continuous axis (e.g. histogram bins aligned across small multiples). */
+  xType?: 'category' | 'number';
+  xDomain?: [number, number];
+  xTicks?: number[];
 };
 
 export type ChartEncoding = {

@@ -87,8 +87,16 @@ export function RechartsRenderer({ data, spec }: Props) {
   } else {
     axes = (
       <>
-        <XAxis dataKey={spec.xKey} label={xLabel} {...axisProps} />
-        <YAxis width={48} label={yLabel} tickFormatter={fmt} domain={spec.yDomain} {...axisProps} />
+        <XAxis
+          dataKey={spec.xKey}
+          type={spec.xType ?? 'category'}
+          domain={spec.xDomain}
+          ticks={spec.xTicks}
+          allowDataOverflow={Boolean(spec.xDomain)}
+          label={xLabel}
+          {...axisProps}
+        />
+        <YAxis width={48} label={yLabel} tickFormatter={fmt} domain={spec.yDomain} allowDataOverflow={Boolean(spec.yDomain)} {...axisProps} />
       </>
     );
   }
@@ -178,7 +186,25 @@ export function RechartsRenderer({ data, spec }: Props) {
 
   const layout = vertical ? 'vertical' : 'horizontal';
   let chart: ReactElement;
-  if (isScatter) {
+  if (isScatter && spec.colorBy) {
+    const { key, levels } = spec.colorBy;
+    chart = (
+      <ScatterChart margin={margin}>
+        {axes}
+        {extras}
+        {levels.map((level, i) => (
+          <Scatter
+            key={`${key}-${level.value}`}
+            name={level.label ?? level.value}
+            data={data.filter((r) => r[key] === level.value)}
+            fill={colors.series[(level.colorIndex ?? i) % colors.series.length]}
+            fillOpacity={0.75}
+            isAnimationActive={false}
+          />
+        ))}
+      </ScatterChart>
+    );
+  } else if (isScatter) {
     chart = (
       <ScatterChart margin={margin}>
         {axes}
