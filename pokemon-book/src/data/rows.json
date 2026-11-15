@@ -1,0 +1,2622 @@
+{
+  "title": "Pok\u00e9mon Base Stats (Gen 1\u20136)",
+  "experimentId": "pokemon-gen1-6-r1",
+  "description": "Primary-form base-stat chart book \u2014 types, generations, legendary flag, and distributions.",
+  "generatedAt": "2026-11-15T08:05:55.008Z",
+  "defaultTabId": "summary",
+  "conventions": {
+    "zeroBaselineBars": true,
+    "population": "Per-species: is_primary_form && type_slot=Primary (721). Type-participation: is_primary_form any slot (dual-types counted twice).",
+    "palette": {
+      "0": "HP / counts / non-legendary",
+      "1": "Attack / legendary",
+      "2": "Defense / BST",
+      "3": "Sp. Atk",
+      "4": "Sp. Def",
+      "5": "Speed / dual-type / polarity"
+    },
+    "notes": [
+      "Bar charts must include 0 on the value axis (omit yDomain or set yDomain[0] <= 0).",
+      "Sibling panels that share measures use the same scaleGroup + explicit yDomain.",
+      "Do not place polarity metrics (Attack\u2212Sp. Atk) beside raw means in the same component row.",
+      "Do not mix counts and means (or BST totals vs six-stat means) as unlabeled siblings.",
+      "Canonical grain is form \u00d7 type slot \u2014 filter type_slot=Primary for per-species charts.",
+      "Both-slot type charts use column `type`; they intentionally double-count dual-types.",
+      "Prefer share / count_if / sum_if / mean_if for rates and conditional totals.",
+      "mergeUserRows preserves createdBy:user rows across regen."
+    ]
+  },
+  "pages": [
+    {
+      "id": "page-overview",
+      "label": "Overview",
+      "order": 0,
+      "tabIds": [
+        "summary"
+      ]
+    },
+    {
+      "id": "page-deep",
+      "label": "Deep dive",
+      "order": 1,
+      "tabIds": [
+        "types",
+        "generations",
+        "legendary",
+        "distributions"
+      ]
+    }
+  ],
+  "tabs": [
+    {
+      "id": "summary",
+      "label": "Summary",
+      "order": 0,
+      "rows": [
+        {
+          "id": "md-summary",
+          "type": "markdown",
+          "order": 0,
+          "createdBy": "skill",
+          "body": "## Pok\u00e9mon base stats \u2014 Gen 1\u20136\n\n**Population:** 721 primary forms (first CSV row per National Dex `#`). Mega and alternate formes are in the canonical file but excluded from default charts via `is_primary_form`.\n\n**Type caveats:** both-slot panels double-count dual-types; Type-1 panels use `type_slot=Primary` only. See Deep dive \u2192 By type and `understanding.md`.\n\nCharts below are **refs** into the detail tabs."
+        },
+        {
+          "id": "comp-summary-refs",
+          "type": "component",
+          "order": 1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "ref-type-count",
+              "ref": "chart-type-count",
+              "flex": 1,
+              "title": "Type participation (ref)"
+            },
+            {
+              "id": "ref-gen-bst",
+              "ref": "chart-gen-bst",
+              "flex": 1,
+              "title": "Mean BST by gen (ref)"
+            },
+            {
+              "id": "ref-leg-bst",
+              "ref": "chart-leg-bst",
+              "flex": 1,
+              "title": "Legendary vs not \u2014 BST (ref)"
+            }
+          ]
+        },
+        {
+          "id": "comp-summary-hist",
+          "type": "component",
+          "order": 2,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "ref-hist-total",
+              "ref": "chart-hist-total",
+              "flex": 1,
+              "title": "BST distribution (ref)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "types",
+      "label": "By type",
+      "order": 1,
+      "rows": [
+        {
+          "id": "md-types",
+          "type": "markdown",
+          "order": 0,
+          "createdBy": "skill",
+          "body": "## By type\n\nDefault panels use **both type slots** (`type` on primary forms). Dual-types appear under each of their types.\n\nThe Type-1-only count at the bottom uses `type_slot=Primary` for an undoubled species tally \u2014 do not treat it as the same population as both-slot means."
+        },
+        {
+          "id": "comp-type-count-bst",
+          "type": "component",
+          "order": 1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-type-count",
+              "title": "Species participation by type",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n",
+                    "label": "Participations"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "n",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Participations",
+                    "colorIndex": 0
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 420,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ],
+                "yLabel": "Participations"
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 both type slots \u00b7 dual-types counted twice",
+              "notes": "Both-slot participation. Filter is_primary_form only (any type_slot)."
+            },
+            {
+              "id": "chart-type-bst",
+              "title": "Mean BST by type",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total",
+                    "as": "mean_bst",
+                    "label": "Mean BST"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "mean_bst",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "mean_bst"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_bst",
+                    "name": "Mean BST",
+                    "colorIndex": 2
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 420,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  560
+                ],
+                "yLabel": "Mean BST"
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 both type slots"
+            }
+          ]
+        },
+        {
+          "id": "comp-type-shares",
+          "type": "component",
+          "order": 2,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-type-leg-share",
+              "title": "Legendary share by type",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "share",
+                    "as": "leg_share",
+                    "label": "Legendary share",
+                    "where": {
+                      "column": "legendary",
+                      "op": "eq",
+                      "value": true
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "leg_share",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "leg_share"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "leg_share",
+                    "name": "Legendary share",
+                    "colorIndex": 1
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 420,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  0.35
+                ],
+                "yLabel": "Share",
+                "valueFormat": "percent"
+              },
+              "flex": 1,
+              "subtitle": "share(legendary) \u00b7 primary forms \u00b7 both slots",
+              "notes": "Uses aggregate fn share with where legendary=true."
+            },
+            {
+              "id": "chart-type-dual-share",
+              "title": "Dual-type share by type",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "share",
+                    "column": "is_dual_type",
+                    "as": "dual_share",
+                    "label": "Dual-type share"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "dual_share",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "dual_share"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "dual_share",
+                    "name": "Dual-type share",
+                    "colorIndex": 5
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 420,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  1
+                ],
+                "yLabel": "Share",
+                "valueFormat": "percent"
+              },
+              "flex": 1,
+              "subtitle": "share(is_dual_type) \u00b7 primary forms \u00b7 both slots",
+              "scaleGroup": "type-rate"
+            }
+          ]
+        },
+        {
+          "id": "md-types-offense",
+          "type": "markdown",
+          "order": 3,
+          "createdBy": "skill",
+          "body": "### Offense means (non-legendary) \u2014 shared `scaleGroup: type-offense`"
+        },
+        {
+          "id": "comp-type-offense",
+          "type": "component",
+          "order": 4,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-type-atk",
+              "title": "Mean Attack by type",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "attack",
+                    "as": "mean_atk",
+                    "label": "Mean Attack"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "type",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "mean_atk"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_atk",
+                    "name": "Mean Attack",
+                    "colorIndex": 1
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 380,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Both slots \u00b7 shared scale with Sp. Atk",
+              "scaleGroup": "type-offense"
+            },
+            {
+              "id": "chart-type-spatk",
+              "title": "Mean Sp. Atk by type",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "sp_atk",
+                    "as": "mean_spatk",
+                    "label": "Mean Sp. Atk"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "type",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "mean_spatk"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_spatk",
+                    "name": "Mean Sp. Atk",
+                    "colorIndex": 3
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 380,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Both slots \u00b7 shared scale with Attack",
+              "scaleGroup": "type-offense"
+            }
+          ]
+        },
+        {
+          "id": "md-types-bulk",
+          "type": "markdown",
+          "order": 5,
+          "createdBy": "skill",
+          "body": "### Bulk means (non-legendary) \u2014 shared `scaleGroup: type-bulk`"
+        },
+        {
+          "id": "comp-type-bulk",
+          "type": "component",
+          "order": 6,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-type-def",
+              "title": "Mean Defense by type",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "defense",
+                    "as": "mean_def",
+                    "label": "Mean Defense"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "type",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "mean_def"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_def",
+                    "name": "Mean Defense",
+                    "colorIndex": 2
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 380,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Both slots \u00b7 shared bulk scale",
+              "scaleGroup": "type-bulk"
+            },
+            {
+              "id": "chart-type-spdef",
+              "title": "Mean Sp. Def by type",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "sp_def",
+                    "as": "mean_spdef",
+                    "label": "Mean Sp. Def"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "type",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "mean_spdef"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_spdef",
+                    "name": "Mean Sp. Def",
+                    "colorIndex": 4
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 380,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Both slots \u00b7 shared bulk scale",
+              "scaleGroup": "type-bulk"
+            }
+          ]
+        },
+        {
+          "id": "md-types-type1",
+          "type": "markdown",
+          "order": 7,
+          "createdBy": "skill",
+          "body": "### Type 1 only (no double-count)"
+        },
+        {
+          "id": "comp-type1",
+          "type": "component",
+          "order": 8,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-type1-count",
+              "title": "Species count by Type 1",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n",
+                    "label": "Species"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "n",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Species",
+                    "colorIndex": 0
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 420,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  130
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 Type 1 only (type_slot=Primary) \u00b7 no double-count",
+              "notes": "Type-1-only cut \u2014 compare with both-slot participation chart above."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "generations",
+      "label": "By generation",
+      "order": 2,
+      "rows": [
+        {
+          "id": "md-gens",
+          "type": "markdown",
+          "order": 0,
+          "createdBy": "skill",
+          "body": "## By generation\n\nPrimary-form species only. Mean BST moves modestly across gens \u2014 bars start at 0; avoid over-reading \u201cpower creep.\u201d"
+        },
+        {
+          "id": "comp-gen-count-bst",
+          "type": "component",
+          "order": 1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-gen-count",
+              "title": "Primary forms by generation",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "generation_label"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n",
+                    "label": "Species"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "generation_label",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation_label",
+                "y": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "generation_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Species",
+                    "colorIndex": 0
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  180
+                ],
+                "yLabel": "Species"
+              },
+              "flex": 1,
+              "subtitle": "is_primary_form \u2227 type_slot=Primary"
+            },
+            {
+              "id": "chart-gen-bst",
+              "title": "Mean BST by generation",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "generation_label"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total",
+                    "as": "mean_bst",
+                    "label": "Mean BST"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "generation_label",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation_label",
+                "y": "mean_bst"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "generation_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_bst",
+                    "name": "Mean BST",
+                    "colorIndex": 2
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  500
+                ],
+                "yLabel": "Mean BST"
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 modest gen-to-gen spread (~402\u2013446)",
+              "notes": "Bars from 0. Spread is modest \u2014 not a strong power-creep claim."
+            }
+          ]
+        },
+        {
+          "id": "comp-gen-shares",
+          "type": "component",
+          "order": 2,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-gen-leg-share",
+              "title": "Legendary share by generation",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "generation_label"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "share",
+                    "as": "leg_share",
+                    "label": "Legendary share",
+                    "where": {
+                      "column": "legendary",
+                      "op": "eq",
+                      "value": true
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "generation_label",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation_label",
+                "y": "leg_share"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "generation_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "leg_share",
+                    "name": "Legendary share",
+                    "colorIndex": 1
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  0.35
+                ],
+                "yLabel": "Share",
+                "valueFormat": "percent"
+              },
+              "flex": 1,
+              "subtitle": "share where legendary \u00b7 primary forms",
+              "scaleGroup": "gen-rate"
+            },
+            {
+              "id": "chart-gen-dual-share",
+              "title": "Dual-type share by generation",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "generation_label"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "share",
+                    "column": "is_dual_type",
+                    "as": "dual_share",
+                    "label": "Dual-type share"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "generation_label",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation_label",
+                "y": "dual_share"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "generation_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "dual_share",
+                    "name": "Dual-type share",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  1
+                ],
+                "yLabel": "Share",
+                "valueFormat": "percent"
+              },
+              "flex": 1,
+              "subtitle": "share(is_dual_type) \u00b7 primary forms"
+            }
+          ]
+        },
+        {
+          "id": "comp-gen-leg-count",
+          "type": "component",
+          "order": 3,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-gen-leg-count",
+              "title": "Legendary count by generation",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "generation_label"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count_if",
+                    "as": "n_leg",
+                    "label": "Legendaries",
+                    "where": {
+                      "column": "legendary",
+                      "op": "eq",
+                      "value": true
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "generation_label",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation_label",
+                "y": "n_leg"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "generation_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n_leg",
+                    "name": "Legendaries",
+                    "colorIndex": 1
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  20
+                ]
+              },
+              "flex": 1,
+              "subtitle": "count_if(legendary) \u00b7 primary forms",
+              "notes": "Uses count_if rather than filtering then counting."
+            }
+          ]
+        },
+        {
+          "id": "md-gen-stats",
+          "type": "markdown",
+          "order": 4,
+          "createdBy": "skill",
+          "body": "### Non-legendary mean stats \u2014 `scaleGroup: gen-stats`"
+        },
+        {
+          "id": "comp-gen-stats",
+          "type": "component",
+          "order": 5,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-gen-atk",
+              "title": "Mean Attack by generation",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "generation_label"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "attack",
+                    "as": "mean_atk"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "generation_label",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation_label",
+                "y": "mean_atk"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "generation_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_atk",
+                    "name": "Attack",
+                    "colorIndex": 1
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  100
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Non-legendary primary forms \u00b7 scaleGroup gen-stats",
+              "scaleGroup": "gen-stats"
+            },
+            {
+              "id": "chart-gen-spa",
+              "title": "Mean Sp. Atk by generation",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "generation_label"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "sp_atk",
+                    "as": "mean_spa"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "generation_label",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation_label",
+                "y": "mean_spa"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "generation_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_spa",
+                    "name": "Sp. Atk",
+                    "colorIndex": 3
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  100
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Non-legendary primary forms \u00b7 scaleGroup gen-stats",
+              "scaleGroup": "gen-stats"
+            },
+            {
+              "id": "chart-gen-spd",
+              "title": "Mean Speed by generation",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "generation_label"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "speed",
+                    "as": "mean_spd"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "generation_label",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation_label",
+                "y": "mean_spd"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "generation_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_spd",
+                    "name": "Speed",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  100
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Non-legendary primary forms \u00b7 scaleGroup gen-stats",
+              "scaleGroup": "gen-stats"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "legendary",
+      "label": "Legendary",
+      "order": 3,
+      "rows": [
+        {
+          "id": "md-leg",
+          "type": "markdown",
+          "order": 0,
+          "createdBy": "skill",
+          "body": "## Legendary\n\nCSV `Legendary` flag on primary forms (46 legendary / 675 non-legendary in this cut). Flag is source-defined \u2014 not a lore-complete mythical list.\n\nSix-stat means share `scaleGroup: leg-stats`. BST means stay on their own row."
+        },
+        {
+          "id": "comp-leg-count-bst",
+          "type": "component",
+          "order": 1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-leg-count",
+              "title": "Species count by legendary flag",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "status"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "status",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "status",
+                "y": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "status",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Species",
+                    "colorIndex": 0
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  700
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Primary forms only"
+            },
+            {
+              "id": "chart-leg-bst",
+              "title": "Mean BST by legendary flag",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "status"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total",
+                    "as": "mean_bst"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "status",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "status",
+                "y": "mean_bst"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "status",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_bst",
+                    "name": "Mean BST",
+                    "colorIndex": 2
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  700
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 separate scale from six-stat means"
+            }
+          ]
+        },
+        {
+          "id": "comp-leg-stats",
+          "type": "component",
+          "order": 2,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-leg-hp",
+              "title": "Mean HP",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "status"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "hp",
+                    "as": "mean_hp"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "status",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "status",
+                "y": "mean_hp"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "status",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_hp",
+                    "name": "HP",
+                    "colorIndex": 0
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  160
+                ]
+              },
+              "flex": 1,
+              "subtitle": "scaleGroup leg-stats",
+              "scaleGroup": "leg-stats"
+            },
+            {
+              "id": "chart-leg-atk",
+              "title": "Mean Attack",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "status"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "attack",
+                    "as": "mean_atk"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "status",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "status",
+                "y": "mean_atk"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "status",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_atk",
+                    "name": "Attack",
+                    "colorIndex": 1
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  160
+                ]
+              },
+              "flex": 1,
+              "subtitle": "scaleGroup leg-stats",
+              "scaleGroup": "leg-stats"
+            },
+            {
+              "id": "chart-leg-def",
+              "title": "Mean Defense",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "status"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "defense",
+                    "as": "mean_def"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "status",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "status",
+                "y": "mean_def"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "status",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_def",
+                    "name": "Defense",
+                    "colorIndex": 2
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  160
+                ]
+              },
+              "flex": 1,
+              "subtitle": "scaleGroup leg-stats",
+              "scaleGroup": "leg-stats"
+            },
+            {
+              "id": "chart-leg-spa",
+              "title": "Mean Sp. Atk",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "status"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "sp_atk",
+                    "as": "mean_spa"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "status",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "status",
+                "y": "mean_spa"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "status",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_spa",
+                    "name": "Sp. Atk",
+                    "colorIndex": 3
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  160
+                ]
+              },
+              "flex": 1,
+              "subtitle": "scaleGroup leg-stats",
+              "scaleGroup": "leg-stats"
+            },
+            {
+              "id": "chart-leg-spdef",
+              "title": "Mean Sp. Def",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "status"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "sp_def",
+                    "as": "mean_spdef"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "status",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "status",
+                "y": "mean_spdef"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "status",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_spdef",
+                    "name": "Sp. Def",
+                    "colorIndex": 4
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  160
+                ]
+              },
+              "flex": 1,
+              "subtitle": "scaleGroup leg-stats",
+              "scaleGroup": "leg-stats"
+            },
+            {
+              "id": "chart-leg-speed",
+              "title": "Mean Speed",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "status"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "speed",
+                    "as": "mean_speed"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "status",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "status",
+                "y": "mean_speed"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "status",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_speed",
+                    "name": "Speed",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  160
+                ]
+              },
+              "flex": 1,
+              "subtitle": "scaleGroup leg-stats",
+              "scaleGroup": "leg-stats"
+            }
+          ]
+        },
+        {
+          "id": "md-leg-cond",
+          "type": "markdown",
+          "order": 3,
+          "createdBy": "skill",
+          "body": "### Conditional aggregates (`mean_if` / `sum_if`)"
+        },
+        {
+          "id": "comp-leg-mean-if",
+          "type": "component",
+          "order": 4,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-leg-mean-if-dual",
+              "title": "Mean BST of dual-types (mean_if)",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "status"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean_if",
+                    "column": "total",
+                    "as": "mean_dual_bst",
+                    "where": {
+                      "column": "is_dual_type",
+                      "op": "eq",
+                      "value": true
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "status",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "status",
+                "y": "mean_dual_bst"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "status",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_dual_bst",
+                    "name": "Mean BST (dual)",
+                    "colorIndex": 2
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  700
+                ]
+              },
+              "flex": 1,
+              "subtitle": "mean_if(total where is_dual_type) by legendary flag",
+              "scaleGroup": "leg-bst-cond"
+            }
+          ]
+        },
+        {
+          "id": "comp-leg-sum-if",
+          "type": "component",
+          "order": 5,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-leg-sum-if-dual",
+              "title": "Sum of dual-type BST (sum_if)",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "status"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "sum_if",
+                    "column": "total",
+                    "as": "sum_dual_bst",
+                    "where": {
+                      "column": "is_dual_type",
+                      "op": "eq",
+                      "value": true
+                    }
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "status",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "status",
+                "y": "sum_dual_bst"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "status",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sum_dual_bst",
+                    "name": "Sum BST (dual)",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  220000
+                ]
+              },
+              "flex": 1,
+              "subtitle": "sum_if(total where is_dual_type) \u00b7 illustrative conditional total",
+              "notes": "Different scale from means \u2014 own row, not a sibling of mean panels."
+            }
+          ]
+        },
+        {
+          "id": "comp-leg-scatter",
+          "type": "component",
+          "order": 6,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-scatter-offense-bulk",
+              "title": "Offense vs bulk",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "dex_number",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "bulk",
+                "y": "offense"
+              },
+              "recharts": {
+                "chart": "ScatterChart",
+                "xKey": "bulk",
+                "series": [
+                  {
+                    "mark": "Scatter",
+                    "dataKey": "offense",
+                    "name": "offense"
+                  }
+                ],
+                "height": 360,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": true,
+                "decimals": 0,
+                "colorBy": {
+                  "key": "status",
+                  "levels": [
+                    {
+                      "value": "Non-legendary",
+                      "label": "Non-legendary",
+                      "colorIndex": 0
+                    },
+                    {
+                      "value": "Legendary",
+                      "label": "Legendary",
+                      "colorIndex": 1
+                    }
+                  ]
+                },
+                "xDomain": [
+                  0,
+                  200
+                ],
+                "yDomain": [
+                  0,
+                  200
+                ],
+                "tooltipKeys": [
+                  "name",
+                  "type_1",
+                  "total"
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 colored by legendary flag"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "distributions",
+      "label": "Distributions",
+      "order": 4,
+      "rows": [
+        {
+          "id": "md-dist",
+          "type": "markdown",
+          "order": 0,
+          "createdBy": "skill",
+          "body": "## Distributions\n\nHistograms over primary forms. Stat panels share `scaleGroup: stat-hist` with identical `xDomain` / `yDomain`. Physical lean is a polarity cut on its own row."
+        },
+        {
+          "id": "comp-hist-total",
+          "type": "component",
+          "order": 1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-hist-total",
+              "title": "BST distribution",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "bin": [
+                  {
+                    "column": "total",
+                    "step": 50,
+                    "as": "total_bin"
+                  }
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n",
+                    "label": "Species"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "total_bin",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "total_bin",
+                "y": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "total_bin",
+                "xType": "number",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Species",
+                    "colorIndex": 2
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "8%",
+                "xLabel": "BST",
+                "yLabel": "Species",
+                "xDomain": [
+                  150,
+                  800
+                ],
+                "yDomain": [
+                  0,
+                  180
+                ],
+                "xShift": 25
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 bin step 50"
+            }
+          ]
+        },
+        {
+          "id": "comp-hist-stats",
+          "type": "component",
+          "order": 2,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-hist-hp",
+              "title": "HP distribution",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "bin": [
+                  {
+                    "column": "hp",
+                    "step": 10,
+                    "as": "hp_bin"
+                  }
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n",
+                    "label": "Species"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "hp_bin",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "hp_bin",
+                "y": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "hp_bin",
+                "xType": "number",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Species",
+                    "colorIndex": 0
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "8%",
+                "xLabel": "Hp",
+                "yLabel": "Species",
+                "xDomain": [
+                  0,
+                  260
+                ],
+                "yDomain": [
+                  0,
+                  220
+                ],
+                "xShift": 5
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 shared stat hist scale",
+              "scaleGroup": "stat-hist"
+            },
+            {
+              "id": "chart-hist-atk",
+              "title": "Attack distribution",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "bin": [
+                  {
+                    "column": "attack",
+                    "step": 10,
+                    "as": "attack_bin"
+                  }
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n",
+                    "label": "Species"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "attack_bin",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "attack_bin",
+                "y": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "attack_bin",
+                "xType": "number",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Species",
+                    "colorIndex": 1
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "8%",
+                "xLabel": "Attack",
+                "yLabel": "Species",
+                "xDomain": [
+                  0,
+                  260
+                ],
+                "yDomain": [
+                  0,
+                  220
+                ],
+                "xShift": 5
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 shared stat hist scale",
+              "scaleGroup": "stat-hist"
+            },
+            {
+              "id": "chart-hist-speed",
+              "title": "Speed distribution",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "bin": [
+                  {
+                    "column": "speed",
+                    "step": 10,
+                    "as": "speed_bin"
+                  }
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n",
+                    "label": "Species"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "speed_bin",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "speed_bin",
+                "y": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "speed_bin",
+                "xType": "number",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Species",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 280,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "8%",
+                "xLabel": "Speed",
+                "yLabel": "Species",
+                "xDomain": [
+                  0,
+                  260
+                ],
+                "yDomain": [
+                  0,
+                  220
+                ],
+                "xShift": 5
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 shared stat hist scale",
+              "scaleGroup": "stat-hist"
+            }
+          ]
+        },
+        {
+          "id": "comp-phys-lean",
+          "type": "component",
+          "order": 3,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-phys-lean",
+              "title": "Mean Attack \u2212 Sp. Atk by generation",
+              "query": {
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "generation_label"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "phys_minus_spec",
+                    "as": "mean_lean"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "generation_label",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation_label",
+                "y": "mean_lean"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "generation_label",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_lean",
+                    "name": "Attack \u2212 Sp. Atk",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  -40,
+                  40
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Polarity \u00b7 own row (not sibling to raw means)",
+              "notes": "Signed polarity metric \u2014 zero baseline still required for bars."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+node_modules
+dist
+*.local
+.DS_Store
+coverage
+.vite
+*.log
+.env
+.env.*
+!/.env.example
+check-book-screenshot.png
+check-book-*.png
