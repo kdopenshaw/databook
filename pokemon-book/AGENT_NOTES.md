@@ -62,3 +62,22 @@ The stock renderer could not draw several of the chosen forms. All extensions ar
 33. **Fractional `order`** (`1.5`) is a natural way for a person to slot a row in. The scaffold's sort handles it, but my round-1 test (contiguous integer order) rejected it. The test now requires unique, numeric orders, with skill rows contiguous.
 34. Recharts auto-thins category tick labels even with only 4 categories (the "300–399" label was hidden). The renderer now uses `interval={0}` for category x-axes with 12 or fewer values.
 35. The analyst's commit removed the trailing newline from `rows.json`; regeneration restores it. That diff is harmless.
+
+## Round 4 (correlation matrix, lookup table, critical review)
+
+36. **The query engine cannot compute a correlation matrix, and the renderer has no heatmap.** `runQuery` has no correlation aggregate and cannot unpivot six columns into `(stat_a, stat_b, r)` rows, and there is no cell/heatmap mark. What I did instead: `build_rows.py` computes Pearson r from `canonical.json` and emits a 7×7 GFM markdown table. `book.test.ts` recomputes every cell, so the table cannot drift from the data. A true heatmap would need either a correlation aggregate plus a long-format result, or a precomputed second grain (stat × stat), plus a heatmap or cell mark in the renderer.
+37. **There is no table row type.** The spec reserves `table` for later. GFM tables already parse through remark-gfm, but `theme.css` had **no table styles**, so they rendered as unstyled, borderless text. I added `.cb-markdown table/th/td` rules that use only `--cb-*` tokens and tabular numerals. That is a scaffold-level gap and belongs upstream.
+38. **There is no per-group top-N.** `orderBy` + `limit` is global, so "top 5 per type" cannot be a query. The lookup table is generated the same way as the correlation table and tested the same way. Ties at fifth place are flagged (†, "+k more at T"), not broken by Dex order.
+39. **Friction item 22 (charts do not re-theme) was a real bug.** Loading in light mode and toggling to dark left light-palette series and white grid lines on the dark background. The fix is a `useThemeKey()` hook (a MutationObserver on the `<html>` class) in `ResponsiveFrame.tsx`, which `App.tsx` uses as the `RowRenderer` key, so the charts remount and reread the CSS variables. This is a scaffold fix and belongs upstream.
+40. Element screenshots taken after a `Page.reload` sometimes came back with empty chart areas, even though the DOM had every bar. That was my capture script, not the book; viewport screenshots confirmed the charts render.
+
+### Review findings and fixes
+
+- **Histograms on a categorical axis** (Summary and Legendary "Base stat total distribution", legendary total values): the x-axis was a list of bin labels, so empty bins vanished and the gap between 600 and 680 looked continuous. They now use a numeric x-axis with fixed ticks, and the renderer's `xShift` centres bars on their bin (the tooltip shows the bin range).
+- **Raw counts vs shares:** "Legendaries by type" showed raw counts, which favour big types. It now carries a note that it is a count, and the share chart is next to it.
+- **Colour semantics:** each stat has a fixed colour (HP 0 … Speed 5), and orange (index 1) means "legendary". Three charts broke that. In "Defense vs Speed by type", Speed used Sp. Def's colour. In the tanks chart, Speed used Sp. Atk's colour (it now uses a neutral colour, index 6). "Strongest forms overall" was all orange even though most bars are not legendary. "Legendaries by type" now uses the legendary orange.
+- **Truncated bar axis:** "Mono- vs dual-type mean total by generation" is a bar chart whose y-axis started at 300, so bar lengths overstated the gap. It now starts at 0. Line charts that still do not start at zero (BST by generation, stat means by generation) say so in their subtitle or note.
+- **Small samples:** legendary means per generation rest on 4–11 species; a note says so.
+- **Misleading comparison:** "Archetypes among Megas" compared Megas against all species. It is now "Archetype share: base forms vs their Megas" (11 of 48 vs 28 of 50), which is the like-for-like comparison.
+- **Unreadable ticks:** share charts got explicit `valueTicks` (0/25/50/75/100%, 0–20%), and the small-multiple histograms got shared y ticks (0–140).
+- **Generation shares:** a mixed chart (legendary share and dual-type share on one axis) was reduced to legendary share; dual-type share lives in the dual-typing section.

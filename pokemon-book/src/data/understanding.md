@@ -70,7 +70,9 @@ Filter conventions used by chart queries:
 - **Gen 4 is the strongest generation** (non-legendary mean 424, median 453) and has the highest legendary share (10%). Gen 3 is the weakest (385). There is no steady power creep.
 - **Dragon has the highest mean total (499)**, but 26% of Dragon species are legendary. Among non-legendaries, **Steel (450)** edges out Dragon (444). Bug is lowest (366), and Bug and Poison have no legendaries at all.
 - Physical vs special identity: Fighting (+36), Ground (+31), and Rock (+30) lean physical; Psychic (−22), Fairy (−16), and Electric (−14) lean special.
-- Defense and Speed are **uncorrelated** (r = −0.01), the weakest pair among the six stats. Sp. Atk correlates most with total (0.72).
+- **Pairwise correlations (721 base forms, Pearson):** no pair of stats exceeds |r| = 0.49. The strongest links are Sp. Atk–Sp. Def (0.49) and Defense–Sp. Def (0.48); Defense and Speed are **uncorrelated** (r = −0.01). Every stat correlates 0.55–0.72 with total, Sp. Atk the most. The full 7×7 matrix is a generated markdown table in Stats & Megas.
+- **Top 5 by total per primary type:** a generated lookup table (Lookup tab). Flagged legendaries fill 38 of the 90 slots. Fire's top 5 is all legendary; Bug, Fighting, and Poison have none. Unflagged mythicals such as Mew (Psychic, tied at 600) appear without ★. Ties at fifth place are marked with † and a count, not broken arbitrarily.
+- 28 of 50 Megas score as glass cannons vs 11 of their 48 base forms, measured against base-form z-scores.
 - Dual-type non-legendaries average 417 vs 393 for mono-types.
 - Megas add +100 that goes to Attack (+29), Sp. Atk (+24), and Defense (+21), and **never to HP** (+0 on average).
 - **Archetypes:** 61 glass cannons (8.5%) and 41 tanks (5.7%); none is both. Glass cannons are also fast (Speed 85 vs 66 overall).
