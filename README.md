@@ -15,30 +15,57 @@ Charts use **[Recharts](https://recharts.org/)** (locked). Markdown uses **[reac
 | [`references/`](./references/) | Bundled Anthropic data plugin + dataviz (read when the skill routes you there) |
 | `src/components/` | Scaffold UI (layout, rows, theme toggle, Recharts helpers) |
 | `src/data/` | `canonical.json`, `rows.json`, `understanding.md`, `runQuery.ts` |
-| [`scripts/install-skill.sh`](./scripts/install-skill.sh) | Link this repo into Cursor and Codex skill folders |
+| [`scripts/install-skill.sh`](./scripts/install-skill.sh) | Link this repo into Cursor / Codex skill folders |
 
 ## Install the skill
 
-The skill package is this repo: `SKILL.md`, `chart-book-spec.md`, `references/`, and the `src/` scaffold. The installer builds `databook/` outside the repo and links those paths in, so the host entry file and the router targets sit side by side.
+Clone this repo once, then link it so Cursor can discover `/databook`:
 
 ```bash
+git clone https://github.com/kdopenshaw/databook.git
+cd databook
 ./scripts/install-skill.sh
 ```
 
-That writes `~/.cursor/skills/databook` and `~/.codex/skills/databook`. A new chat picks the skill up. Invoke it as `databook`. Edits in this clone are what the skill reads.
+That writes `~/.cursor/skills/databook` and `${CODEX_HOME:-~/.codex}/skills/databook` (symlink package). Open a **new** Agent chat and invoke `/databook`.
+
+### Skill package vs target project
+
+| | |
+|--|--|
+| **Skill package** | This clone (and the linked folder under `~/.cursor/skills/databook`). Treat it as a **read-only template**: docs, references, and the scaffold to copy from. |
+| **Target project** | The workspace where you want a chart book (your experiment repo). The skill **copies** the scaffold there and writes `canonical.json` / `rows.json` / analysis into **that** tree. |
+
+Do **not** edit books or dump experiment data into `~/.cursor/skills/databook` (or into this product clone’s working tree unless you are developing DataBook itself).
+
+### Team / repo install
+
+To commit discovery into a project so teammates get the skill without a personal install:
+
+```bash
+./scripts/install-skill.sh --project
+```
+
+That creates `.cursor/skills/databook` with **relative** symlinks back into this repo (or into a nested checkout). Commit that folder with the project.
+
+Flags: `--cursor-only`, `--codex-only`, `--help`.
+
+A Cursor Marketplace plugin may ship later; it is **optional** and **not required**. Symlink install is the supported path today.
 
 ## How to use
 
-Invoke the DataBook skill on your experiment. **Init runs automatically** — there is no separate init command. The skill:
+Invoke `/databook` on your experiment workspace. **Init runs automatically** — there is no separate init command. The skill:
 
-1. Ensures the nested scaffold exists and installs a **trivial** sample (Overview tab, “hello world” markdown, one exponential curve) so the app boots.
+1. Copies the scaffold into the **target** workspace (if needed) and installs a **trivial** sample (Overview tab, “hello world” markdown, one exponential curve) so the app boots.
 2. Profiles your data (routing into `references/anthropic-data-plugin/` as needed).
-3. Writes `src/data/canonical.json` and self-describing rows with **inlined** query objects.
+3. Writes `src/data/canonical.json` and self-describing rows with **inlined** query objects **in the target project**.
 4. Chooses Recharts compositions using routed viz guidance under `references/anthropic-dataviz/`.
 
 When the skill initializes a chart book **inside another project**, it does **not** generate a README in that folder. This root README is for the DataBook product repo only.
 
-## Run the scaffold
+## Run a book
+
+In the **target** chart-book directory (after init), not in the skill install folder:
 
 ```bash
 npm install
