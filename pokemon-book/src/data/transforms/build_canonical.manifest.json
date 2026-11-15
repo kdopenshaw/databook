@@ -1,0 +1,20 @@
+{
+  "script": "src/data/transforms/build_canonical.py",
+  "inputs": [
+    {
+      "path": "data/Pokemon.csv",
+      "sha256": "02eabc49d3c70bc1e150891bdb9acb254910adfdfc12a6020c7b7117b2eca32f",
+      "rows": 800
+    }
+  ],
+  "params": {
+    "grain": "form x type slot",
+    "base_form_rule": "first CSV row per dex number"
+  },
+  "output": {
+    "path": "src/data/canonical.json",
+    "rows": 1214,
+    "hash": "6de475dbe32f"
+  },
+  "builtAt": "2026-11-15T05:34:15Z"
+}

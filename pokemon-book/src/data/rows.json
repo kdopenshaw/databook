@@ -1,0 +1,1586 @@
+{
+  "title": "Pokémon base stats",
+  "experimentId": "Gen 1–6 · 721 species",
+  "description": "How base stats differ across types, generations, and legendary status.",
+  "generatedAt": "2026-11-15T00:00:00.000Z",
+  "defaultTabId": "overview",
+  "tabs": [
+    {
+      "id": "overview",
+      "label": "Overview",
+      "order": 0,
+      "rows": [
+        {
+          "id": "md-question",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "## What separates strong Pokémon from weak ones?\n\nThis book compares **base stats** (HP, Attack, Defense, Sp. Atk, Sp. Def, Speed, and their sum, the *base stat total*) across **types**, **generations 1–6**, and **legendary status**.\n\n**Source:** `data/Pokemon.csv`, 800 rows, one per Pokémon *form*. That covers 721 species plus 50 Mega/Primal forms and 29 alternate forms (Rotom appliances, Deoxys formes, and so on).\n\n**Population.** Unless a chart says otherwise, it uses **one row per species (its base form, 721 rows)**. That keeps Charizard's two Megas and Rotom's five appliances from counting multiple times. Megas get their own section under *Stats & Megas*.\n\n**Types count both slots.** A Grass/Poison Pokémon counts toward Grass *and* Poison in type charts. Using only the primary type hides most Flying Pokémon: Flying is the primary type of just 3 species but the secondary type of 87.",
+          "order": 0
+        },
+        {
+          "id": "md-headlines",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "### Headline findings\n\n1. **Legendary is a stat tier, not just a label.** Base-form legendaries average **620** total vs **404** for everyone else. *No* base-form legendary is below 580, and only 15 non-legendaries reach it.\n2. **The non-legendary distribution has two humps** (around 300–349 and 450–499): unevolved vs fully evolved Pokémon.\n3. **Gen 4 is the strongest generation** (non-legendary mean 424, median 453). There is no steady power creep: Gen 3 is the weakest (385).\n4. **Dragon tops the type ranking (499), but partly through legendaries.** A quarter of Dragon species are legendary. Among non-legendaries, Steel (450) edges past Dragon (444). Bug is last (366).\n5. **Types have a physical/special identity.** Fighting, Ground, and Rock lean on Attack; Psychic, Fairy, and Electric lean on Sp. Atk.\n6. **Bulk and speed are traded off.** Defense and Speed are uncorrelated (r = −0.01), the weakest link between any two stats.\n7. **Mega Evolution is a flat +100** (49 of 50; Mega Alakazam is +90), spent on offense and never on HP.",
+          "order": 1
+        },
+        {
+          "id": "comp-total-dist",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-total-hist",
+              "title": "Base stat total distribution",
+              "subtitle": "Species (base forms) per 20-point bin, split by legendary status",
+              "query": {
+                "label": "Base stat total distribution",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "bin": [
+                  {
+                    "column": "total",
+                    "step": 20,
+                    "as": "total_bin"
+                  }
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "column": "total_nonlegendary",
+                    "as": "non_legendary",
+                    "label": "Non-legendary species"
+                  },
+                  {
+                    "fn": "count",
+                    "column": "total_legendary",
+                    "as": "legendary",
+                    "label": "Legendary species"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "total_bin",
+                "y": "non_legendary",
+                "color": "status",
+                "stack": true
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "total_bin",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "non_legendary",
+                    "name": "Non-legendary",
+                    "stackId": "status"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "legendary",
+                    "name": "Legendary",
+                    "stackId": "status"
+                  }
+                ],
+                "xLabel": "Base stat total (bin start)",
+                "yLabel": "Species",
+                "barCategoryGap": 1
+              },
+              "flex": 2,
+              "notes": "Legendaries start at 580; the non-legendary tail above 580 is mostly pseudo-legendaries and mythicals."
+            },
+            {
+              "id": "chart-gen-counts",
+              "title": "Species per generation",
+              "subtitle": "Base forms, stacked by legendary status",
+              "query": {
+                "label": "Species per generation",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "generation"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "column": "total_nonlegendary",
+                    "as": "non_legendary",
+                    "label": "Non-legendary species"
+                  },
+                  {
+                    "fn": "count",
+                    "column": "total_legendary",
+                    "as": "legendary",
+                    "label": "Legendary species"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation",
+                "y": "non_legendary",
+                "color": "status",
+                "stack": true
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "generation",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "non_legendary",
+                    "name": "Non-legendary",
+                    "stackId": "status"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "legendary",
+                    "name": "Legendary",
+                    "stackId": "status"
+                  }
+                ],
+                "yLabel": "Species"
+              },
+              "flex": 1
+            }
+          ],
+          "order": 2
+        },
+        {
+          "id": "md-caveats",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "### Caveats\n\n- **The `Legendary` flag is inconsistent for mythicals.** Mew, Celebi, Manaphy, Genesect, Keldeo, and Meloetta are `False`; Jirachi, Darkrai, Victini, Arceus, and Hoopa are `True`. The book keeps the source flag, so a few \"non-legendary 600s\" are mythicals.\n- Stats are fixed game-design values, not samples. Differences are descriptive, and there is no sampling error to test.\n- Only generations 1–6 are covered.\n\nProfiling notes, the column contract, and the transform are in `src/data/understanding.md` and `src/data/transforms/`.",
+          "order": 3
+        }
+      ]
+    },
+    {
+      "id": "legendary",
+      "label": "Legendary status",
+      "order": 1,
+      "rows": [
+        {
+          "id": "md-leg-intro",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "## Legendary vs non-legendary\n\n46 of 721 species (6.4%) are flagged legendary. The gap is about **+216 total points**, roughly two standard deviations of the whole population. It is not spread evenly: **special stats get the biggest boost** (Sp. Atk +48, Sp. Def +40), while HP gets the smallest (+27).",
+          "order": 0
+        },
+        {
+          "id": "comp-leg-profile",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-leg-stat-profile",
+              "title": "Mean of each stat by status",
+              "subtitle": "Base forms; bars are the mean of each base stat",
+              "query": {
+                "label": "Mean of each stat by status",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "status"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "hp",
+                    "as": "mean_hp",
+                    "label": "Mean HP"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "attack",
+                    "as": "mean_attack",
+                    "label": "Mean Attack"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "defense",
+                    "as": "mean_defense",
+                    "label": "Mean Defense"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "sp_atk",
+                    "as": "mean_sp_atk",
+                    "label": "Mean Sp. Atk"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "sp_def",
+                    "as": "mean_sp_def",
+                    "label": "Mean Sp. Def"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "speed",
+                    "as": "mean_speed",
+                    "label": "Mean Speed"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "status",
+                "y": "mean_hp",
+                "color": "stat"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "status",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_hp",
+                    "name": "HP"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_attack",
+                    "name": "Attack"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_defense",
+                    "name": "Defense"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_sp_atk",
+                    "name": "Sp. Atk"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_sp_def",
+                    "name": "Sp. Def"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_speed",
+                    "name": "Speed"
+                  }
+                ],
+                "yLabel": "Mean base stat",
+                "decimals": 1
+              },
+              "flex": 1
+            },
+            {
+              "id": "chart-leg-by-type",
+              "title": "Legendary species per type",
+              "subtitle": "Base forms; both type slots count",
+              "query": {
+                "label": "Legendary species per type",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "sum",
+                    "column": "legendary",
+                    "as": "legendary_species",
+                    "label": "Legendary species"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "legendary_species",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "y": "type",
+                "x": "legendary_species"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "legendary_species",
+                    "name": "Legendary species"
+                  }
+                ],
+                "xLabel": "Legendary species",
+                "categoryWidth": 72,
+                "height": 460
+              },
+              "flex": 1,
+              "notes": "Psychic and Dragon dominate; Bug and Poison have none."
+            }
+          ],
+          "order": 1
+        },
+        {
+          "id": "md-leg-boundary",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "### The 580 line\n\nLegendaries have a hard floor: **no base-form legendary is below 580**, and 16 of them sit exactly on it (the legendary birds, beasts, Regis, lake trio, Swords of Justice, and the Tornadus/Thundurus genies). The 15 non-legendaries at 580 or above fall into three groups:\n\n- **Pseudo-legendaries** at exactly 600: Dragonite, Tyranitar, Salamence, Metagross, Garchomp, Hydreigon, and Goodra.\n- **Mythicals or legendaries the source does not flag:** Mew, Celebi, Manaphy, Genesect, Meloetta, Keldeo, and Cresselia.\n- **Slaking (670)**, the strongest non-legendary. Its ability, Truant, makes it act only every other turn, which is the game's price for those stats.",
+          "order": 2
+        },
+        {
+          "id": "comp-leg-edges",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-top-nonleg",
+              "title": "Strongest non-legendaries",
+              "subtitle": "Base forms, top 16 by base stat total",
+              "query": {
+                "label": "Strongest non-legendaries",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "total",
+                    "direction": "desc"
+                  },
+                  {
+                    "column": "dex",
+                    "direction": "asc"
+                  }
+                ],
+                "limit": 16
+              },
+              "encoding": {
+                "y": "name",
+                "x": "total"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "name",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "total",
+                    "name": "Base stat total"
+                  }
+                ],
+                "xLabel": "Base stat total",
+                "categoryWidth": 168,
+                "height": 460
+              },
+              "flex": 1
+            },
+            {
+              "id": "chart-leg-total-values",
+              "title": "Legendary species by base stat total",
+              "subtitle": "Base forms; each bar is one exact total value",
+              "query": {
+                "label": "Legendary species by base stat total",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "total"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "species",
+                    "label": "Legendary species"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "total",
+                "y": "species"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "total",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "species",
+                    "name": "Legendary species",
+                    "colorIndex": 1
+                  }
+                ],
+                "xLabel": "Base stat total",
+                "yLabel": "Species",
+                "height": 460
+              },
+              "flex": 1,
+              "notes": "Two spikes: 580 (the trios) and 600 (Latias/Latios, Heatran, Landorus, Zygarde, and flagged mythicals such as Jirachi, Darkrai, and Victini). Nothing is below 580."
+            }
+          ],
+          "order": 3
+        }
+      ]
+    },
+    {
+      "id": "types",
+      "label": "Types",
+      "order": 2,
+      "rows": [
+        {
+          "id": "md-types-intro",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "## Types\n\nEach species counts toward **every type it has** (1,071 type memberships across 721 species; 350 are dual-type). The mean total per type is shown twice: for all species, and for **non-legendaries only**. That separates \"this type is strong\" from \"this type has a lot of legendaries\".",
+          "order": 0
+        },
+        {
+          "id": "comp-type-total",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-type-total",
+              "title": "Mean base stat total by type",
+              "subtitle": "Base forms, both type slots; sorted by the all-species mean",
+              "query": {
+                "label": "Mean base stat total by type",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total",
+                    "as": "mean_total",
+                    "label": "All species"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "total_nonlegendary",
+                    "as": "mean_total_nonleg",
+                    "label": "Non-legendary only"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "mean_total",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "y": "type",
+                "x": "mean_total",
+                "color": "population"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_total",
+                    "name": "All species"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_total_nonleg",
+                    "name": "Non-legendary only"
+                  }
+                ],
+                "xLabel": "Mean base stat total",
+                "categoryWidth": 72,
+                "height": 560,
+                "decimals": 1
+              },
+              "flex": 1,
+              "notes": "Dragon drops from 499 to 444 once legendaries are removed; Steel (450) becomes the top non-legendary type. Poison and Bug have no legendaries, so both bars match."
+            }
+          ],
+          "order": 1
+        },
+        {
+          "id": "comp-type-membership",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-type-slots",
+              "title": "Species per type, by slot",
+              "subtitle": "Base forms; primary vs secondary type",
+              "query": {
+                "label": "Species per type, by slot",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "sum",
+                    "column": "in_primary_slot",
+                    "as": "primary",
+                    "label": "As primary type"
+                  },
+                  {
+                    "fn": "sum",
+                    "column": "in_secondary_slot",
+                    "as": "secondary",
+                    "label": "As secondary type"
+                  },
+                  {
+                    "fn": "count",
+                    "as": "species",
+                    "label": "Species"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "species",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "y": "type",
+                "x": "species",
+                "color": "type_slot",
+                "stack": true
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "primary",
+                    "name": "Primary",
+                    "stackId": "slot"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "secondary",
+                    "name": "Secondary",
+                    "stackId": "slot"
+                  }
+                ],
+                "xLabel": "Species",
+                "categoryWidth": 72,
+                "height": 520
+              },
+              "flex": 1,
+              "notes": "Flying is almost always a secondary type (87 of 90)."
+            },
+            {
+              "id": "chart-type-leg-share",
+              "title": "Legendary share by type",
+              "subtitle": "Base forms, both type slots",
+              "query": {
+                "label": "Legendary share by type",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "legendary",
+                    "as": "legendary_share",
+                    "label": "Legendary share"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "legendary_share",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "y": "type",
+                "x": "legendary_share"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "legendary_share",
+                    "name": "Legendary share",
+                    "colorIndex": 1
+                  }
+                ],
+                "xLabel": "Share of species that are legendary",
+                "categoryWidth": 72,
+                "height": 520,
+                "valueFormat": "percent"
+              },
+              "flex": 1
+            }
+          ],
+          "order": 2
+        },
+        {
+          "id": "md-types-identity",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "### Type identity: how the stats are spent\n\nThe total says how strong a type is; the split says *how*. **Attack − Sp. Atk** separates physical types (Fighting +36, Ground +31, Rock +30) from special types (Psychic −22, Fairy −16, Electric −14). **Defense vs Speed** separates the walls (Steel 110 Def / 56 Spe, Rock 107 / 48) from the sprinters (Flying 83 Spe, Electric 82).",
+          "order": 3
+        },
+        {
+          "id": "comp-type-identity",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-type-phys-spec",
+              "title": "Physical vs special lean by type",
+              "subtitle": "Mean of Attack − Sp. Atk; base forms, both slots",
+              "query": {
+                "label": "Physical vs special lean by type",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "phys_minus_spec",
+                    "as": "mean_lean",
+                    "label": "Mean Attack − Sp. Atk"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "mean_lean",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "y": "type",
+                "x": "mean_lean"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_lean",
+                    "name": "Attack − Sp. Atk"
+                  }
+                ],
+                "xLabel": "← special · points · physical →",
+                "categoryWidth": 72,
+                "height": 520,
+                "decimals": 1
+              },
+              "flex": 1
+            },
+            {
+              "id": "chart-type-def-speed",
+              "title": "Defense vs Speed by type",
+              "subtitle": "Mean stat; base forms, both slots; sorted by Defense",
+              "query": {
+                "label": "Defense vs Speed by type",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "defense",
+                    "as": "mean_defense",
+                    "label": "Mean Defense"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "speed",
+                    "as": "mean_speed",
+                    "label": "Mean Speed"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "mean_defense",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "y": "type",
+                "x": "mean_defense",
+                "color": "stat"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_defense",
+                    "name": "Defense",
+                    "colorIndex": 2
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_speed",
+                    "name": "Speed",
+                    "colorIndex": 4
+                  }
+                ],
+                "xLabel": "Mean base stat",
+                "categoryWidth": 72,
+                "height": 520,
+                "decimals": 1
+              },
+              "flex": 1
+            }
+          ],
+          "order": 4
+        }
+      ]
+    },
+    {
+      "id": "generations",
+      "label": "Generations",
+      "order": 3,
+      "rows": [
+        {
+          "id": "md-gen-intro",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "## Generations\n\nIs there power creep? **Not a steady one.** Non-legendary strength dips in Gen 3, **jumps in Gen 4** (mean 424, median 453; Gen 4 added many evolutions of older lines, such as Magnezone, Rhyperior, and Togekiss), and settles back around 412 afterwards. Legendaries hover around 605–634 in every generation.",
+          "order": 0
+        },
+        {
+          "id": "comp-gen-total",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-gen-total",
+              "title": "Base stat total by generation",
+              "subtitle": "Base forms; mean (and non-legendary median) per generation; Y axis starts at 300",
+              "query": {
+                "label": "Base stat total by generation",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "generation"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total_legendary",
+                    "as": "mean_leg",
+                    "label": "Legendary mean"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "total_nonlegendary",
+                    "as": "mean_nonleg",
+                    "label": "Non-legendary mean"
+                  },
+                  {
+                    "fn": "median",
+                    "column": "total_nonlegendary",
+                    "as": "median_nonleg",
+                    "label": "Non-legendary median"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation",
+                "y": "mean_nonleg",
+                "color": "series"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "LineChart",
+                "xKey": "generation",
+                "series": [
+                  {
+                    "mark": "Line",
+                    "dataKey": "mean_nonleg",
+                    "name": "Non-legendary mean",
+                    "dot": true,
+                    "type": "linear"
+                  },
+                  {
+                    "mark": "Line",
+                    "dataKey": "median_nonleg",
+                    "name": "Non-legendary median",
+                    "dot": true,
+                    "type": "linear",
+                    "strokeDasharray": "4 3",
+                    "colorIndex": 0
+                  },
+                  {
+                    "mark": "Line",
+                    "dataKey": "mean_leg",
+                    "name": "Legendary mean",
+                    "dot": true,
+                    "type": "linear",
+                    "colorIndex": 1
+                  }
+                ],
+                "yLabel": "Base stat total",
+                "yDomain": [
+                  300,
+                  700
+                ],
+                "decimals": 1
+              },
+              "flex": 2
+            },
+            {
+              "id": "chart-gen-shares",
+              "title": "Legendary and dual-type share",
+              "subtitle": "Base forms, share of species per generation",
+              "query": {
+                "label": "Legendary and dual-type share",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "generation"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "legendary",
+                    "as": "legendary_share",
+                    "label": "Legendary share"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "is_dual_type",
+                    "as": "dual_share",
+                    "label": "Dual-type share"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation",
+                "y": "legendary_share",
+                "color": "metric"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "generation",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "legendary_share",
+                    "name": "Legendary",
+                    "colorIndex": 1
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "dual_share",
+                    "name": "Dual-type",
+                    "colorIndex": 2
+                  }
+                ],
+                "yLabel": "Share of species",
+                "valueFormat": "percent"
+              },
+              "flex": 1,
+              "notes": "Gen 4 has the most legendaries per species (10%); Gen 6 is the most dual-typed (57%)."
+            }
+          ],
+          "order": 1
+        },
+        {
+          "id": "comp-gen-stats",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-gen-stat-lines",
+              "title": "Mean of each stat by generation, non-legendaries",
+              "subtitle": "Base forms, non-legendary only",
+              "query": {
+                "label": "Mean of each stat by generation, non-legendaries",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "generation"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "hp",
+                    "as": "mean_hp",
+                    "label": "Mean HP"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "attack",
+                    "as": "mean_attack",
+                    "label": "Mean Attack"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "defense",
+                    "as": "mean_defense",
+                    "label": "Mean Defense"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "sp_atk",
+                    "as": "mean_sp_atk",
+                    "label": "Mean Sp. Atk"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "sp_def",
+                    "as": "mean_sp_def",
+                    "label": "Mean Sp. Def"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "speed",
+                    "as": "mean_speed",
+                    "label": "Mean Speed"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation",
+                "y": "mean_attack",
+                "color": "stat"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "LineChart",
+                "xKey": "generation",
+                "series": [
+                  {
+                    "mark": "Line",
+                    "dataKey": "mean_hp",
+                    "name": "HP",
+                    "dot": true,
+                    "type": "linear"
+                  },
+                  {
+                    "mark": "Line",
+                    "dataKey": "mean_attack",
+                    "name": "Attack",
+                    "dot": true,
+                    "type": "linear"
+                  },
+                  {
+                    "mark": "Line",
+                    "dataKey": "mean_defense",
+                    "name": "Defense",
+                    "dot": true,
+                    "type": "linear"
+                  },
+                  {
+                    "mark": "Line",
+                    "dataKey": "mean_sp_atk",
+                    "name": "Sp. Atk",
+                    "dot": true,
+                    "type": "linear"
+                  },
+                  {
+                    "mark": "Line",
+                    "dataKey": "mean_sp_def",
+                    "name": "Sp. Def",
+                    "dot": true,
+                    "type": "linear"
+                  },
+                  {
+                    "mark": "Line",
+                    "dataKey": "mean_speed",
+                    "name": "Speed",
+                    "dot": true,
+                    "type": "linear"
+                  }
+                ],
+                "yLabel": "Mean base stat",
+                "yDomain": [
+                  50,
+                  90
+                ],
+                "decimals": 1
+              },
+              "flex": 1,
+              "notes": "Y axis starts at 50 to show the spread; every stat moves within about 20 points. Gen 4's bump is broad (HP, Attack, Defense, and Sp. Def all rise), and Attack keeps climbing into Gen 5."
+            }
+          ],
+          "order": 2
+        }
+      ]
+    },
+    {
+      "id": "stats",
+      "label": "Stats & Megas",
+      "order": 4,
+      "rows": [
+        {
+          "id": "md-stats-intro",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "## How the six stats relate\n\nEvery stat correlates positively with total (r = 0.55 for Speed up to 0.72 for Sp. Atk), but the stats are only loosely tied to each other. The weakest pair is **Defense and Speed (r = −0.01)**: heavily armored Pokémon (Shuckle, Steelix, Aggron) are rarely fast. Attack and Sp. Atk are only moderately linked (r = 0.34), which is why \"physical\" and \"special\" attackers are distinct archetypes.",
+          "order": 0
+        },
+        {
+          "id": "comp-scatter",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-def-speed",
+              "title": "Defense vs Speed",
+              "subtitle": "Base forms (721 species)",
+              "query": {
+                "label": "Defense vs Speed",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "defense",
+                "y": "speed"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "ScatterChart",
+                "xKey": "defense",
+                "series": [
+                  {
+                    "mark": "Scatter",
+                    "dataKey": "speed",
+                    "name": "Species"
+                  }
+                ],
+                "xLabel": "Defense",
+                "yLabel": "Speed",
+                "tooltipKeys": [
+                  "name",
+                  "defense",
+                  "speed"
+                ]
+              },
+              "flex": 1,
+              "notes": "r = −0.01. The slow, bulky corner (lower right) and the fast, frail corner (upper left) are both populated."
+            },
+            {
+              "id": "chart-atk-spatk",
+              "title": "Attack vs Sp. Atk",
+              "subtitle": "Base forms (721 species)",
+              "query": {
+                "label": "Attack vs Sp. Atk",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "attack",
+                "y": "sp_atk"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "ScatterChart",
+                "xKey": "attack",
+                "series": [
+                  {
+                    "mark": "Scatter",
+                    "dataKey": "sp_atk",
+                    "name": "Species",
+                    "colorIndex": 4
+                  }
+                ],
+                "xLabel": "Attack",
+                "yLabel": "Sp. Atk",
+                "tooltipKeys": [
+                  "name",
+                  "attack",
+                  "sp_atk"
+                ]
+              },
+              "flex": 1,
+              "notes": "r = 0.34. Points far from the diagonal are specialists; the diagonal band is mixed attackers."
+            }
+          ],
+          "order": 1
+        },
+        {
+          "id": "comp-top-stat",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-top-stat",
+              "title": "Each species' highest stat",
+              "subtitle": "Base forms; count of species whose single highest stat is each one",
+              "query": {
+                "label": "Each species' highest stat",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "top_stat"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "species",
+                    "label": "Species"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "top_stat",
+                "y": "species"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "top_stat",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "species",
+                    "name": "Species"
+                  }
+                ],
+                "yLabel": "Species"
+              },
+              "flex": 1,
+              "notes": "Attack is the most common peak stat (192 species); Sp. Def the rarest (65). Ties go to the earlier stat in HP → Speed order."
+            }
+          ],
+          "order": 2
+        },
+        {
+          "id": "md-mega",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "## Mega Evolution: a flat +100, spent on offense\n\nMega/Primal forms add **exactly +100** to the base total in 49 of 50 cases (Mega Alakazam is +90). The chart compares the 48 species that have a Mega/Primal against their own Mega/Primal forms. Attack (+29), Sp. Atk (+24), and Defense (+21) absorb most of the boost; **HP never changes**.",
+          "order": 3
+        },
+        {
+          "id": "comp-mega",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-mega-profile",
+              "title": "Base form vs Mega/Primal: mean of each stat",
+              "subtitle": "Species that have a Mega or Primal form",
+              "query": {
+                "label": "Base form vs Mega/Primal: mean of each stat",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "has_mega_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "form_kind",
+                    "op": "in",
+                    "value": [
+                      "Base",
+                      "Mega/Primal"
+                    ]
+                  }
+                ],
+                "groupBy": [
+                  "form_kind"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "hp",
+                    "as": "mean_hp",
+                    "label": "Mean HP"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "attack",
+                    "as": "mean_attack",
+                    "label": "Mean Attack"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "defense",
+                    "as": "mean_defense",
+                    "label": "Mean Defense"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "sp_atk",
+                    "as": "mean_sp_atk",
+                    "label": "Mean Sp. Atk"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "sp_def",
+                    "as": "mean_sp_def",
+                    "label": "Mean Sp. Def"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "speed",
+                    "as": "mean_speed",
+                    "label": "Mean Speed"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "form_kind",
+                "y": "mean_attack",
+                "color": "stat"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "form_kind",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_hp",
+                    "name": "HP"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_attack",
+                    "name": "Attack"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_defense",
+                    "name": "Defense"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_sp_atk",
+                    "name": "Sp. Atk"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_sp_def",
+                    "name": "Sp. Def"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_speed",
+                    "name": "Speed"
+                  }
+                ],
+                "yLabel": "Mean base stat",
+                "decimals": 1
+              },
+              "flex": 1,
+              "notes": "Means over 48 base forms vs 50 Mega/Primal forms (Charizard and Mewtwo have two Megas each)."
+            },
+            {
+              "id": "chart-mega-top",
+              "title": "Strongest forms overall",
+              "subtitle": "All 800 forms, top 12 by base stat total",
+              "query": {
+                "label": "Strongest forms overall",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "total",
+                    "direction": "desc"
+                  },
+                  {
+                    "column": "dex",
+                    "direction": "asc"
+                  }
+                ],
+                "limit": 12
+              },
+              "encoding": {
+                "y": "name",
+                "x": "total"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "name",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "total",
+                    "name": "Base stat total",
+                    "colorIndex": 1
+                  }
+                ],
+                "xLabel": "Base stat total",
+                "categoryWidth": 132,
+                "height": 380
+              },
+              "flex": 1,
+              "notes": "Megas and Primals hold 11 of the top 12 spots; Arceus (720) is the only base form. Ties at 700 are broken by dex number (Black/White Kyurem and Mega Diancie also have 700)."
+            }
+          ],
+          "order": 4
+        }
+      ]
+    }
+  ]
+}
