@@ -180,6 +180,13 @@
           "createdBy": "skill",
           "body": "### Caveats\n\n- **The `Legendary` flag is inconsistent for mythicals.** Mew, Celebi, Manaphy, Genesect, Keldeo, and Meloetta are `False`; Jirachi, Darkrai, Victini, Arceus, and Hoopa are `True`. The book keeps the source flag, so a few \"non-legendary 600s\" are mythicals.\n- Stats are fixed game-design values, not samples. Differences are descriptive, and there is no sampling error to test.\n- Only generations 1–6 are covered.\n\nProfiling notes, the column contract, and the transform are in `src/data/understanding.md` and `src/data/transforms/`.",
           "order": 3
+        },
+        {
+          "id": "md-analyst-take",
+          "type": "markdown",
+          "order": 1.5,
+          "createdBy": "user",
+          "body": "### Analyst's take (Keith)\n\nFor team-building, the useful cut isn't legendary vs not; it's **base stat total ≥ 500 among non-legendaries**. That's the pool you can actually field. Two follow-ups I want:\n\n- How the speed tiers (e.g. ≥100 Speed) split by type\n- Whether dual typing buys stats, or only coverage\n\n> Caveat: stats ignore abilities and movepools (Slaking's 670 is the classic trap)."
         }
       ]
     },
