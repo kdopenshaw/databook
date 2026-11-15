@@ -1,0 +1,29 @@
+{
+  "grain": "one synthetic point per x on y = e^x",
+  "hash": "init-sample-exp",
+  "builtAt": "2026-11-15T00:00:00.000Z",
+  "status": "ready",
+  "schema": [
+    {
+      "name": "x",
+      "type": "quantitative",
+      "label": "x",
+      "nullable": false
+    },
+    {
+      "name": "y",
+      "type": "quantitative",
+      "label": "e^x",
+      "nullable": false
+    }
+  ],
+  "rows": [
+    { "x": 0, "y": 1 },
+    { "x": 0.5, "y": 1.648721 },
+    { "x": 1, "y": 2.718282 },
+    { "x": 1.5, "y": 4.481689 },
+    { "x": 2, "y": 7.389056 },
+    { "x": 2.5, "y": 12.182494 },
+    { "x": 3, "y": 20.085537 }
+  ]
+}
