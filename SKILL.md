@@ -34,10 +34,11 @@ Do **not** re-init. **Every** extend round (including R2/R3/cold) must complete 
 | 2 | Read `BookDocument.conventions` in `rows.json` (+ generator header) | Honesty rules in working memory |
 | 3 | Find the generator (`src/data/transforms/…`) | Prefer editing it over hand-editing `rows.json` |
 | 4 | Apply → `mergeUserRows` → **`npm run ok`** (blocking) | Artifacts + live `lintBook(rows, { table })` + nonempty query smoke green |
-| 5 | Open **validate-data** / **create-viz** | **Only when choosing new chart forms / cuts** — not every regen |
-| 6 | Visual | **Optional** on handoff or UI doubt: `npm run check:visual -- --url http://127.0.0.1:5173/` |
+| 5 | Inspect query (when editing a chart) | **`npm run print-block -- <chartId>`** — same `runQuery` as the app; CSV/table on stdout (no browser) |
+| 6 | Open **validate-data** / **create-viz** | **Only when choosing new chart forms / cuts** — not every regen |
+| 7 | Visual | **Optional** on handoff or UI doubt: `npm run check:visual -- --url http://127.0.0.1:5173/` |
 
-**Exploratory loop:** leave `npm run dev` running; after each edit run **only** `npm run ok`. Do **not** also run `lint:charts`, `check`, `extend-check`, `npm test`, or `check:visual` every round (`check`/`validate`/`extend-check` are aliases or subsets of `ok`).
+**Exploratory loop:** leave `npm run dev` running; after each edit run **`npm run ok`**. To inspect a chart’s query slice without the browser, run **`npm run print-block -- <chartId>`** (optional `--format table`, `--limit N`). Do **not** also run `lint:charts`, `check`, `extend-check`, `npm test`, or `check:visual` every round (`check`/`validate`/`extend-check` are aliases or subsets of `ok`).
 
 House rules that must not live only in a private `AGENT_NOTES.md`:
 
@@ -51,7 +52,7 @@ House rules that must not live only in a private `AGENT_NOTES.md`:
 
 ### Init (automatic when no book yet)
 
-1. Copy the scaffold listed in `scaffold-files.txt` (or: `src/`, `public/`, `scripts/`, `index.html`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `vitest.ok.config.ts`, `.gitignore`) into the **target**. **`scripts/` is required** so `npm run ok` works.
+1. Copy the scaffold listed in `scaffold-files.txt` (or: `src/`, `public/`, `scripts/`, `index.html`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `vitest.ok.config.ts`, `.gitignore`) into the **target**. **`scripts/` is required** so `npm run ok` / `npm run print-block` work.
 2. Write the **minimal sample** into the target: one tab **Overview**, markdown **hello world**, one exponential curve chart, tiny `canonical.json`, `understanding.md`, and `BookDocument.conventions`.
 3. Set `index.html` `<title>` from `BookDocument.title` when replacing the sample.
 4. Mount **BookTabs** (primary nav). Sidebar appears only when `pages` are defined (desktop); mobile shows a horizontal page switcher.
@@ -67,7 +68,7 @@ House rules that must not live only in a private `AGENT_NOTES.md`:
 | 3 | **Transform** | `src/data/canonical.json` — **one** JSON file of normalized rows |
 | 4 | **Choose charts** | → Anthropic dataviz; pick Recharts compositions from **stock RechartsSpec** |
 | 5 | **Emit document** | `src/data/rows.json` (`BookDocument`); inlined `query` + `recharts` + `encoding`; set `conventions` |
-| 6 | **Sanity-check (blocking)** | **`npm run ok`** (artifacts + live honesty lint with canonical + query nonempty smoke). Optional: `check:visual` on handoff. Multi-chart rows need a clear comparison purpose. |
+| 6 | **Sanity-check (blocking)** | **`npm run ok`** (artifacts + live honesty lint with canonical + query nonempty smoke). After chart/query edits, **`npm run print-block -- <chartId>`** to confirm the slice. Optional: `check:visual` on handoff. Multi-chart rows need a clear comparison purpose. |
 
 **Do not** create `queries.json`, `blocks.json`, or a closed `ChartCatalog` of bar/line/…. Queries live on each chart block.
 

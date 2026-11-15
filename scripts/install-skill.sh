@@ -143,7 +143,7 @@ tsconfig.json
 vite.config.ts
 public/
 src/
-scripts/                 # check-book.mjs — required for `npm run check` / visual QA
+scripts/                 # ok-book.mjs + print-block.mjs — required for `npm run ok` / `print-block`; check-book.mjs for optional visual
 .gitignore               # scaffold gitignore (node_modules, dist, …)
 # After copy: set index.html <title> from BookDocument.title; replace sample data.
 EOF

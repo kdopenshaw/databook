@@ -10,6 +10,6 @@ vite.config.ts
 vitest.ok.config.ts
 public/
 src/
-scripts/                 # ok-book.mjs — required for `npm run ok`; check-book.mjs for optional visual
+scripts/                 # ok-book.mjs + print-block.mjs — required for `npm run ok` / `print-block`; check-book.mjs for optional visual
 .gitignore               # scaffold gitignore (node_modules, dist, …)
 # After copy: set index.html <title> from BookDocument.title; replace sample data.

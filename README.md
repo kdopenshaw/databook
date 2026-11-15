@@ -12,6 +12,7 @@ In a databook directory (after `/databook` init):
 
 ```bash
 npm install
-npm run dev   # preview at http://127.0.0.1:5173/
-npm run ok    # artifacts + live chart lint + query smoke
+npm run dev                         # preview at http://127.0.0.1:5173/
+npm run ok                          # artifacts + live chart lint + query smoke
+npm run print-block -- <chartId>    # headless query preview (CSV to stdout)
 ```
