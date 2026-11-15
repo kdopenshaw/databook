@@ -92,6 +92,7 @@ export function RechartsRenderer({ data, spec }: Props) {
           type={spec.xType ?? 'category'}
           domain={spec.xDomain}
           ticks={spec.xTicks}
+          interval={spec.xType !== 'number' && data.length <= 12 ? 0 : 'preserveEnd'}
           allowDataOverflow={Boolean(spec.xDomain)}
           label={xLabel}
           {...axisProps}
