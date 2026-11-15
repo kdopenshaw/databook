@@ -4,7 +4,7 @@ Repo-local **chart books**: a fixed React scaffold plus an AI skill that profile
 
 **Start here:** [`SKILL.md`](./SKILL.md) is the product entrypoint. Invoking the skill runs **databook init automatically** (or the **extend existing book** path), then profiles → charts → emits `rows.json`. Spec: [`chart-book-spec.md`](./chart-book-spec.md). Live types: [`src/data/types.ts`](./src/data/types.ts).
 
-Charts use **[Recharts](https://recharts.org/)** (locked). Markdown uses **[react-markdown](https://github.com/remarkjs/react-markdown)**. Typography uses the **[`geist`](https://www.npmjs.com/package/geist)** font package; **Tabs** are a Geist-styled scaffold primitive (`BookTabs`). Dark mode is CSS variables + class `dark` on `<html>` — no theme-provider library.
+Charts use **[Recharts](https://recharts.org/)** (locked). Markdown uses **[react-markdown](https://github.com/remarkjs/react-markdown)**. Typography uses **vendored Geist fonts** in `public/fonts/` (no `geist` npm package — that peer-pulls Next). **Tabs** are a Geist-styled scaffold primitive (`BookTabs`). Dark mode is CSS variables + class `dark` on `<html>` — no theme-provider library.
 
 **Prerequisite:** Node.js **20+** on PATH.
 
@@ -16,10 +16,10 @@ Charts use **[Recharts](https://recharts.org/)** (locked). Markdown uses **[reac
 | [`chart-book-spec.md`](./chart-book-spec.md) | Product & implementation spec |
 | [`references/`](./references/) | Bundled Anthropic data plugin + dataviz (read when the skill routes you there) |
 | `src/components/` | Scaffold UI (layout, rows, theme toggle, Recharts helpers) |
-| `src/data/` | `canonical.json`, `rows.json`, `understanding.md`, `runQuery.ts`, `chartLint.ts` |
+| `src/data/` | `canonical.json`, `rows.json`, `understanding.md`, `runQuery.ts`, `chartLint.ts`, `okBook.ts` |
 | [`scripts/install-skill.sh`](./scripts/install-skill.sh) | Link this repo into Cursor / Codex skill folders |
-| [`scripts/check-book.mjs`](./scripts/check-book.mjs) | Blocking lint + optional HTTP / Playwright visual check |
-| [`scripts/extend-check.mjs`](./scripts/extend-check.mjs) | Fail-closed extend-path gate (understanding + conventions + check script) |
+| [`scripts/ok-book.mjs`](./scripts/ok-book.mjs) | **Exploratory gate:** artifacts + live honesty lint + query smoke |
+| [`scripts/check-book.mjs`](./scripts/check-book.mjs) | Optional HTTP / Playwright-or-chromium visual check |
 
 ## Install the skill
 
@@ -57,9 +57,9 @@ Flags: `--cursor-only`, `--codex-only`, `--help`.
 
 ## How to use
 
-Invoke `/databook` on your experiment workspace. **Init runs automatically** when no book exists. If a book already exists, follow the skill’s **fail-closed extend** path (`understanding.md` → conventions → `extend-check` → validate-data/create-viz → lint → **`npm run check`**).
+Invoke `/databook` on your experiment workspace. **Init runs automatically** when no book exists. If a book already exists, follow the skill’s extend path: read understanding + conventions → edit → **`npm run ok`**.
 
-When the skill initializes a chart book **inside another project**, it does **not** generate a README in that folder. This root README is for the DataBook product repo only. Init copies **`scripts/`** so `npm run check` works in every book.
+When the skill initializes a chart book **inside another project**, it does **not** generate a README in that folder. This root README is for the DataBook product repo only. Init copies **`scripts/`** so `npm run ok` works in every book.
 
 ## Run a book
 
@@ -67,15 +67,22 @@ In the **target** chart-book directory (after init), not in the skill install fo
 
 ```bash
 npm install
-npm run dev         # Vite
-npm run build
-npm test            # vitest (runQuery, chart lint, merge helpers)
-npm run lint:charts # chart honesty lint only
-npm run check       # lint:charts (blocking on extend)
-npm run extend-check
-npm run check:visual -- --url http://127.0.0.1:5173/   # Playwright / chromium screenshot
-npm run smoke:insert -- --url http://127.0.0.1:5173/   # (+) markdown insert + persist
+npm run dev         # leave running — preview at http://127.0.0.1:5173/
+npm run ok          # every edit round: artifacts + live lint + query smoke
 ```
+
+### Handoff / product
+
+```bash
+npm test            # full vitest suite (scaffold / product changes)
+npm run lint:charts # unit tests for the linter only (not the live book)
+npm run typecheck
+npm run build
+npm run check:visual -- --url http://127.0.0.1:5173/   # optional screenshot (Playwright if installed, else chromium)
+npm run smoke:insert -- --url http://127.0.0.1:5173/    # (+) markdown persist (needs playwright)
+```
+
+`check` / `validate` alias `ok`. `extend-check` is artifacts-only (subset of `ok`). Playwright is **not** a default book dependency — explore-only books need not install browsers; for visual/smoke: `npm i -D playwright && npx playwright install chromium` (otherwise `check:visual` uses system chromium when available).
 
 User-inserted markdown (`createdBy: "user"`) is kept in the live book document and persisted in `localStorage` under `databook:user-rows:v1:<experimentId>` so refresh keeps edits. Generators still merge those rows via `mergeUserRows` when rewriting `rows.json`.
 
@@ -87,4 +94,4 @@ User-inserted markdown (`createdBy: "user"`) is kept in the live book document a
 - **Component row** — flex/wrap container for one or more chart blocks (aligned headers). Related measures use **`scaleGroup`** + shared `yDomain`.
 - Each chart block is **self-describing** or a **`ref`** to another chart id (Summary without copied queries).
 - Query helpers: **`share` / `count_if` / `sum_if` / `mean_if`** for rates and conditional aggregates.
-- **`npm run lint:charts`** rejects truncated bar axes, unstated line zooms, unshared sibling scales, unknown marks, and near-flat “trend” bands.
+- **`npm run ok`** rejects truncated bar axes, unstated line zooms, unshared sibling scales, unknown marks, near-flat “trend” bands, and empty chart queries.

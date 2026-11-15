@@ -1,16 +1,15 @@
 #!/usr/bin/env node
 /**
- * Book check for agents (blocking in extend path step 6).
+ * Optional visual / HTTP check for handoff or UI suspicion.
+ * Honesty lint lives in `npm run ok` — this script does not re-run unit tests.
  *
  * Usage:
- *   npm run check                         # lint:charts (required)
- *   npm run check -- --url http://127.0.0.1:5173/
  *   npm run check:visual -- --url http://127.0.0.1:5173/
  *   node scripts/check-book.mjs --screenshot /tmp/book.png --url http://127.0.0.1:5173/
  *
- * Visual QA tries Playwright when installed (`npx playwright`), else falls back to
- * a timed Chromium headless screenshot. Always use an explicit process timeout —
- * never wait forever on the Vite HMR socket.
+ * Visual QA tries Playwright when installed (`npm i -D playwright` or optionalDep),
+ * else falls back to a timed Chromium headless screenshot. Always use an explicit
+ * process timeout — never wait forever on the Vite HMR socket.
  *
  * Chromium fallback recipe:
  *   timeout 20s chromium --headless --disable-gpu --screenshot=out.png \
@@ -34,8 +33,10 @@ const url = flagValue('--url');
 const screenshot = flagValue('--screenshot');
 const wantVisual = args.includes('--visual') || Boolean(screenshot);
 
-const lint = spawnSync('npm', ['run', 'lint:charts'], { cwd: root, stdio: 'inherit', shell: true });
-if (lint.status !== 0) process.exit(lint.status ?? 1);
+if (!wantVisual && !url) {
+  console.error('check-book: use `npm run ok` for honesty lint; pass --visual --url … for screenshots');
+  process.exit(2);
+}
 
 if (url) {
   const ctrl = AbortSignal.timeout(8000);
@@ -55,10 +56,14 @@ if (url) {
 async function screenshotWithPlaywright(targetUrl, outPath) {
   try {
     const { chromium } = await import('playwright');
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({
+      headless: true,
+      args: ['--disable-dev-shm-usage', '--no-sandbox'],
+    });
     try {
       const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-      await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 15000 });
+      await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+      await new Promise((r) => setTimeout(r, 1500));
       await page.screenshot({ path: outPath, fullPage: true });
       console.log(`check-book: playwright screenshot → ${outPath}`);
       return true;
@@ -80,17 +85,21 @@ function screenshotWithChromium(targetUrl, outPath) {
     return which.status === 0;
   });
   if (!bin) {
-    console.error('check-book: no chromium binary found for screenshot fallback');
+    console.error(
+      'check-book: no chromium binary found. Install playwright (`npm i -D playwright && npx playwright install chromium`) or a system chromium.',
+    );
     return false;
   }
   const userData = `/tmp/db-chrome-${process.pid}`;
   const result = spawnSync(
     'timeout',
     [
-      '20s',
+      '25s',
       bin,
-      '--headless',
+      '--headless=new',
       '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--no-sandbox',
       `--screenshot=${outPath}`,
       '--window-size=1280,800',
       `--user-data-dir=${userData}`,

@@ -2,10 +2,20 @@
 /**
  * Smoke: insert markdown via (+), save, reload, assert persistence.
  * Requires a running Vite server: npm run dev
+ * Requires Playwright: npm i -D playwright && npx playwright install chromium
  *
  *   node scripts/smoke-markdown-insert.mjs --url http://127.0.0.1:5173/
  */
-import { chromium } from 'playwright';
+let chromium;
+try {
+  ({ chromium } = await import('playwright'));
+} catch {
+  console.error(
+    'smoke-markdown-insert: playwright is not installed.\n' +
+      '  npm i -D playwright && npx playwright install chromium',
+  );
+  process.exit(1);
+}
 
 const args = process.argv.slice(2);
 const urlIdx = args.indexOf('--url');
@@ -13,11 +23,11 @@ const url = urlIdx >= 0 ? args[urlIdx + 1] : 'http://127.0.0.1:5173/';
 
 const marker = `Smoke finding ${Date.now()}`;
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: true, args: ['--disable-dev-shm-usage', '--no-sandbox'] });
 try {
   const context = await browser.newContext();
   const page = await context.newPage();
-  await page.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
   // Force-show first insert gap and click.
   const gap = page.locator('.cb-insert-gap-btn').first();
@@ -34,7 +44,7 @@ try {
   await page.getByText(marker).waitFor({ state: 'visible', timeout: 5000 });
 
   // Reload — localStorage overlay should restore the user row.
-  await page.reload({ waitUntil: 'networkidle', timeout: 20000 });
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
   await page.getByText(marker).waitFor({ state: 'visible', timeout: 5000 });
 
   // No "Analyst note" / "Analyst ask" chrome.
