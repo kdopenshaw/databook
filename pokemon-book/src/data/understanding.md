@@ -2,7 +2,7 @@
 
 ## Question
 
-How do base stats differ across **types**, **generations**, and **legendary status**?
+How do base stats differ across **types** (both slots), **generations**, **legendary status**, and **glass-cannon / tank archetypes**?
 
 ## Sources
 
@@ -12,49 +12,55 @@ How do base stats differ across **types**, **generations**, and **legendary stat
 
 Columns: `#`, `Name`, `Type 1`, `Type 2`, `Total`, `HP`, `Attack`, `Defense`, `Sp. Atk`, `Sp. Def`, `Speed`, `Generation`, `Legendary`.
 
-No joins. Rebuild with `python3 src/data/transforms/build_canonical.py` then `python3 src/data/transforms/build_rows.py` from the book root, then `npm test`.
+Rebuild: `python3 src/data/transforms/build_canonical.py` then `python3 src/data/transforms/build_rows.py`, then `npm test`.
 
 ## Profile
 
-- 800 rows, 13 columns. Only `Type 2` is sparse: blank on 386 mono-type forms (48%).
-- `#` is **not unique** (721 distinct dex numbers; 79 extra forms):
-  - ~50 Mega/Primal forms (names containing `Mega ` / `Primal `).
-  - Remaining extras are alternate formes (Rotom appliances, Deoxys, Pumpkaboo sizes, Therian, etc.).
-- `Total` equals the sum of the six battle stats on every row.
-- Stats are design constants on roughly a 1–255 scale (Shedinja HP 1; Blissey HP 255; Shuckle Defense/Sp. Def 230).
-- Generations 1–6 present; counts by form: 166 / 106 / 160 / 121 / 165 / 82.
-- Legendary flag: 65 / 800 forms (`True`).
+- 800 CSV forms; `#` is not unique (721 dex numbers + Mega/alternate formes).
+- `Type 2` blank on 386 mono-type forms.
+- `Total` always equals the six-stat sum.
+- Legendary flag: 65 / 800 forms (46 / 721 primary forms).
 
 ## Grain
 
-**Canonical grain:** one row per CSV form (800). Primary key: `row_id` (stable `dex-form` index).
+**Canonical grain:** one row per **form × type slot** (1,214 rows). Dual-types get a Primary and a Secondary row; mono-types get Primary only.
 
-Derived helpers:
+| Population | Filter | Rows (approx.) | Use |
+|------------|--------|----------------|-----|
+| Per-species | `is_primary_form` && `type_slot = Primary` | 721 | Generations, legendary, distributions, archetype counts |
+| Type participation | `is_primary_form` (any slot) | ~1,071 | Type means / rates (dual-types under both types) |
+| Type 1 only | species filter above | 721 | Side-by-side vs both-slots |
 
-- `is_primary_form` — first CSV row for each dex `#` (721 species “base” rows).
-- `is_mega` — Mega/Primal name match.
-- `form_kind` — `Base` | `Mega/Primal` | `Alternate`.
-- `generation_label` — `Gen 1` … `Gen 6`.
-- `status` — `Legendary` | `Non-legendary` (from the source flag).
-- `type_2` — null when blank.
+## Archetypes
 
-## Default analysis population
+Fit on the **721 primary forms**, then copied to every slot row of that form:
 
-Charts default to **`is_primary_form = true`** (721 species), so Mega and alternate formes do not overweight species with many rows.
+- `offense` = max(Attack, Sp. Atk); `bulk` = mean(HP, Defense, Sp. Def)
+- z-scores vs primary-form mean/SD
+- **Glass cannon:** `z(offense) − z(bulk) ≥ 1` and `z(offense) ≥ 0.5` → **61** species
+- **Tank:** `z(bulk) − max(z(offense), z(Speed)) ≥ 1` and `z(bulk) ≥ 0.5` → **41** species
+- Else **Neither**. If both fire (rare), the larger gap wins.
 
-Type charts group by **`type_1` only**. Dual-type Pokémon contribute only under their primary type; Flying (and others that are often secondary) are under-counted — see caveats.
+Thresholds (`gap=1.0`, `floor=0.5`) are a judgment call — descriptive labels, not competitive roles.
+
+## Pages / IA
+
+- **Overview** page → Summary tab (refs into deep-dive charts)
+- **Deep dive** page → By type, By generation, Legendary, Distributions, Archetypes
+
+Sidebar lists pages only because `BookDocument.pages` is set.
 
 ## Caveats
 
-- **Legendary flag is inconsistent for mythicals.** Some mythicals are `False` (e.g. Mew, Celebi) and some are `True` (e.g. Jirachi, Arceus). Charts use the source flag as-is.
-- Mega/alternate forms are excluded from default charts; they inflate totals (~+100 BST for most Megas).
-- Stats are not samples — group differences are descriptive, not inferential.
-- Gen 1–6 only (no Alola/Galar/Paldea forms beyond what this CSV encodes).
-- Type-1-only ranking: Flying has very few primary-type species; Bug looks weakest partly because many Bug lines stay low-BST unevolved stages in the primary-form set.
+- Legendary / mythical flag inconsistency in the source CSV.
+- Mega/alternate formes excluded from default populations via `is_primary_form`.
+- Both-slot type charts **intentionally double-count** dual-type species.
+- Stats are design constants — differences are descriptive, not inferential.
+- Gen 1–6 only.
 
-## Headline findings (primary forms)
+## Headline findings
 
-- Legendaries average ~**620** total vs ~**404** for non-legendaries.
-- Among non-legendaries, **Dragon** and **Steel** lead mean Total; **Bug** is lowest; **Flying** Type-1 means are unstable (tiny n).
-- **Gen 4** non-legendaries have the highest mean/median Total; **Gen 3** is weakest — no monotonic power creep across generations.
-- Offense identity: Fighting / Ground / Rock lean physical (Attack ≫ Sp. Atk); Psychic / Fairy / Electric lean special.
+- Legendary ~**620** vs non-legendary ~**404** mean BST (species grain).
+- Both-slot cut: **Flying** participation jumps (~80 non-legendary participations vs ~2 as Type 1).
+- Gen 4 strongest / Gen 3 weakest among non-legendary means — no monotonic power creep.
+- Glass cannons lean fast and high-offense; tanks lean high-bulk / lower Speed.

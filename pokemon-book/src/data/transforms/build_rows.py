@@ -10,17 +10,28 @@ from pathlib import Path
 BOOK_ROOT = Path(__file__).resolve().parents[3]
 ROWS_PATH = BOOK_ROOT / "src" / "data" / "rows.json"
 
-PRIMARY = [{"column": "is_primary_form", "op": "eq", "value": True}]
-PRIMARY_NONLEG = PRIMARY + [{"column": "legendary", "op": "eq", "value": False}]
-PRIMARY_LEG = PRIMARY + [{"column": "legendary", "op": "eq", "value": True}]
+# Per-species (no double-count): primary form + primary type slot.
+SPECIES = [
+    {"column": "is_primary_form", "op": "eq", "value": True},
+    {"column": "type_slot", "op": "eq", "value": "Primary"},
+]
+SPECIES_NONLEG = SPECIES + [{"column": "legendary", "op": "eq", "value": False}]
+SPECIES_LEG = SPECIES + [{"column": "legendary", "op": "eq", "value": True}]
 
-# Shared scales for small multiples (include 0 for bars; generous headroom from profile).
+# Type participation: primary forms, both type slots (dual-types counted twice).
+TYPE_ANY = [{"column": "is_primary_form", "op": "eq", "value": True}]
+TYPE_ANY_NONLEG = TYPE_ANY + [{"column": "legendary", "op": "eq", "value": False}]
+TYPE_PRIMARY_ONLY = SPECIES_NONLEG  # Type-1-equivalent via type_slot=Primary
+
 STAT_DOMAIN = [0, 130]
 TOTAL_TYPE_DOMAIN = [0, 560]
 TOTAL_GEN_DOMAIN = [0, 500]
 STAT_GEN_DOMAIN = [0, 100]
 HIST_X = [150, 800]
 HIST_Y = [0, 180]
+ARCH_BST_DOMAIN = [0, 600]
+ARCH_OB_DOMAIN = [0, 140]
+ARCH_RATE_DOMAIN = [0, 0.35]
 
 
 def bar_h(
@@ -33,32 +44,24 @@ def bar_h(
     query: dict,
     subtitle: str | None = None,
     notes: str | None = None,
-    y_domain: list[int] | None = None,
+    y_domain: list | None = None,
     category_width: int = 88,
     height: int = 420,
     color_index: int = 0,
-    x_label: str | None = None,
     y_label: str | None = None,
     decimals: int = 1,
-    encoding: dict | None = None,
+    value_format: str | None = None,
 ) -> dict:
     block = {
         "id": chart_id,
         "title": title,
         "query": query,
-        "encoding": encoding or {"category": x_key, "value": data_key},
+        "encoding": {"category": x_key, "value": data_key},
         "recharts": {
             "chart": "BarChart",
             "layout": "vertical",
             "xKey": x_key,
-            "series": [
-                {
-                    "mark": "Bar",
-                    "dataKey": data_key,
-                    "name": name,
-                    "colorIndex": color_index,
-                }
-            ],
+            "series": [{"mark": "Bar", "dataKey": data_key, "name": name, "colorIndex": color_index}],
             "categoryWidth": category_width,
             "height": height,
             "showGrid": True,
@@ -75,10 +78,10 @@ def bar_h(
         block["notes"] = notes
     if y_domain is not None:
         block["recharts"]["yDomain"] = y_domain
-    if x_label:
-        block["recharts"]["xLabel"] = x_label
     if y_label:
         block["recharts"]["yLabel"] = y_label
+    if value_format:
+        block["recharts"]["valueFormat"] = value_format
     return block
 
 
@@ -91,7 +94,7 @@ def bar_v(
     query: dict,
     subtitle: str | None = None,
     notes: str | None = None,
-    y_domain: list[int] | None = None,
+    y_domain: list | None = None,
     height: int = 320,
     show_legend: bool = True,
     stacked: bool = False,
@@ -147,9 +150,8 @@ def line_chart(
     query: dict,
     subtitle: str | None = None,
     notes: str | None = None,
-    y_domain: list[int] | None = None,
+    y_domain: list | None = None,
     height: int = 300,
-    show_legend: bool = True,
 ) -> dict:
     series_out = [
         {
@@ -175,7 +177,7 @@ def line_chart(
             "height": height,
             "showGrid": True,
             "showTooltip": True,
-            "showLegend": show_legend,
+            "showLegend": True,
             "decimals": 1,
         },
         "flex": 1,
@@ -193,9 +195,17 @@ def scatter(
     chart_id: str,
     title: str,
     *,
+    x_key: str,
+    y_key: str,
+    color_key: str,
+    levels: list[dict],
     query: dict,
     subtitle: str | None = None,
     notes: str | None = None,
+    x_label: str | None = None,
+    y_label: str | None = None,
+    tooltip_keys: list[str] | None = None,
+    height: int = 420,
 ) -> dict:
     return {
         "id": chart_id,
@@ -203,40 +213,26 @@ def scatter(
         "subtitle": subtitle,
         "notes": notes,
         "query": query,
-        "encoding": {"x": "attack", "y": "speed", "color": "status"},
+        "encoding": {"x": x_key, "y": y_key, "color": color_key},
         "recharts": {
             "chart": "ScatterChart",
-            "xKey": "attack",
-            "series": [{"mark": "Scatter", "dataKey": "speed", "name": "Speed"}],
-            "colorBy": {
-                "key": "status",
-                "levels": [
-                    {"value": "Non-legendary", "label": "Non-legendary", "colorIndex": 0},
-                    {"value": "Legendary", "label": "Legendary", "colorIndex": 1},
-                ],
-            },
-            "tooltipKeys": ["name", "type_1", "total"],
-            "xLabel": "Attack",
-            "yLabel": "Speed",
-            "height": 420,
+            "xKey": x_key,
+            "series": [{"mark": "Scatter", "dataKey": y_key, "name": y_label or y_key}],
+            "colorBy": {"key": color_key, "levels": levels},
+            "tooltipKeys": tooltip_keys or ["name", "type_1", "total"],
+            "xLabel": x_label or x_key,
+            "yLabel": y_label or y_key,
+            "height": height,
             "showGrid": True,
             "showTooltip": True,
             "showLegend": True,
-            "decimals": 0,
+            "decimals": 2,
         },
         "flex": 1,
     }
 
 
-def hist(
-    chart_id: str,
-    title: str,
-    *,
-    filter_: list,
-    subtitle: str | None = None,
-    notes: str | None = None,
-    color_index: int = 0,
-) -> dict:
+def hist(chart_id: str, title: str, *, filter_: list, subtitle: str | None = None, notes: str | None = None, color_index: int = 0) -> dict:
     return {
         "id": chart_id,
         "title": title,
@@ -257,14 +253,7 @@ def hist(
             "xDomain": HIST_X,
             "xShift": 25,
             "yDomain": HIST_Y,
-            "series": [
-                {
-                    "mark": "Bar",
-                    "dataKey": "n",
-                    "name": "Forms",
-                    "colorIndex": color_index,
-                }
-            ],
+            "series": [{"mark": "Bar", "dataKey": "n", "name": "Forms", "colorIndex": color_index}],
             "xLabel": "Base stat total (bin start)",
             "yLabel": "Count",
             "height": 300,
@@ -279,13 +268,7 @@ def hist(
 
 
 def md(row_id: str, order: float, body: str) -> dict:
-    return {
-        "id": row_id,
-        "type": "markdown",
-        "order": order,
-        "createdBy": "skill",
-        "body": body,
-    }
+    return {"id": row_id, "type": "markdown", "order": order, "createdBy": "skill", "body": body}
 
 
 def component(row_id: str, order: float, components: list, *, wrap: bool = True, gap: int = 16) -> dict:
@@ -299,22 +282,23 @@ def component(row_id: str, order: float, components: list, *, wrap: bool = True,
     }
 
 
-def mean_by_type(stat: str, label: str, *, nonleg: bool = False) -> dict:
+def mean_by_type(stat: str, *, filter_: list, as_name: str | None = None) -> dict:
+    out = as_name or f"mean_{stat}"
     return {
-        "label": f"mean {label} by type_1",
-        "filter": PRIMARY_NONLEG if nonleg else PRIMARY,
-        "groupBy": ["type_1"],
-        "aggregate": [{"fn": "mean", "column": stat, "as": f"mean_{stat}"}, {"fn": "count", "as": "n"}],
-        "orderBy": [{"column": f"mean_{stat}", "direction": "desc"}],
+        "label": f"mean {stat} by type",
+        "filter": filter_,
+        "groupBy": ["type"],
+        "aggregate": [{"fn": "mean", "column": stat, "as": out}, {"fn": "count", "as": "n"}],
+        "orderBy": [{"column": out, "direction": "desc"}],
     }
 
 
-def mean_by_gen(stats: list[tuple[str, str]]) -> dict:
-    aggs = [{"fn": "mean", "column": s, "as": f"mean_{s}"} for s, _ in stats]
+def mean_by_gen(stats: list[str], *, filter_: list) -> dict:
+    aggs = [{"fn": "mean", "column": s, "as": f"mean_{s}"} for s in stats]
     aggs.append({"fn": "count", "as": "n"})
     return {
         "label": "mean stats by generation",
-        "filter": PRIMARY_NONLEG,
+        "filter": filter_,
         "groupBy": ["generation_label"],
         "aggregate": aggs,
         "orderBy": [{"column": "generation_label", "direction": "asc"}],
@@ -351,28 +335,29 @@ def merge_user_rows(previous: dict | None, next_doc: dict) -> dict:
 
 
 def build_document() -> dict:
-    type_total_all = bar_h(
-        "chart-type-total-all",
-        "Mean base total by Type 1",
-        x_key="type_1",
+    # ---- Types (primary slot vs both slots) ----
+    type_total_primary = bar_h(
+        "chart-type-total-primary",
+        "Mean BST by type (Type 1 / primary slot)",
+        x_key="type",
         data_key="mean_total",
         name="Mean total",
-        query=mean_by_type("total", "Total"),
-        subtitle="Primary forms · all statuses · Type 1 only",
-        notes="Flying n is tiny as a primary type; dual-types only count under Type 1.",
+        query=mean_by_type("total", filter_=TYPE_PRIMARY_ONLY),
+        subtitle="Primary forms · type_slot=Primary · non-legendary",
+        notes="Same as R1 Type-1 cut; Flying stays under-counted.",
         y_domain=TOTAL_TYPE_DOMAIN,
         color_index=2,
         y_label="Mean BST",
     )
-    type_total_nonleg = bar_h(
-        "chart-type-total-nonleg",
-        "Mean base total by Type 1 (non-legendary)",
-        x_key="type_1",
+    type_total_both = bar_h(
+        "chart-type-total-both",
+        "Mean BST by type (both slots)",
+        x_key="type",
         data_key="mean_total",
         name="Mean total",
-        query=mean_by_type("total", "Total", nonleg=True),
-        subtitle="Primary forms · legendary flag = false",
-        notes="Removes legendary inflation (Dragon especially).",
+        query=mean_by_type("total", filter_=TYPE_ANY_NONLEG),
+        subtitle="Primary forms · Primary+Secondary · non-legendary",
+        notes="Dual-types contribute to both types; species appear twice if dual.",
         y_domain=TOTAL_TYPE_DOMAIN,
         color_index=0,
         y_label="Mean BST",
@@ -380,79 +365,119 @@ def build_document() -> dict:
 
     type_attack = bar_h(
         "chart-type-attack",
-        "Mean Attack by Type 1",
-        x_key="type_1",
+        "Mean Attack (both slots)",
+        x_key="type",
         data_key="mean_attack",
         name="Attack",
-        query=mean_by_type("attack", "Attack", nonleg=True),
-        subtitle="Non-legendary primary forms",
+        query=mean_by_type("attack", filter_=TYPE_ANY_NONLEG),
+        subtitle="Non-legendary primary forms · both type slots",
         y_domain=STAT_DOMAIN,
         color_index=1,
         height=380,
     )
     type_spatk = bar_h(
         "chart-type-spatk",
-        "Mean Sp. Atk by Type 1",
-        x_key="type_1",
+        "Mean Sp. Atk (both slots)",
+        x_key="type",
         data_key="mean_sp_atk",
         name="Sp. Atk",
-        query=mean_by_type("sp_atk", "Sp. Atk", nonleg=True),
-        subtitle="Non-legendary primary forms",
+        query=mean_by_type("sp_atk", filter_=TYPE_ANY_NONLEG),
+        subtitle="Non-legendary primary forms · both type slots",
         y_domain=STAT_DOMAIN,
         color_index=3,
         height=380,
     )
     type_phys_lean = bar_h(
         "chart-type-phys-lean",
-        "Mean Attack − Sp. Atk by Type 1",
-        x_key="type_1",
+        "Mean Attack − Sp. Atk (both slots)",
+        x_key="type",
         data_key="mean_phys_minus_spec",
         name="Attack − Sp. Atk",
-        query=mean_by_type("phys_minus_spec", "phys_minus_spec", nonleg=True),
-        subtitle="Positive = physical lean · non-legendary primary forms",
-        notes="Bar axis still includes 0 so polarity is readable.",
+        query=mean_by_type("phys_minus_spec", filter_=TYPE_ANY_NONLEG),
+        subtitle="Positive = physical lean · both slots",
         y_domain=[-40, 50],
         color_index=5,
         height=380,
     )
-
     type_def = bar_h(
         "chart-type-defense",
-        "Mean Defense by Type 1",
-        x_key="type_1",
+        "Mean Defense (both slots)",
+        x_key="type",
         data_key="mean_defense",
         name="Defense",
-        query=mean_by_type("defense", "Defense", nonleg=True),
-        subtitle="Non-legendary primary forms",
+        query=mean_by_type("defense", filter_=TYPE_ANY_NONLEG),
+        subtitle="Both type slots · non-legendary",
         y_domain=STAT_DOMAIN,
         color_index=2,
         height=380,
     )
     type_spdef = bar_h(
         "chart-type-spdef",
-        "Mean Sp. Def by Type 1",
-        x_key="type_1",
+        "Mean Sp. Def (both slots)",
+        x_key="type",
         data_key="mean_sp_def",
         name="Sp. Def",
-        query=mean_by_type("sp_def", "Sp. Def", nonleg=True),
-        subtitle="Non-legendary primary forms",
+        query=mean_by_type("sp_def", filter_=TYPE_ANY_NONLEG),
+        subtitle="Both type slots · non-legendary",
         y_domain=STAT_DOMAIN,
         color_index=4,
         height=380,
     )
     type_speed = bar_h(
         "chart-type-speed",
-        "Mean Speed by Type 1",
-        x_key="type_1",
+        "Mean Speed (both slots)",
+        x_key="type",
         data_key="mean_speed",
         name="Speed",
-        query=mean_by_type("speed", "Speed", nonleg=True),
-        subtitle="Non-legendary primary forms",
+        query=mean_by_type("speed", filter_=TYPE_ANY_NONLEG),
+        subtitle="Both type slots · non-legendary",
         y_domain=STAT_DOMAIN,
         color_index=5,
         height=380,
     )
 
+    type_n_primary = bar_h(
+        "chart-type-n-primary",
+        "Species count (primary slot)",
+        x_key="type",
+        data_key="n",
+        name="Species",
+        query={
+            "label": "n by type primary slot",
+            "filter": TYPE_PRIMARY_ONLY,
+            "groupBy": ["type"],
+            "aggregate": [{"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "n", "direction": "desc"}],
+        },
+        subtitle="One row per species",
+        y_domain=[0, 120],
+        color_index=2,
+        height=380,
+        decimals=0,
+        y_label="Species",
+    )
+    type_n_both = bar_h(
+        "chart-type-n-both",
+        "Participation count (both slots)",
+        x_key="type",
+        data_key="n",
+        name="Participations",
+        query={
+            "label": "n by type both slots",
+            "filter": TYPE_ANY_NONLEG,
+            "groupBy": ["type"],
+            "aggregate": [{"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "n", "direction": "desc"}],
+        },
+        subtitle="Dual-types counted under both types · Flying rises",
+        y_domain=[0, 120],
+        color_index=0,
+        height=380,
+        decimals=0,
+        y_label="Participations",
+    )
+
+    # ---- Generations (species grain) ----
     gen_total = bar_v(
         "chart-gen-total",
         "Mean base total by generation",
@@ -460,7 +485,7 @@ def build_document() -> dict:
         series=[{"dataKey": "mean_total", "name": "Mean total", "colorIndex": 0}],
         query={
             "label": "mean total by gen nonleg",
-            "filter": PRIMARY_NONLEG,
+            "filter": SPECIES_NONLEG,
             "groupBy": ["generation_label"],
             "aggregate": [
                 {"fn": "mean", "column": "total", "as": "mean_total"},
@@ -468,14 +493,13 @@ def build_document() -> dict:
             ],
             "orderBy": [{"column": "generation_label", "direction": "asc"}],
         },
-        subtitle="Non-legendary primary forms",
-        notes="Gen 4 leads; Gen 3 is weakest — no steady power creep.",
+        subtitle="Non-legendary primary forms · primary slot",
+        notes="Gen 4 leads; Gen 3 weakest — no steady power creep.",
         y_domain=TOTAL_GEN_DOMAIN,
         show_legend=False,
         y_label="Mean BST",
         height=340,
     )
-
     gen_counts = bar_v(
         "chart-gen-counts",
         "Species count by generation and status",
@@ -485,8 +509,8 @@ def build_document() -> dict:
             {"dataKey": "n_legendary", "name": "Legendary", "colorIndex": 1, "stackId": "a"},
         ],
         query={
-            "label": "counts by gen/status via pivot helpers",
-            "filter": PRIMARY,
+            "label": "counts by gen/status",
+            "filter": SPECIES,
             "groupBy": ["generation_label"],
             "aggregate": [
                 {"fn": "count", "column": "total_nonlegendary", "as": "n_nonlegendary"},
@@ -494,15 +518,13 @@ def build_document() -> dict:
             ],
             "orderBy": [{"column": "generation_label", "direction": "asc"}],
         },
-        subtitle="Primary forms · stacked counts",
-        notes="count on nullable pivot columns counts non-null only.",
+        subtitle="Primary forms · primary slot · stacked",
         y_domain=[0, 180],
         stacked=True,
         decimals=0,
         y_label="Species",
         height=340,
     )
-
     gen_offense = line_chart(
         "chart-gen-offense",
         "Mean offense stats by generation",
@@ -512,10 +534,9 @@ def build_document() -> dict:
             {"dataKey": "mean_sp_atk", "name": "Sp. Atk", "colorIndex": 3},
             {"dataKey": "mean_speed", "name": "Speed", "colorIndex": 5},
         ],
-        query=mean_by_gen([("attack", "Attack"), ("sp_atk", "Sp. Atk"), ("speed", "Speed")]),
-        subtitle="Non-legendary primary forms · axis includes 0",
+        query=mean_by_gen(["attack", "sp_atk", "speed"], filter_=SPECIES_NONLEG),
+        subtitle="Non-legendary · primary slot · axis includes 0",
         y_domain=STAT_GEN_DOMAIN,
-        height=320,
     )
     gen_bulk = line_chart(
         "chart-gen-bulk",
@@ -526,12 +547,12 @@ def build_document() -> dict:
             {"dataKey": "mean_defense", "name": "Defense", "colorIndex": 2},
             {"dataKey": "mean_sp_def", "name": "Sp. Def", "colorIndex": 4},
         ],
-        query=mean_by_gen([("hp", "HP"), ("defense", "Defense"), ("sp_def", "Sp. Def")]),
-        subtitle="Non-legendary primary forms · axis includes 0",
+        query=mean_by_gen(["hp", "defense", "sp_def"], filter_=SPECIES_NONLEG),
+        subtitle="Non-legendary · primary slot · axis includes 0",
         y_domain=STAT_GEN_DOMAIN,
-        height=320,
     )
 
+    # ---- Legendary ----
     leg_means = bar_v(
         "chart-leg-means",
         "Mean stats: legendary vs non-legendary",
@@ -546,7 +567,7 @@ def build_document() -> dict:
         ],
         query={
             "label": "mean six stats by status",
-            "filter": PRIMARY,
+            "filter": SPECIES,
             "groupBy": ["status"],
             "aggregate": [
                 {"fn": "mean", "column": "hp", "as": "mean_hp"},
@@ -559,13 +580,11 @@ def build_document() -> dict:
             ],
             "orderBy": [{"column": "status", "direction": "asc"}],
         },
-        subtitle="Primary forms · clustered means",
-        notes="Largest gaps tend to sit in Sp. Atk / Sp. Def; HP gap is smaller.",
+        subtitle="Primary forms · primary slot",
         y_domain=[0, 130],
         height=360,
         y_label="Mean stat",
     )
-
     leg_total = bar_h(
         "chart-leg-total",
         "Mean base total by status",
@@ -574,7 +593,7 @@ def build_document() -> dict:
         name="Mean total",
         query={
             "label": "mean total by status",
-            "filter": PRIMARY,
+            "filter": SPECIES,
             "groupBy": ["status"],
             "aggregate": [
                 {"fn": "mean", "column": "total", "as": "mean_total"},
@@ -582,71 +601,242 @@ def build_document() -> dict:
             ],
             "orderBy": [{"column": "mean_total", "direction": "desc"}],
         },
-        subtitle="Primary forms",
+        subtitle="Primary forms · primary slot",
         y_domain=[0, 700],
         category_width=120,
         height=220,
         color_index=1,
     )
-
     scatter_as = scatter(
         "chart-scatter-atk-speed",
         "Attack vs Speed",
-        query={
-            "label": "primary forms sample for scatter",
-            "filter": PRIMARY,
-            "orderBy": [{"column": "total", "direction": "desc"}],
-        },
-        subtitle="Primary forms · coloured by legendary status",
-        notes="Hover shows name, Type 1, and total.",
+        x_key="attack",
+        y_key="speed",
+        color_key="status",
+        levels=[
+            {"value": "Non-legendary", "label": "Non-legendary", "colorIndex": 0},
+            {"value": "Legendary", "label": "Legendary", "colorIndex": 1},
+        ],
+        query={"label": "species scatter", "filter": SPECIES, "orderBy": [{"column": "total", "direction": "desc"}]},
+        subtitle="Primary forms · primary slot",
+        x_label="Attack",
+        y_label="Speed",
+        tooltip_keys=["name", "type_1", "total"],
     )
 
-    hist_all = hist(
-        "chart-hist-total-all",
-        "Base total distribution",
-        filter_=PRIMARY,
-        subtitle="Primary forms · bin width 50",
-        color_index=0,
-    )
-    hist_nonleg = hist(
-        "chart-hist-total-nonleg",
-        "Non-legendary totals",
-        filter_=PRIMARY_NONLEG,
-        subtitle="Primary forms · shared scale with siblings",
-        color_index=0,
-    )
+    # ---- Distributions ----
+    hist_all = hist("chart-hist-total-all", "Base total distribution", filter_=SPECIES, subtitle="Primary forms · primary slot · bin 50")
+    hist_nonleg = hist("chart-hist-total-nonleg", "Non-legendary totals", filter_=SPECIES_NONLEG, subtitle="Shared scale with sibling", color_index=0)
     hist_leg = hist(
         "chart-hist-total-leg",
         "Legendary totals",
-        filter_=PRIMARY_LEG,
-        subtitle="Primary forms · shared scale with siblings",
-        notes="Mass near 580–680; almost no legendaries below 580.",
+        filter_=SPECIES_LEG,
+        subtitle="Shared scale with sibling",
+        notes="Mass near 580–680.",
         color_index=1,
+    )
+
+    # ---- Archetypes ----
+    arch_counts = bar_v(
+        "chart-arch-counts",
+        "Archetype counts (primary forms)",
+        x_key="archetype",
+        series=[{"dataKey": "n", "name": "Species", "colorIndex": 0}],
+        query={
+            "label": "archetype counts",
+            "filter": SPECIES,
+            "groupBy": ["archetype"],
+            "aggregate": [{"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "n", "direction": "desc"}],
+        },
+        subtitle="z-score cut: gap≥1.0 and floor≥0.5 vs primary-form pool",
+        notes="Glass = high offense vs bulk; Tank = high bulk vs offense/speed.",
+        y_domain=[0, 700],
+        show_legend=False,
+        decimals=0,
+        height=300,
+    )
+
+    arch_mean_total = bar_h(
+        "chart-arch-mean-total",
+        "Mean BST by archetype",
+        x_key="archetype",
+        data_key="mean_total",
+        name="Mean total",
+        query={
+            "label": "mean total by archetype",
+            "filter": SPECIES,
+            "groupBy": ["archetype"],
+            "aggregate": [{"fn": "mean", "column": "total", "as": "mean_total"}, {"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "mean_total", "direction": "desc"}],
+        },
+        subtitle="Primary forms · primary slot",
+        y_domain=ARCH_BST_DOMAIN,
+        category_width=110,
+        height=260,
+        color_index=2,
+    )
+    # Same dataKey `mean_stat` so lint enforces a shared yDomain across siblings.
+    arch_mean_offense = bar_h(
+        "chart-arch-mean-offense",
+        "Mean offense by archetype",
+        x_key="archetype",
+        data_key="mean_stat",
+        name="Offense",
+        query={
+            "label": "mean offense by archetype",
+            "filter": SPECIES,
+            "groupBy": ["archetype"],
+            "aggregate": [{"fn": "mean", "column": "offense", "as": "mean_stat"}, {"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "mean_stat", "direction": "desc"}],
+        },
+        subtitle="max(Attack, Sp. Atk) · shared scale with bulk",
+        y_domain=ARCH_OB_DOMAIN,
+        category_width=110,
+        height=260,
+        color_index=1,
+    )
+    arch_mean_bulk = bar_h(
+        "chart-arch-mean-bulk",
+        "Mean bulk by archetype",
+        x_key="archetype",
+        data_key="mean_stat",
+        name="Bulk",
+        query={
+            "label": "mean bulk by archetype",
+            "filter": SPECIES,
+            "groupBy": ["archetype"],
+            "aggregate": [{"fn": "mean", "column": "bulk", "as": "mean_stat"}, {"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "mean_stat", "direction": "desc"}],
+        },
+        subtitle="mean(HP, Defense, Sp. Def) · shared scale with offense",
+        y_domain=ARCH_OB_DOMAIN,
+        category_width=110,
+        height=260,
+        color_index=4,
+    )
+
+    # Shared-measure siblings for rates by type (same xKey + dataKey pattern via rate alias)
+    arch_glass_rate = bar_h(
+        "chart-arch-glass-rate",
+        "Glass-cannon share by type",
+        x_key="type",
+        data_key="rate",
+        name="Glass share",
+        query={
+            "label": "glass rate by type both slots",
+            "filter": TYPE_ANY,
+            "groupBy": ["type"],
+            "aggregate": [{"fn": "mean", "column": "is_glass_cannon", "as": "rate"}, {"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "rate", "direction": "desc"}],
+        },
+        subtitle="Both type slots · primary forms · shared rate scale",
+        notes="Boolean mean = share. Dual-types contribute under both types.",
+        y_domain=ARCH_RATE_DOMAIN,
+        color_index=1,
+        height=400,
+        decimals=2,
+        value_format="percent",
+        y_label="Share",
+    )
+    arch_tank_rate = bar_h(
+        "chart-arch-tank-rate",
+        "Tank share by type",
+        x_key="type",
+        data_key="rate",
+        name="Tank share",
+        query={
+            "label": "tank rate by type both slots",
+            "filter": TYPE_ANY,
+            "groupBy": ["type"],
+            "aggregate": [{"fn": "mean", "column": "is_tank", "as": "rate"}, {"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "rate", "direction": "desc"}],
+        },
+        subtitle="Both type slots · primary forms · shared rate scale",
+        y_domain=ARCH_RATE_DOMAIN,
+        color_index=4,
+        height=400,
+        decimals=2,
+        value_format="percent",
+        y_label="Share",
+    )
+
+    arch_scatter = scatter(
+        "chart-arch-scatter",
+        "z(offense) vs z(bulk)",
+        x_key="z_offense",
+        y_key="z_bulk",
+        color_key="archetype",
+        levels=[
+            {"value": "Neither", "label": "Neither", "colorIndex": 0},
+            {"value": "Glass cannon", "label": "Glass cannon", "colorIndex": 1},
+            {"value": "Tank", "label": "Tank", "colorIndex": 4},
+        ],
+        query={"label": "archetype scatter", "filter": SPECIES},
+        subtitle="Primary forms · z fit on primary-form pool",
+        notes="Glass cannons sit high-offense / low-bulk; tanks the reverse.",
+        x_label="z(offense)",
+        y_label="z(bulk)",
+        tooltip_keys=["name", "type_1", "glass_score", "tank_score", "total"],
+    )
+
+    arch_speed = bar_h(
+        "chart-arch-speed",
+        "Mean Speed by archetype",
+        x_key="archetype",
+        data_key="mean_speed",
+        name="Speed",
+        query={
+            "label": "mean speed by archetype",
+            "filter": SPECIES,
+            "groupBy": ["archetype"],
+            "aggregate": [{"fn": "mean", "column": "speed", "as": "mean_speed"}, {"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "mean_speed", "direction": "desc"}],
+        },
+        subtitle="Glass cannons tend to be faster",
+        y_domain=[0, 120],
+        category_width=110,
+        height=260,
+        color_index=5,
     )
 
     doc = {
         "title": "Pokémon base stats — Gen 1–6",
-        "experimentId": "pokemon-gen1-6-reaudit-r1",
-        "description": "How base stats differ across Type 1, generation, and legendary status (primary forms).",
+        "experimentId": "pokemon-gen1-6-reaudit-r2",
+        "description": "Base stats by type (both slots), generation, legendary status, and glass/tank archetypes.",
         "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
         "defaultTabId": "summary",
+        "pages": [
+            {"id": "page-overview", "label": "Overview", "order": 0, "tabIds": ["summary"]},
+            {
+                "id": "page-deep",
+                "label": "Deep dive",
+                "order": 1,
+                "tabIds": ["types", "generations", "legendary", "distributions", "archetypes"],
+            },
+        ],
         "conventions": {
             "zeroBaselineBars": True,
-            "population": "Default charts filter is_primary_form = true (721 species). Type charts group by type_1 only. Non-legendary panels add legendary = false.",
+            "population": (
+                "Per-species charts: is_primary_form && type_slot=Primary (721). "
+                "Type-participation charts: is_primary_form any slot (dual-types counted twice). "
+                "Archetype z-scores fit on primary forms; thresholds gap=1.0, floor=0.5."
+            ),
             "palette": {
-                "0": "HP / non-legendary",
-                "1": "Attack / legendary",
-                "2": "Defense / totals (all statuses)",
+                "0": "HP / non-legendary / Neither",
+                "1": "Attack / legendary / Glass cannon",
+                "2": "Defense / primary-slot totals",
                 "3": "Sp. Atk",
-                "4": "Sp. Def",
+                "4": "Sp. Def / Tank / bulk",
                 "5": "Speed / physical lean",
             },
             "notes": [
                 "Bar charts must include 0 on the value axis (omit yDomain or set yDomain[0] <= 0).",
                 "Sibling panels that share measures use the same explicit yDomain (and xDomain for histograms).",
-                "Mega/alternate formes are excluded from default populations via is_primary_form.",
-                "Legendary uses the CSV flag as-is (mythicals are inconsistently tagged).",
-                "Type-1-only analysis under-counts secondary types such as Flying.",
+                "Canonical grain is form × type slot — always filter type_slot=Primary for per-species charts.",
+                "Both-slot type charts use column `type` with is_primary_form; they intentionally double-count dual-types.",
+                "Legendary uses the CSV flag as-is (mythicals inconsistently tagged).",
+                "Archetypes are descriptive design labels, not battle roles.",
             ],
         },
         "tabs": [
@@ -660,36 +850,22 @@ def build_document() -> dict:
                         0,
                         """## Summary
 
-Primary forms only (**721** species). Mega and alternate formes are set aside so multi-form species are not overweight.
+**Pages:** Overview (this tab) · Deep dive (types, generations, legendary, distributions, archetypes).
 
-1. **Legendary gap** — flagged legendaries average ~**620** BST vs ~**404** for everyone else (see Legendary tab).
-2. **Types** — among non-legendaries, **Dragon** / **Steel** lead mean Total; **Bug** is lowest. Offense identity splits physical (Fighting, Ground, Rock) vs special (Psychic, Fairy, Electric).
-3. **Generations** — **Gen 4** non-legendaries are strongest; **Gen 3** weakest. Counts and means do not show steady power creep.
+1. **Legendary gap** — ~620 vs ~404 mean BST (primary forms).
+2. **Types** — both-slot cut restores Flying participation; Bug still weakest on mean BST among non-legendaries.
+3. **Generations** — Gen 4 strongest non-legendary mean; Gen 3 weakest.
+4. **Archetypes** — glass cannons (high offense vs bulk) vs tanks (high bulk vs offense/speed); z-scores on the primary-form pool.
 
-Details and caveats: `src/data/understanding.md`. Charts below are refs into the analysis tabs.""",
+Caveats and grain: `src/data/understanding.md`.""",
                     ),
                     component(
                         "comp-summary-refs",
                         1,
                         [
-                            {
-                                "id": "summary-ref-type",
-                                "ref": "chart-type-total-nonleg",
-                                "title": "Types (non-legendary)",
-                                "flex": 1,
-                            },
-                            {
-                                "id": "summary-ref-gen",
-                                "ref": "chart-gen-total",
-                                "title": "Generations",
-                                "flex": 1,
-                            },
-                            {
-                                "id": "summary-ref-leg",
-                                "ref": "chart-leg-total",
-                                "title": "Legendary gap",
-                                "flex": 1,
-                            },
+                            {"id": "summary-ref-type", "ref": "chart-type-total-both", "title": "Types (both slots)", "flex": 1},
+                            {"id": "summary-ref-gen", "ref": "chart-gen-total", "title": "Generations", "flex": 1},
+                            {"id": "summary-ref-arch", "ref": "chart-arch-counts", "title": "Archetypes", "flex": 1},
                         ],
                     ),
                 ],
@@ -702,39 +878,18 @@ Details and caveats: `src/data/understanding.md`. Charts below are refs into the
                     md(
                         "md-types",
                         0,
-                        """## By Type 1
+                        """## By type
 
-Population: **primary forms**. Left panel includes legendaries; right panel is non-legendary only (fairer for type identity). Dual-types appear only under Type 1.""",
+**Primary slot** = Type 1 only (no double-count). **Both slots** = dual-types counted under each type (Flying etc. appear). Means below are non-legendary primary forms.""",
                     ),
-                    component(
-                        "comp-type-totals",
-                        1,
-                        [type_total_all, type_total_nonleg],
-                    ),
-                    md(
-                        "md-types-offense",
-                        2,
-                        """### Offense identity
+                    component("comp-type-totals", 1, [type_total_primary, type_total_both]),
+                    component("comp-type-counts", 2, [type_n_primary, type_n_both]),
+                    md("md-types-offense", 3, """### Offense identity (both slots)
 
-Shared 0–130 scale across the three panels.""",
-                    ),
-                    component(
-                        "comp-type-offense",
-                        3,
-                        [type_attack, type_spatk, type_phys_lean],
-                    ),
-                    md(
-                        "md-types-bulk",
-                        4,
-                        """### Bulk and Speed
-
-Same shared scale as the Attack / Sp. Atk panels above.""",
-                    ),
-                    component(
-                        "comp-type-bulk",
-                        5,
-                        [type_def, type_spdef, type_speed],
-                    ),
+Shared 0–130 value scale."""),
+                    component("comp-type-offense", 4, [type_attack, type_spatk, type_phys_lean]),
+                    md("md-types-bulk", 5, """### Bulk and Speed (both slots)"""),
+                    component("comp-type-bulk", 6, [type_def, type_spdef, type_speed]),
                 ],
             },
             {
@@ -747,18 +902,10 @@ Same shared scale as the Attack / Sp. Atk panels above.""",
                         0,
                         """## By generation
 
-Means use **non-legendary primary forms** so legendary roster size does not dominate. Stacked counts use all primary forms.""",
+Species grain (`type_slot=Primary`). Means exclude legendaries; stacked counts include them.""",
                     ),
-                    component(
-                        "comp-gen-overview",
-                        1,
-                        [gen_total, gen_counts],
-                    ),
-                    component(
-                        "comp-gen-stats",
-                        2,
-                        [gen_offense, gen_bulk],
-                    ),
+                    component("comp-gen-overview", 1, [gen_total, gen_counts]),
+                    component("comp-gen-stats", 2, [gen_offense, gen_bulk]),
                 ],
             },
             {
@@ -771,19 +918,10 @@ Means use **non-legendary primary forms** so legendary roster size does not domi
                         0,
                         """## Legendary status
 
-Source `Legendary` flag (mythicals inconsistently tagged — see understanding.md). Population: primary forms.""",
+Species grain. Source flag kept as-is (mythicals inconsistently tagged).""",
                     ),
-                    component(
-                        "comp-leg-gap",
-                        1,
-                        [leg_total, leg_means],
-                        wrap=True,
-                    ),
-                    component(
-                        "comp-leg-scatter",
-                        2,
-                        [scatter_as],
-                    ),
+                    component("comp-leg-gap", 1, [leg_total, leg_means]),
+                    component("comp-leg-scatter", 2, [scatter_as]),
                 ],
             },
             {
@@ -796,18 +934,48 @@ Source `Legendary` flag (mythicals inconsistently tagged — see understanding.m
                         0,
                         """## Base total distributions
 
-Bin width **50**. Sibling histograms share `xDomain` and `yDomain` so shapes are comparable.""",
+Species grain. Sibling histograms share `xDomain` / `yDomain`.""",
                     ),
-                    component(
-                        "comp-hist-all",
-                        1,
-                        [hist_all],
+                    component("comp-hist-all", 1, [hist_all]),
+                    component("comp-hist-split", 2, [hist_nonleg, hist_leg]),
+                ],
+            },
+            {
+                "id": "archetypes",
+                "label": "Archetypes",
+                "order": 5,
+                "rows": [
+                    md(
+                        "md-arch",
+                        0,
+                        """## Glass cannon vs tank
+
+**Offense** = max(Attack, Sp. Atk). **Bulk** = mean(HP, Defense, Sp. Def). Z-scores fit on **721 primary forms**, then applied to every form.
+
+- **Glass cannon:** `glass_score = z(offense) − z(bulk) ≥ 1` and `z(offense) ≥ 0.5`
+- **Tank:** `tank_score = z(bulk) − max(z(offense), z(Speed)) ≥ 1` and `z(bulk) ≥ 0.5`
+
+Thresholds are a judgment call — descriptive labels, not competitive roles. Type shares use **both slots** so dual-types contribute under each type.""",
                     ),
-                    component(
-                        "comp-hist-split",
-                        2,
-                        [hist_nonleg, hist_leg],
+                    component("comp-arch-counts", 1, [arch_counts, arch_speed]),
+                    component("comp-arch-bst", 2, [arch_mean_total]),
+                    md(
+                        "md-arch-means",
+                        3,
+                        """### Offense vs bulk
+
+Shared 0–140 scale (same measure key across panels).""",
                     ),
+                    component("comp-arch-means", 4, [arch_mean_offense, arch_mean_bulk]),
+                    md(
+                        "md-arch-rates",
+                        5,
+                        """### Type composition
+
+Share = mean of the boolean flag. Shared 0–35% rate scale · both type slots.""",
+                    ),
+                    component("comp-arch-rates", 6, [arch_glass_rate, arch_tank_rate]),
+                    component("comp-arch-scatter", 7, [arch_scatter]),
                 ],
             },
         ],
@@ -823,12 +991,9 @@ def main() -> None:
     merged = merge_user_rows(previous, next_doc)
     ROWS_PATH.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
     n_charts = sum(
-        len(r["components"])
-        for t in merged["tabs"]
-        for r in t["rows"]
-        if r["type"] == "component"
+        len(r["components"]) for t in merged["tabs"] for r in t["rows"] if r["type"] == "component"
     )
-    print(f"Wrote {ROWS_PATH} ({len(merged['tabs'])} tabs, {n_charts} chart slots)")
+    print(f"Wrote {ROWS_PATH} ({len(merged['tabs'])} tabs, {len(merged.get('pages', []))} pages, {n_charts} chart slots)")
 
 
 if __name__ == "__main__":

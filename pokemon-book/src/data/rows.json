@@ -1,26 +1,49 @@
 {
   "title": "Pok\u00e9mon base stats \u2014 Gen 1\u20136",
-  "experimentId": "pokemon-gen1-6-reaudit-r1",
-  "description": "How base stats differ across Type 1, generation, and legendary status (primary forms).",
-  "generatedAt": "2026-11-15T07:22:53.622Z",
+  "experimentId": "pokemon-gen1-6-reaudit-r2",
+  "description": "Base stats by type (both slots), generation, legendary status, and glass/tank archetypes.",
+  "generatedAt": "2026-11-15T07:39:03.672Z",
   "defaultTabId": "summary",
+  "pages": [
+    {
+      "id": "page-overview",
+      "label": "Overview",
+      "order": 0,
+      "tabIds": [
+        "summary"
+      ]
+    },
+    {
+      "id": "page-deep",
+      "label": "Deep dive",
+      "order": 1,
+      "tabIds": [
+        "types",
+        "generations",
+        "legendary",
+        "distributions",
+        "archetypes"
+      ]
+    }
+  ],
   "conventions": {
     "zeroBaselineBars": true,
-    "population": "Default charts filter is_primary_form = true (721 species). Type charts group by type_1 only. Non-legendary panels add legendary = false.",
+    "population": "Per-species charts: is_primary_form && type_slot=Primary (721). Type-participation charts: is_primary_form any slot (dual-types counted twice). Archetype z-scores fit on primary forms; thresholds gap=1.0, floor=0.5.",
     "palette": {
-      "0": "HP / non-legendary",
-      "1": "Attack / legendary",
-      "2": "Defense / totals (all statuses)",
+      "0": "HP / non-legendary / Neither",
+      "1": "Attack / legendary / Glass cannon",
+      "2": "Defense / primary-slot totals",
       "3": "Sp. Atk",
-      "4": "Sp. Def",
+      "4": "Sp. Def / Tank / bulk",
       "5": "Speed / physical lean"
     },
     "notes": [
       "Bar charts must include 0 on the value axis (omit yDomain or set yDomain[0] <= 0).",
       "Sibling panels that share measures use the same explicit yDomain (and xDomain for histograms).",
-      "Mega/alternate formes are excluded from default populations via is_primary_form.",
-      "Legendary uses the CSV flag as-is (mythicals are inconsistently tagged).",
-      "Type-1-only analysis under-counts secondary types such as Flying."
+      "Canonical grain is form \u00d7 type slot \u2014 always filter type_slot=Primary for per-species charts.",
+      "Both-slot type charts use column `type` with is_primary_form; they intentionally double-count dual-types.",
+      "Legendary uses the CSV flag as-is (mythicals inconsistently tagged).",
+      "Archetypes are descriptive design labels, not battle roles."
     ]
   },
   "tabs": [
@@ -34,7 +57,7 @@
           "type": "markdown",
           "order": 0,
           "createdBy": "skill",
-          "body": "## Summary\n\nPrimary forms only (**721** species). Mega and alternate formes are set aside so multi-form species are not overweight.\n\n1. **Legendary gap** \u2014 flagged legendaries average ~**620** BST vs ~**404** for everyone else (see Legendary tab).\n2. **Types** \u2014 among non-legendaries, **Dragon** / **Steel** lead mean Total; **Bug** is lowest. Offense identity splits physical (Fighting, Ground, Rock) vs special (Psychic, Fairy, Electric).\n3. **Generations** \u2014 **Gen 4** non-legendaries are strongest; **Gen 3** weakest. Counts and means do not show steady power creep.\n\nDetails and caveats: `src/data/understanding.md`. Charts below are refs into the analysis tabs."
+          "body": "## Summary\n\n**Pages:** Overview (this tab) \u00b7 Deep dive (types, generations, legendary, distributions, archetypes).\n\n1. **Legendary gap** \u2014 ~620 vs ~404 mean BST (primary forms).\n2. **Types** \u2014 both-slot cut restores Flying participation; Bug still weakest on mean BST among non-legendaries.\n3. **Generations** \u2014 Gen 4 strongest non-legendary mean; Gen 3 weakest.\n4. **Archetypes** \u2014 glass cannons (high offense vs bulk) vs tanks (high bulk vs offense/speed); z-scores on the primary-form pool.\n\nCaveats and grain: `src/data/understanding.md`."
         },
         {
           "id": "comp-summary-refs",
@@ -49,8 +72,8 @@
           "components": [
             {
               "id": "summary-ref-type",
-              "ref": "chart-type-total-nonleg",
-              "title": "Types (non-legendary)",
+              "ref": "chart-type-total-both",
+              "title": "Types (both slots)",
               "flex": 1
             },
             {
@@ -60,9 +83,9 @@
               "flex": 1
             },
             {
-              "id": "summary-ref-leg",
-              "ref": "chart-leg-total",
-              "title": "Legendary gap",
+              "id": "summary-ref-arch",
+              "ref": "chart-arch-counts",
+              "title": "Archetypes",
               "flex": 1
             }
           ]
@@ -79,7 +102,7 @@
           "type": "markdown",
           "order": 0,
           "createdBy": "skill",
-          "body": "## By Type 1\n\nPopulation: **primary forms**. Left panel includes legendaries; right panel is non-legendary only (fairer for type identity). Dual-types appear only under Type 1."
+          "body": "## By type\n\n**Primary slot** = Type 1 only (no double-count). **Both slots** = dual-types counted under each type (Flying etc. appear). Means below are non-legendary primary forms."
         },
         {
           "id": "comp-type-totals",
@@ -93,19 +116,29 @@
           },
           "components": [
             {
-              "id": "chart-type-total-all",
-              "title": "Mean base total by Type 1",
+              "id": "chart-type-total-primary",
+              "title": "Mean BST by type (Type 1 / primary slot)",
               "query": {
-                "label": "mean Total by type_1",
+                "label": "mean total by type",
                 "filter": [
                   {
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
                   }
                 ],
                 "groupBy": [
-                  "type_1"
+                  "type"
                 ],
                 "aggregate": [
                   {
@@ -126,13 +159,13 @@
                 ]
               },
               "encoding": {
-                "category": "type_1",
+                "category": "type",
                 "value": "mean_total"
               },
               "recharts": {
                 "chart": "BarChart",
                 "layout": "vertical",
-                "xKey": "type_1",
+                "xKey": "type",
                 "series": [
                   {
                     "mark": "Bar",
@@ -155,14 +188,14 @@
                 "yLabel": "Mean BST"
               },
               "flex": 1,
-              "subtitle": "Primary forms \u00b7 all statuses \u00b7 Type 1 only",
-              "notes": "Flying n is tiny as a primary type; dual-types only count under Type 1."
+              "subtitle": "Primary forms \u00b7 type_slot=Primary \u00b7 non-legendary",
+              "notes": "Same as R1 Type-1 cut; Flying stays under-counted."
             },
             {
-              "id": "chart-type-total-nonleg",
-              "title": "Mean base total by Type 1 (non-legendary)",
+              "id": "chart-type-total-both",
+              "title": "Mean BST by type (both slots)",
               "query": {
-                "label": "mean Total by type_1",
+                "label": "mean total by type",
                 "filter": [
                   {
                     "column": "is_primary_form",
@@ -176,7 +209,7 @@
                   }
                 ],
                 "groupBy": [
-                  "type_1"
+                  "type"
                 ],
                 "aggregate": [
                   {
@@ -197,13 +230,13 @@
                 ]
               },
               "encoding": {
-                "category": "type_1",
+                "category": "type",
                 "value": "mean_total"
               },
               "recharts": {
                 "chart": "BarChart",
                 "layout": "vertical",
-                "xKey": "type_1",
+                "xKey": "type",
                 "series": [
                   {
                     "mark": "Bar",
@@ -226,22 +259,15 @@
                 "yLabel": "Mean BST"
               },
               "flex": 1,
-              "subtitle": "Primary forms \u00b7 legendary flag = false",
-              "notes": "Removes legendary inflation (Dragon especially)."
+              "subtitle": "Primary forms \u00b7 Primary+Secondary \u00b7 non-legendary",
+              "notes": "Dual-types contribute to both types; species appear twice if dual."
             }
           ]
         },
         {
-          "id": "md-types-offense",
-          "type": "markdown",
-          "order": 2,
-          "createdBy": "skill",
-          "body": "### Offense identity\n\nShared 0\u2013130 scale across the three panels."
-        },
-        {
-          "id": "comp-type-offense",
+          "id": "comp-type-counts",
           "type": "component",
-          "order": 3,
+          "order": 2,
           "createdBy": "skill",
           "layout": {
             "gap": 16,
@@ -250,10 +276,80 @@
           },
           "components": [
             {
-              "id": "chart-type-attack",
-              "title": "Mean Attack by Type 1",
+              "id": "chart-type-n-primary",
+              "title": "Species count (primary slot)",
               "query": {
-                "label": "mean Attack by type_1",
+                "label": "n by type primary slot",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "n",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Species",
+                    "colorIndex": 2
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 380,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  120
+                ],
+                "yLabel": "Species"
+              },
+              "flex": 1,
+              "subtitle": "One row per species"
+            },
+            {
+              "id": "chart-type-n-both",
+              "title": "Participation count (both slots)",
+              "query": {
+                "label": "n by type both slots",
                 "filter": [
                   {
                     "column": "is_primary_form",
@@ -267,7 +363,92 @@
                   }
                 ],
                 "groupBy": [
-                  "type_1"
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "n",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Participations",
+                    "colorIndex": 0
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 380,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  120
+                ],
+                "yLabel": "Participations"
+              },
+              "flex": 1,
+              "subtitle": "Dual-types counted under both types \u00b7 Flying rises"
+            }
+          ]
+        },
+        {
+          "id": "md-types-offense",
+          "type": "markdown",
+          "order": 3,
+          "createdBy": "skill",
+          "body": "### Offense identity (both slots)\n\nShared 0\u2013130 value scale."
+        },
+        {
+          "id": "comp-type-offense",
+          "type": "component",
+          "order": 4,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-type-attack",
+              "title": "Mean Attack (both slots)",
+              "query": {
+                "label": "mean attack by type",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "legendary",
+                    "op": "eq",
+                    "value": false
+                  }
+                ],
+                "groupBy": [
+                  "type"
                 ],
                 "aggregate": [
                   {
@@ -288,13 +469,13 @@
                 ]
               },
               "encoding": {
-                "category": "type_1",
+                "category": "type",
                 "value": "mean_attack"
               },
               "recharts": {
                 "chart": "BarChart",
                 "layout": "vertical",
-                "xKey": "type_1",
+                "xKey": "type",
                 "series": [
                   {
                     "mark": "Bar",
@@ -316,13 +497,13 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Non-legendary primary forms"
+              "subtitle": "Non-legendary primary forms \u00b7 both type slots"
             },
             {
               "id": "chart-type-spatk",
-              "title": "Mean Sp. Atk by Type 1",
+              "title": "Mean Sp. Atk (both slots)",
               "query": {
-                "label": "mean Sp. Atk by type_1",
+                "label": "mean sp_atk by type",
                 "filter": [
                   {
                     "column": "is_primary_form",
@@ -336,7 +517,7 @@
                   }
                 ],
                 "groupBy": [
-                  "type_1"
+                  "type"
                 ],
                 "aggregate": [
                   {
@@ -357,13 +538,13 @@
                 ]
               },
               "encoding": {
-                "category": "type_1",
+                "category": "type",
                 "value": "mean_sp_atk"
               },
               "recharts": {
                 "chart": "BarChart",
                 "layout": "vertical",
-                "xKey": "type_1",
+                "xKey": "type",
                 "series": [
                   {
                     "mark": "Bar",
@@ -385,13 +566,13 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Non-legendary primary forms"
+              "subtitle": "Non-legendary primary forms \u00b7 both type slots"
             },
             {
               "id": "chart-type-phys-lean",
-              "title": "Mean Attack \u2212 Sp. Atk by Type 1",
+              "title": "Mean Attack \u2212 Sp. Atk (both slots)",
               "query": {
-                "label": "mean phys_minus_spec by type_1",
+                "label": "mean phys_minus_spec by type",
                 "filter": [
                   {
                     "column": "is_primary_form",
@@ -405,7 +586,7 @@
                   }
                 ],
                 "groupBy": [
-                  "type_1"
+                  "type"
                 ],
                 "aggregate": [
                   {
@@ -426,13 +607,13 @@
                 ]
               },
               "encoding": {
-                "category": "type_1",
+                "category": "type",
                 "value": "mean_phys_minus_spec"
               },
               "recharts": {
                 "chart": "BarChart",
                 "layout": "vertical",
-                "xKey": "type_1",
+                "xKey": "type",
                 "series": [
                   {
                     "mark": "Bar",
@@ -454,22 +635,21 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Positive = physical lean \u00b7 non-legendary primary forms",
-              "notes": "Bar axis still includes 0 so polarity is readable."
+              "subtitle": "Positive = physical lean \u00b7 both slots"
             }
           ]
         },
         {
           "id": "md-types-bulk",
           "type": "markdown",
-          "order": 4,
+          "order": 5,
           "createdBy": "skill",
-          "body": "### Bulk and Speed\n\nSame shared scale as the Attack / Sp. Atk panels above."
+          "body": "### Bulk and Speed (both slots)"
         },
         {
           "id": "comp-type-bulk",
           "type": "component",
-          "order": 5,
+          "order": 6,
           "createdBy": "skill",
           "layout": {
             "gap": 16,
@@ -479,9 +659,9 @@
           "components": [
             {
               "id": "chart-type-defense",
-              "title": "Mean Defense by Type 1",
+              "title": "Mean Defense (both slots)",
               "query": {
-                "label": "mean Defense by type_1",
+                "label": "mean defense by type",
                 "filter": [
                   {
                     "column": "is_primary_form",
@@ -495,7 +675,7 @@
                   }
                 ],
                 "groupBy": [
-                  "type_1"
+                  "type"
                 ],
                 "aggregate": [
                   {
@@ -516,13 +696,13 @@
                 ]
               },
               "encoding": {
-                "category": "type_1",
+                "category": "type",
                 "value": "mean_defense"
               },
               "recharts": {
                 "chart": "BarChart",
                 "layout": "vertical",
-                "xKey": "type_1",
+                "xKey": "type",
                 "series": [
                   {
                     "mark": "Bar",
@@ -544,13 +724,13 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Non-legendary primary forms"
+              "subtitle": "Both type slots \u00b7 non-legendary"
             },
             {
               "id": "chart-type-spdef",
-              "title": "Mean Sp. Def by Type 1",
+              "title": "Mean Sp. Def (both slots)",
               "query": {
-                "label": "mean Sp. Def by type_1",
+                "label": "mean sp_def by type",
                 "filter": [
                   {
                     "column": "is_primary_form",
@@ -564,7 +744,7 @@
                   }
                 ],
                 "groupBy": [
-                  "type_1"
+                  "type"
                 ],
                 "aggregate": [
                   {
@@ -585,13 +765,13 @@
                 ]
               },
               "encoding": {
-                "category": "type_1",
+                "category": "type",
                 "value": "mean_sp_def"
               },
               "recharts": {
                 "chart": "BarChart",
                 "layout": "vertical",
-                "xKey": "type_1",
+                "xKey": "type",
                 "series": [
                   {
                     "mark": "Bar",
@@ -613,13 +793,13 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Non-legendary primary forms"
+              "subtitle": "Both type slots \u00b7 non-legendary"
             },
             {
               "id": "chart-type-speed",
-              "title": "Mean Speed by Type 1",
+              "title": "Mean Speed (both slots)",
               "query": {
-                "label": "mean Speed by type_1",
+                "label": "mean speed by type",
                 "filter": [
                   {
                     "column": "is_primary_form",
@@ -633,7 +813,7 @@
                   }
                 ],
                 "groupBy": [
-                  "type_1"
+                  "type"
                 ],
                 "aggregate": [
                   {
@@ -654,13 +834,13 @@
                 ]
               },
               "encoding": {
-                "category": "type_1",
+                "category": "type",
                 "value": "mean_speed"
               },
               "recharts": {
                 "chart": "BarChart",
                 "layout": "vertical",
-                "xKey": "type_1",
+                "xKey": "type",
                 "series": [
                   {
                     "mark": "Bar",
@@ -682,7 +862,7 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Non-legendary primary forms"
+              "subtitle": "Both type slots \u00b7 non-legendary"
             }
           ]
         }
@@ -698,7 +878,7 @@
           "type": "markdown",
           "order": 0,
           "createdBy": "skill",
-          "body": "## By generation\n\nMeans use **non-legendary primary forms** so legendary roster size does not dominate. Stacked counts use all primary forms."
+          "body": "## By generation\n\nSpecies grain (`type_slot=Primary`). Means exclude legendaries; stacked counts include them."
         },
         {
           "id": "comp-gen-overview",
@@ -721,6 +901,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
                   },
                   {
                     "column": "legendary",
@@ -777,19 +962,24 @@
                 "yLabel": "Mean BST"
               },
               "flex": 1,
-              "subtitle": "Non-legendary primary forms",
-              "notes": "Gen 4 leads; Gen 3 is weakest \u2014 no steady power creep."
+              "subtitle": "Non-legendary primary forms \u00b7 primary slot",
+              "notes": "Gen 4 leads; Gen 3 weakest \u2014 no steady power creep."
             },
             {
               "id": "chart-gen-counts",
               "title": "Species count by generation and status",
               "query": {
-                "label": "counts by gen/status via pivot helpers",
+                "label": "counts by gen/status",
                 "filter": [
                   {
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
                   }
                 ],
                 "groupBy": [
@@ -850,8 +1040,7 @@
                 "yLabel": "Species"
               },
               "flex": 1,
-              "subtitle": "Primary forms \u00b7 stacked counts",
-              "notes": "count on nullable pivot columns counts non-null only."
+              "subtitle": "Primary forms \u00b7 primary slot \u00b7 stacked"
             }
           ]
         },
@@ -876,6 +1065,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
                   },
                   {
                     "column": "legendary",
@@ -950,7 +1144,7 @@
                     "colorIndex": 5
                   }
                 ],
-                "height": 320,
+                "height": 300,
                 "showGrid": true,
                 "showTooltip": true,
                 "showLegend": true,
@@ -961,7 +1155,7 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Non-legendary primary forms \u00b7 axis includes 0"
+              "subtitle": "Non-legendary \u00b7 primary slot \u00b7 axis includes 0"
             },
             {
               "id": "chart-gen-bulk",
@@ -973,6 +1167,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
                   },
                   {
                     "column": "legendary",
@@ -1047,7 +1246,7 @@
                     "colorIndex": 4
                   }
                 ],
-                "height": 320,
+                "height": 300,
                 "showGrid": true,
                 "showTooltip": true,
                 "showLegend": true,
@@ -1058,7 +1257,7 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Non-legendary primary forms \u00b7 axis includes 0"
+              "subtitle": "Non-legendary \u00b7 primary slot \u00b7 axis includes 0"
             }
           ]
         }
@@ -1074,7 +1273,7 @@
           "type": "markdown",
           "order": 0,
           "createdBy": "skill",
-          "body": "## Legendary status\n\nSource `Legendary` flag (mythicals inconsistently tagged \u2014 see understanding.md). Population: primary forms."
+          "body": "## Legendary status\n\nSpecies grain. Source flag kept as-is (mythicals inconsistently tagged)."
         },
         {
           "id": "comp-leg-gap",
@@ -1097,6 +1296,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
                   }
                 ],
                 "groupBy": [
@@ -1149,7 +1353,7 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Primary forms"
+              "subtitle": "Primary forms \u00b7 primary slot"
             },
             {
               "id": "chart-leg-means",
@@ -1161,6 +1365,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
                   }
                 ],
                 "groupBy": [
@@ -1267,8 +1476,7 @@
                 "yLabel": "Mean stat"
               },
               "flex": 1,
-              "subtitle": "Primary forms \u00b7 clustered means",
-              "notes": "Largest gaps tend to sit in Sp. Atk / Sp. Def; HP gap is smaller."
+              "subtitle": "Primary forms \u00b7 primary slot"
             }
           ]
         },
@@ -1286,15 +1494,20 @@
             {
               "id": "chart-scatter-atk-speed",
               "title": "Attack vs Speed",
-              "subtitle": "Primary forms \u00b7 coloured by legendary status",
-              "notes": "Hover shows name, Type 1, and total.",
+              "subtitle": "Primary forms \u00b7 primary slot",
+              "notes": null,
               "query": {
-                "label": "primary forms sample for scatter",
+                "label": "species scatter",
                 "filter": [
                   {
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
                   }
                 ],
                 "orderBy": [
@@ -1345,7 +1558,7 @@
                 "showGrid": true,
                 "showTooltip": true,
                 "showLegend": true,
-                "decimals": 0
+                "decimals": 2
               },
               "flex": 1
             }
@@ -1363,7 +1576,7 @@
           "type": "markdown",
           "order": 0,
           "createdBy": "skill",
-          "body": "## Base total distributions\n\nBin width **50**. Sibling histograms share `xDomain` and `yDomain` so shapes are comparable."
+          "body": "## Base total distributions\n\nSpecies grain. Sibling histograms share `xDomain` / `yDomain`."
         },
         {
           "id": "comp-hist-all",
@@ -1379,7 +1592,7 @@
             {
               "id": "chart-hist-total-all",
               "title": "Base total distribution",
-              "subtitle": "Primary forms \u00b7 bin width 50",
+              "subtitle": "Primary forms \u00b7 primary slot \u00b7 bin 50",
               "notes": null,
               "query": {
                 "label": "Base total distribution",
@@ -1388,6 +1601,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
                   }
                 ],
                 "bin": [
@@ -1463,7 +1681,7 @@
             {
               "id": "chart-hist-total-nonleg",
               "title": "Non-legendary totals",
-              "subtitle": "Primary forms \u00b7 shared scale with siblings",
+              "subtitle": "Shared scale with sibling",
               "notes": null,
               "query": {
                 "label": "Non-legendary totals",
@@ -1472,6 +1690,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
                   },
                   {
                     "column": "legendary",
@@ -1539,8 +1762,8 @@
             {
               "id": "chart-hist-total-leg",
               "title": "Legendary totals",
-              "subtitle": "Primary forms \u00b7 shared scale with siblings",
-              "notes": "Mass near 580\u2013680; almost no legendaries below 580.",
+              "subtitle": "Shared scale with sibling",
+              "notes": "Mass near 580\u2013680.",
               "query": {
                 "label": "Legendary totals",
                 "filter": [
@@ -1548,6 +1771,11 @@
                     "column": "is_primary_form",
                     "op": "eq",
                     "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
                   },
                   {
                     "column": "legendary",
@@ -1609,6 +1837,643 @@
                 "showLegend": false,
                 "decimals": 0,
                 "barCategoryGap": "8%"
+              },
+              "flex": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "archetypes",
+      "label": "Archetypes",
+      "order": 5,
+      "rows": [
+        {
+          "id": "md-arch",
+          "type": "markdown",
+          "order": 0,
+          "createdBy": "skill",
+          "body": "## Glass cannon vs tank\n\n**Offense** = max(Attack, Sp. Atk). **Bulk** = mean(HP, Defense, Sp. Def). Z-scores fit on **721 primary forms**, then applied to every form.\n\n- **Glass cannon:** `glass_score = z(offense) \u2212 z(bulk) \u2265 1` and `z(offense) \u2265 0.5`\n- **Tank:** `tank_score = z(bulk) \u2212 max(z(offense), z(Speed)) \u2265 1` and `z(bulk) \u2265 0.5`\n\nThresholds are a judgment call \u2014 descriptive labels, not competitive roles. Type shares use **both slots** so dual-types contribute under each type."
+        },
+        {
+          "id": "comp-arch-counts",
+          "type": "component",
+          "order": 1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-arch-counts",
+              "title": "Archetype counts (primary forms)",
+              "query": {
+                "label": "archetype counts",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "n",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "archetype",
+                "y": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Species",
+                    "colorIndex": 0
+                  }
+                ],
+                "height": 300,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  700
+                ]
+              },
+              "flex": 1,
+              "subtitle": "z-score cut: gap\u22651.0 and floor\u22650.5 vs primary-form pool",
+              "notes": "Glass = high offense vs bulk; Tank = high bulk vs offense/speed."
+            },
+            {
+              "id": "chart-arch-speed",
+              "title": "Mean Speed by archetype",
+              "query": {
+                "label": "mean speed by archetype",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "speed",
+                    "as": "mean_speed"
+                  },
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "mean_speed",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "archetype",
+                "value": "mean_speed"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_speed",
+                    "name": "Speed",
+                    "colorIndex": 5
+                  }
+                ],
+                "categoryWidth": 110,
+                "height": 260,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  120
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Glass cannons tend to be faster"
+            }
+          ]
+        },
+        {
+          "id": "comp-arch-bst",
+          "type": "component",
+          "order": 2,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-arch-mean-total",
+              "title": "Mean BST by archetype",
+              "query": {
+                "label": "mean total by archetype",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total",
+                    "as": "mean_total"
+                  },
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "mean_total",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "archetype",
+                "value": "mean_total"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_total",
+                    "name": "Mean total",
+                    "colorIndex": 2
+                  }
+                ],
+                "categoryWidth": 110,
+                "height": 260,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  600
+                ]
+              },
+              "flex": 1,
+              "subtitle": "Primary forms \u00b7 primary slot"
+            }
+          ]
+        },
+        {
+          "id": "md-arch-means",
+          "type": "markdown",
+          "order": 3,
+          "createdBy": "skill",
+          "body": "### Offense vs bulk\n\nShared 0\u2013140 scale (same measure key across panels)."
+        },
+        {
+          "id": "comp-arch-means",
+          "type": "component",
+          "order": 4,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-arch-mean-offense",
+              "title": "Mean offense by archetype",
+              "query": {
+                "label": "mean offense by archetype",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "offense",
+                    "as": "mean_stat"
+                  },
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "mean_stat",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "archetype",
+                "value": "mean_stat"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_stat",
+                    "name": "Offense",
+                    "colorIndex": 1
+                  }
+                ],
+                "categoryWidth": 110,
+                "height": 260,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  140
+                ]
+              },
+              "flex": 1,
+              "subtitle": "max(Attack, Sp. Atk) \u00b7 shared scale with bulk"
+            },
+            {
+              "id": "chart-arch-mean-bulk",
+              "title": "Mean bulk by archetype",
+              "query": {
+                "label": "mean bulk by archetype",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ],
+                "groupBy": [
+                  "archetype"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "bulk",
+                    "as": "mean_stat"
+                  },
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "mean_stat",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "archetype",
+                "value": "mean_stat"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "archetype",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_stat",
+                    "name": "Bulk",
+                    "colorIndex": 4
+                  }
+                ],
+                "categoryWidth": 110,
+                "height": 260,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  140
+                ]
+              },
+              "flex": 1,
+              "subtitle": "mean(HP, Defense, Sp. Def) \u00b7 shared scale with offense"
+            }
+          ]
+        },
+        {
+          "id": "md-arch-rates",
+          "type": "markdown",
+          "order": 5,
+          "createdBy": "skill",
+          "body": "### Type composition\n\nShare = mean of the boolean flag. Shared 0\u201335% rate scale \u00b7 both type slots."
+        },
+        {
+          "id": "comp-arch-rates",
+          "type": "component",
+          "order": 6,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-arch-glass-rate",
+              "title": "Glass-cannon share by type",
+              "query": {
+                "label": "glass rate by type both slots",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "is_glass_cannon",
+                    "as": "rate"
+                  },
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "rate",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "rate"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "rate",
+                    "name": "Glass share",
+                    "colorIndex": 1
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 400,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 2,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  0.35
+                ],
+                "yLabel": "Share",
+                "valueFormat": "percent"
+              },
+              "flex": 1,
+              "subtitle": "Both type slots \u00b7 primary forms \u00b7 shared rate scale",
+              "notes": "Boolean mean = share. Dual-types contribute under both types."
+            },
+            {
+              "id": "chart-arch-tank-rate",
+              "title": "Tank share by type",
+              "query": {
+                "label": "tank rate by type both slots",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "is_tank",
+                    "as": "rate"
+                  },
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "rate",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "encoding": {
+                "category": "type",
+                "value": "rate"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "layout": "vertical",
+                "xKey": "type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "rate",
+                    "name": "Tank share",
+                    "colorIndex": 4
+                  }
+                ],
+                "categoryWidth": 88,
+                "height": 400,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 2,
+                "barCategoryGap": "18%",
+                "yDomain": [
+                  0,
+                  0.35
+                ],
+                "yLabel": "Share",
+                "valueFormat": "percent"
+              },
+              "flex": 1,
+              "subtitle": "Both type slots \u00b7 primary forms \u00b7 shared rate scale"
+            }
+          ]
+        },
+        {
+          "id": "comp-arch-scatter",
+          "type": "component",
+          "order": 7,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-arch-scatter",
+              "title": "z(offense) vs z(bulk)",
+              "subtitle": "Primary forms \u00b7 z fit on primary-form pool",
+              "notes": "Glass cannons sit high-offense / low-bulk; tanks the reverse.",
+              "query": {
+                "label": "archetype scatter",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "z_offense",
+                "y": "z_bulk",
+                "color": "archetype"
+              },
+              "recharts": {
+                "chart": "ScatterChart",
+                "xKey": "z_offense",
+                "series": [
+                  {
+                    "mark": "Scatter",
+                    "dataKey": "z_bulk",
+                    "name": "z(bulk)"
+                  }
+                ],
+                "colorBy": {
+                  "key": "archetype",
+                  "levels": [
+                    {
+                      "value": "Neither",
+                      "label": "Neither",
+                      "colorIndex": 0
+                    },
+                    {
+                      "value": "Glass cannon",
+                      "label": "Glass cannon",
+                      "colorIndex": 1
+                    },
+                    {
+                      "value": "Tank",
+                      "label": "Tank",
+                      "colorIndex": 4
+                    }
+                  ]
+                },
+                "tooltipKeys": [
+                  "name",
+                  "type_1",
+                  "glass_score",
+                  "tank_score",
+                  "total"
+                ],
+                "xLabel": "z(offense)",
+                "yLabel": "z(bulk)",
+                "height": 420,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": true,
+                "decimals": 2
               },
               "flex": 1
             }

@@ -1,4 +1,4 @@
-# AGENT_NOTES — Pokémon reaudit R1
+# AGENT_NOTES — Pokémon reaudit R2
 
 ## Dev server
 
@@ -10,6 +10,8 @@ npm run dev -- --port 5180 --host 127.0.0.1
 
 URL: **http://127.0.0.1:5180/**
 
+Pages (sidebar): **Overview** · **Deep dive**. Tabs filter to the active page.
+
 ## Rebuild
 
 ```bash
@@ -19,14 +21,22 @@ npm test
 npm run lint:charts
 ```
 
-## Friction vs skill (R1)
+## R2 changes
 
-- Stock RechartsSpec was enough (horizontal bars, stackId, yDomain/xDomain, colorBy, xType/xShift). **No renderer/App/theme forks.**
-- `scaffold-files.txt` does not copy `scripts/`; `package.json` still references `npm run check` → `scripts/check-book.mjs`. Visual `check` is unavailable unless scripts are copied manually.
-- `conventions.template.test.ts` ships in the scaffold and stays soft on conventions; book-specific honesty lives in `book.test.ts`.
-- Histogram empty-bin alignment works via `xType: "number"` + shared `xDomain` + `xShift` (half bin step) as documented — no custom mark needed.
-- Pivot-style legendary counts use nullable helper columns + `count(column)` (non-null only); skill docs mention this pattern indirectly via aggregate helpers.
+- Canonical grain → form × type slot (1,214 rows); species charts filter `type_slot=Primary`.
+- Both-slot type analysis + primary-slot comparison panels.
+- Archetypes tab (glass / tank z-score cut); shared `yDomain` on rate and offense/bulk siblings.
+- `BookDocument.pages` → Overview / Deep dive (sidebar mounts only because pages exist).
+- Summary uses `ref` (no copied queries). `mergeUserRows` still applied in `build_rows.py`.
+
+## Friction vs skill
+
+- Stock RechartsSpec still enough — **no renderer/App/theme forks**.
+- `scaffold-files.txt` still omits `scripts/`; `npm run check` unavailable without copying scripts.
+- Sibling shared-scale lint keys off identical `xKey` + series `dataKey`; renamed aggregates to a shared `mean_stat` / `rate` so honesty is lint-enforced.
+- `valueFormat: "percent"` expects 0–1 rates (boolean means) — domain stays `[0, 0.35]`.
+- Boolean `mean` for shares is the stock substitute for a missing pivot/share aggregate.
 
 ## Population reminder
 
-Default charts: `is_primary_form = true`. Type charts: `type_1` only. See `src/data/understanding.md` and `BookDocument.conventions`.
+See `src/data/understanding.md` and `BookDocument.conventions`.
