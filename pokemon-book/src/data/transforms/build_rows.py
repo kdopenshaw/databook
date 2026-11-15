@@ -32,6 +32,10 @@ HIST_Y = [0, 180]
 ARCH_BST_DOMAIN = [0, 600]
 ARCH_OB_DOMAIN = [0, 140]
 ARCH_RATE_DOMAIN = [0, 0.35]
+POOL_SHARE_DOMAIN = [0, 0.4]
+POOL_COUNT_DOMAIN = [0, 50]
+# Team-building pool: primary form + primary slot + in_team_pool (implies non-leg, BST≥500).
+TEAM_POOL = SPECIES + [{"column": "in_team_pool", "op": "eq", "value": True}]
 
 
 def bar_h(
@@ -363,14 +367,21 @@ def build_document() -> dict:
         y_label="Mean BST",
     )
 
+    # Shared dataKey `mean_stat` so sibling lint enforces one value scale.
     type_attack = bar_h(
         "chart-type-attack",
         "Mean Attack (both slots)",
         x_key="type",
-        data_key="mean_attack",
+        data_key="mean_stat",
         name="Attack",
-        query=mean_by_type("attack", filter_=TYPE_ANY_NONLEG),
-        subtitle="Non-legendary primary forms · both type slots",
+        query={
+            "label": "mean attack by type both slots",
+            "filter": TYPE_ANY_NONLEG,
+            "groupBy": ["type"],
+            "aggregate": [{"fn": "mean", "column": "attack", "as": "mean_stat"}, {"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "mean_stat", "direction": "desc"}],
+        },
+        subtitle="Non-legendary · both slots · shared 0–130 with Sp. Atk",
         y_domain=STAT_DOMAIN,
         color_index=1,
         height=380,
@@ -379,10 +390,16 @@ def build_document() -> dict:
         "chart-type-spatk",
         "Mean Sp. Atk (both slots)",
         x_key="type",
-        data_key="mean_sp_atk",
+        data_key="mean_stat",
         name="Sp. Atk",
-        query=mean_by_type("sp_atk", filter_=TYPE_ANY_NONLEG),
-        subtitle="Non-legendary primary forms · both type slots",
+        query={
+            "label": "mean spatk by type both slots",
+            "filter": TYPE_ANY_NONLEG,
+            "groupBy": ["type"],
+            "aggregate": [{"fn": "mean", "column": "sp_atk", "as": "mean_stat"}, {"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "mean_stat", "direction": "desc"}],
+        },
+        subtitle="Non-legendary · both slots · shared 0–130 with Attack",
         y_domain=STAT_DOMAIN,
         color_index=3,
         height=380,
@@ -394,7 +411,8 @@ def build_document() -> dict:
         data_key="mean_phys_minus_spec",
         name="Attack − Sp. Atk",
         query=mean_by_type("phys_minus_spec", filter_=TYPE_ANY_NONLEG),
-        subtitle="Positive = physical lean · both slots",
+        subtitle="Own row — polarity metric, not comparable to raw means · axis includes 0",
+        notes="Kept off the Attack/Sp. Atk sibling row so mixed scales are not implied.",
         y_domain=[-40, 50],
         color_index=5,
         height=380,
@@ -403,10 +421,16 @@ def build_document() -> dict:
         "chart-type-defense",
         "Mean Defense (both slots)",
         x_key="type",
-        data_key="mean_defense",
+        data_key="mean_stat",
         name="Defense",
-        query=mean_by_type("defense", filter_=TYPE_ANY_NONLEG),
-        subtitle="Both type slots · non-legendary",
+        query={
+            "label": "mean defense by type",
+            "filter": TYPE_ANY_NONLEG,
+            "groupBy": ["type"],
+            "aggregate": [{"fn": "mean", "column": "defense", "as": "mean_stat"}, {"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "mean_stat", "direction": "desc"}],
+        },
+        subtitle="Both slots · shared 0–130 with Sp. Def / Speed",
         y_domain=STAT_DOMAIN,
         color_index=2,
         height=380,
@@ -415,10 +439,16 @@ def build_document() -> dict:
         "chart-type-spdef",
         "Mean Sp. Def (both slots)",
         x_key="type",
-        data_key="mean_sp_def",
+        data_key="mean_stat",
         name="Sp. Def",
-        query=mean_by_type("sp_def", filter_=TYPE_ANY_NONLEG),
-        subtitle="Both type slots · non-legendary",
+        query={
+            "label": "mean spdef by type",
+            "filter": TYPE_ANY_NONLEG,
+            "groupBy": ["type"],
+            "aggregate": [{"fn": "mean", "column": "sp_def", "as": "mean_stat"}, {"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "mean_stat", "direction": "desc"}],
+        },
+        subtitle="Both slots · shared 0–130 with Defense / Speed",
         y_domain=STAT_DOMAIN,
         color_index=4,
         height=380,
@@ -427,10 +457,16 @@ def build_document() -> dict:
         "chart-type-speed",
         "Mean Speed (both slots)",
         x_key="type",
-        data_key="mean_speed",
+        data_key="mean_stat",
         name="Speed",
-        query=mean_by_type("speed", filter_=TYPE_ANY_NONLEG),
-        subtitle="Both type slots · non-legendary",
+        query={
+            "label": "mean speed by type",
+            "filter": TYPE_ANY_NONLEG,
+            "groupBy": ["type"],
+            "aggregate": [{"fn": "mean", "column": "speed", "as": "mean_stat"}, {"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "mean_stat", "direction": "desc"}],
+        },
+        subtitle="Both slots · shared 0–130 with Defense / Sp. Def",
         y_domain=STAT_DOMAIN,
         color_index=5,
         height=380,
@@ -800,10 +836,81 @@ def build_document() -> dict:
         color_index=5,
     )
 
+    # ---- Team-building pool / speed tiers ----
+    pool_share = bar_v(
+        "chart-pool-speed-share",
+        "Speed-tier share (team-building pool)",
+        x_key="speed_tier",
+        series=[{"dataKey": "share", "name": "Share", "colorIndex": 5}],
+        query={
+            "label": "speed tier share in team pool",
+            "filter": TEAM_POOL,
+            "groupBy": ["speed_tier_rank", "speed_tier"],
+            "aggregate": [
+                {"fn": "sum", "column": "pool_share_unit", "as": "share"},
+                {"fn": "count", "as": "n"},
+            ],
+            "orderBy": [{"column": "speed_tier_rank", "direction": "asc"}],
+        },
+        subtitle="Non-legendary · BST ≥ 500 · primary forms (n=134) · axis at 0",
+        notes="sum(pool_share_unit)=1 across tiers. Tiers: <60 / 60-79 / 80-99 / 100+.",
+        y_domain=POOL_SHARE_DOMAIN,
+        show_legend=False,
+        decimals=3,
+        y_label="Share of pool",
+        height=320,
+    )
+    # Percent formatting on the share chart
+    pool_share["recharts"]["valueFormat"] = "percent"
+    pool_share["recharts"]["decimals"] = 0
+
+    pool_counts = bar_v(
+        "chart-pool-speed-counts",
+        "Speed-tier counts (team-building pool)",
+        x_key="speed_tier",
+        series=[{"dataKey": "n", "name": "Species", "colorIndex": 0}],
+        query={
+            "label": "speed tier counts in team pool",
+            "filter": TEAM_POOL,
+            "groupBy": ["speed_tier_rank", "speed_tier"],
+            "aggregate": [{"fn": "count", "as": "n"}],
+            "orderBy": [{"column": "speed_tier_rank", "direction": "asc"}],
+        },
+        subtitle="Same pool · counts · axis at 0",
+        y_domain=POOL_COUNT_DOMAIN,
+        show_legend=False,
+        decimals=0,
+        y_label="Species",
+        height=320,
+    )
+
+    pool_mean_total = bar_v(
+        "chart-pool-mean-total",
+        "Mean BST by speed tier (pool)",
+        x_key="speed_tier",
+        series=[{"dataKey": "mean_total", "name": "Mean total", "colorIndex": 2}],
+        query={
+            "label": "mean total by speed tier in pool",
+            "filter": TEAM_POOL,
+            "groupBy": ["speed_tier_rank", "speed_tier"],
+            "aggregate": [
+                {"fn": "mean", "column": "total", "as": "mean_total"},
+                {"fn": "count", "as": "n"},
+            ],
+            "orderBy": [{"column": "speed_tier_rank", "direction": "asc"}],
+        },
+        subtitle="Team pool only · axis at 0",
+        notes="All pool members already have BST ≥ 500; this shows residual spread by Speed band.",
+        y_domain=[0, 700],
+        show_legend=False,
+        height=300,
+        y_label="Mean BST",
+    )
+
     doc = {
         "title": "Pokémon base stats — Gen 1–6",
-        "experimentId": "pokemon-gen1-6-reaudit-r2",
-        "description": "Base stats by type (both slots), generation, legendary status, and glass/tank archetypes.",
+        "experimentId": "pokemon-gen1-6-reaudit-r3",
+        "description": "Base stats by type slots, generation, legendary status, archetypes, and team-pool speed tiers.",
         "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
         "defaultTabId": "summary",
         "pages": [
@@ -812,31 +919,41 @@ def build_document() -> dict:
                 "id": "page-deep",
                 "label": "Deep dive",
                 "order": 1,
-                "tabIds": ["types", "generations", "legendary", "distributions", "archetypes"],
+                "tabIds": [
+                    "types",
+                    "generations",
+                    "legendary",
+                    "distributions",
+                    "archetypes",
+                    "team-pool",
+                ],
             },
         ],
         "conventions": {
             "zeroBaselineBars": True,
             "population": (
-                "Per-species charts: is_primary_form && type_slot=Primary (721). "
-                "Type-participation charts: is_primary_form any slot (dual-types counted twice). "
-                "Archetype z-scores fit on primary forms; thresholds gap=1.0, floor=0.5."
+                "Per-species: is_primary_form && type_slot=Primary (721). "
+                "Type-participation: is_primary_form any slot (dual-types counted twice). "
+                "Team-building pool: primary form, non-legendary, total≥500 (134) — in_team_pool. "
+                "Archetype z-scores on primary forms; gap=1.0, floor=0.5."
             ),
             "palette": {
-                "0": "HP / non-legendary / Neither",
+                "0": "HP / non-legendary / Neither / pool counts",
                 "1": "Attack / legendary / Glass cannon",
-                "2": "Defense / primary-slot totals",
+                "2": "Defense / primary-slot totals / pool BST",
                 "3": "Sp. Atk",
                 "4": "Sp. Def / Tank / bulk",
-                "5": "Speed / physical lean",
+                "5": "Speed / physical lean / pool shares",
             },
             "notes": [
                 "Bar charts must include 0 on the value axis (omit yDomain or set yDomain[0] <= 0).",
                 "Sibling panels that share measures use the same explicit yDomain (and xDomain for histograms).",
-                "Canonical grain is form × type slot — always filter type_slot=Primary for per-species charts.",
-                "Both-slot type charts use column `type` with is_primary_form; they intentionally double-count dual-types.",
-                "Legendary uses the CSV flag as-is (mythicals inconsistently tagged).",
-                "Archetypes are descriptive design labels, not battle roles.",
+                "Do not place polarity metrics (Attack−Sp. Atk) beside raw means in the same component row.",
+                "Do not mix counts and means (or BST totals vs six-stat means) as unlabeled siblings.",
+                "Canonical grain is form × type slot — filter type_slot=Primary for per-species charts.",
+                "Both-slot type charts use column `type`; they intentionally double-count dual-types.",
+                "Team-pool speed shares use sum(pool_share_unit) by speed_tier (axis at 0).",
+                "mergeUserRows preserves createdBy:user rows (e.g. md-analyst-speed-tiers) across regen.",
             ],
         },
         "tabs": [
@@ -850,12 +967,13 @@ def build_document() -> dict:
                         0,
                         """## Summary
 
-**Pages:** Overview (this tab) · Deep dive (types, generations, legendary, distributions, archetypes).
+**Pages:** Overview (this tab) · Deep dive (types, generations, legendary, distributions, archetypes, team pool).
 
 1. **Legendary gap** — ~620 vs ~404 mean BST (primary forms).
 2. **Types** — both-slot cut restores Flying participation; Bug still weakest on mean BST among non-legendaries.
 3. **Generations** — Gen 4 strongest non-legendary mean; Gen 3 weakest.
-4. **Archetypes** — glass cannons (high offense vs bulk) vs tanks (high bulk vs offense/speed); z-scores on the primary-form pool.
+4. **Archetypes** — glass cannons vs tanks (z-score cut on the primary-form pool).
+5. **Team pool speed** — among non-legendary BST≥500, Speed bands &lt;60 / 60–79 / 80–99 / 100+ are fairly even (~19–30% each).
 
 Caveats and grain: `src/data/understanding.md`.""",
                     ),
@@ -865,7 +983,7 @@ Caveats and grain: `src/data/understanding.md`.""",
                         [
                             {"id": "summary-ref-type", "ref": "chart-type-total-both", "title": "Types (both slots)", "flex": 1},
                             {"id": "summary-ref-gen", "ref": "chart-gen-total", "title": "Generations", "flex": 1},
-                            {"id": "summary-ref-arch", "ref": "chart-arch-counts", "title": "Archetypes", "flex": 1},
+                            {"id": "summary-ref-pool", "ref": "chart-pool-speed-share", "title": "Team-pool speed", "flex": 1},
                         ],
                     ),
                 ],
@@ -884,12 +1002,30 @@ Caveats and grain: `src/data/understanding.md`.""",
                     ),
                     component("comp-type-totals", 1, [type_total_primary, type_total_both]),
                     component("comp-type-counts", 2, [type_n_primary, type_n_both]),
-                    md("md-types-offense", 3, """### Offense identity (both slots)
+                    md(
+                        "md-types-offense",
+                        3,
+                        """### Offense (both slots)
 
-Shared 0–130 value scale."""),
-                    component("comp-type-offense", 4, [type_attack, type_spatk, type_phys_lean]),
-                    md("md-types-bulk", 5, """### Bulk and Speed (both slots)"""),
-                    component("comp-type-bulk", 6, [type_def, type_spdef, type_speed]),
+Attack and Sp. Atk share a 0–130 scale (lint-enforced via shared measure key).""",
+                    ),
+                    component("comp-type-offense", 4, [type_attack, type_spatk]),
+                    md(
+                        "md-types-phys",
+                        5,
+                        """### Physical vs special lean
+
+Polarity metric on its own row (domain crosses 0; not comparable to raw means).""",
+                    ),
+                    component("comp-type-phys", 6, [type_phys_lean]),
+                    md(
+                        "md-types-bulk",
+                        7,
+                        """### Bulk and Speed (both slots)
+
+Shared 0–130 scale.""",
+                    ),
+                    component("comp-type-bulk", 8, [type_def, type_spdef, type_speed]),
                 ],
             },
             {
@@ -902,10 +1038,18 @@ Shared 0–130 value scale."""),
                         0,
                         """## By generation
 
-Species grain (`type_slot=Primary`). Means exclude legendaries; stacked counts include them.""",
+Species grain (`type_slot=Primary`). Means exclude legendaries; stacked counts include them. Means and counts are on separate rows so scales are not mixed.""",
                     ),
-                    component("comp-gen-overview", 1, [gen_total, gen_counts]),
-                    component("comp-gen-stats", 2, [gen_offense, gen_bulk]),
+                    component("comp-gen-total", 1, [gen_total]),
+                    component("comp-gen-counts", 2, [gen_counts]),
+                    md(
+                        "md-gen-stats",
+                        3,
+                        """### Stat profiles
+
+Offense vs bulk lines — both include 0 on the value axis.""",
+                    ),
+                    component("comp-gen-stats", 4, [gen_offense, gen_bulk]),
                 ],
             },
             {
@@ -918,10 +1062,11 @@ Species grain (`type_slot=Primary`). Means exclude legendaries; stacked counts i
                         0,
                         """## Legendary status
 
-Species grain. Source flag kept as-is (mythicals inconsistently tagged).""",
+Species grain. Source flag kept as-is (mythicals inconsistently tagged). BST totals and six-stat means are separate rows (different scales).""",
                     ),
-                    component("comp-leg-gap", 1, [leg_total, leg_means]),
-                    component("comp-leg-scatter", 2, [scatter_as]),
+                    component("comp-leg-total", 1, [leg_total]),
+                    component("comp-leg-means", 2, [leg_means]),
+                    component("comp-leg-scatter", 3, [scatter_as]),
                 ],
             },
             {
@@ -957,25 +1102,47 @@ Species grain. Sibling histograms share `xDomain` / `yDomain`.""",
 
 Thresholds are a judgment call — descriptive labels, not competitive roles. Type shares use **both slots** so dual-types contribute under each type.""",
                     ),
-                    component("comp-arch-counts", 1, [arch_counts, arch_speed]),
-                    component("comp-arch-bst", 2, [arch_mean_total]),
+                    component("comp-arch-counts", 1, [arch_counts]),
+                    component("comp-arch-speed", 2, [arch_speed]),
+                    component("comp-arch-bst", 3, [arch_mean_total]),
                     md(
                         "md-arch-means",
-                        3,
+                        4,
                         """### Offense vs bulk
 
 Shared 0–140 scale (same measure key across panels).""",
                     ),
-                    component("comp-arch-means", 4, [arch_mean_offense, arch_mean_bulk]),
+                    component("comp-arch-means", 5, [arch_mean_offense, arch_mean_bulk]),
                     md(
                         "md-arch-rates",
-                        5,
+                        6,
                         """### Type composition
 
 Share = mean of the boolean flag. Shared 0–35% rate scale · both type slots.""",
                     ),
-                    component("comp-arch-rates", 6, [arch_glass_rate, arch_tank_rate]),
-                    component("comp-arch-scatter", 7, [arch_scatter]),
+                    component("comp-arch-rates", 7, [arch_glass_rate, arch_tank_rate]),
+                    component("comp-arch-scatter", 8, [arch_scatter]),
+                ],
+            },
+            {
+                "id": "team-pool",
+                "label": "Team pool",
+                "order": 6,
+                "rows": [
+                    md(
+                        "md-pool",
+                        0,
+                        """## Team-building pool — speed tiers
+
+**Pool:** primary forms, non-legendary, base total ≥ **500** (**134** species). Analyst definition for OU-ish fully evolved threats.
+
+**Speed tiers:** &lt;60 · 60–79 · 80–99 · 100+.
+
+Shares sum to 100% via `sum(pool_share_unit)`. Bar axes include 0.""",
+                    ),
+                    component("comp-pool-share", 1, [pool_share]),
+                    component("comp-pool-counts", 2, [pool_counts]),
+                    component("comp-pool-bst", 3, [pool_mean_total]),
                 ],
             },
         ],

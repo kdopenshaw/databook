@@ -1,4 +1,4 @@
-# AGENT_NOTES — Pokémon reaudit R2
+# AGENT_NOTES — Pokémon reaudit R3
 
 ## Dev server
 
@@ -10,33 +10,27 @@ npm run dev -- --port 5180 --host 127.0.0.1
 
 URL: **http://127.0.0.1:5180/**
 
-Pages (sidebar): **Overview** · **Deep dive**. Tabs filter to the active page.
+Pages (sidebar): **Overview** · **Deep dive** (includes **Team pool**).
 
 ## Rebuild
 
 ```bash
 python3 src/data/transforms/build_canonical.py
-python3 src/data/transforms/build_rows.py
+python3 src/data/transforms/build_rows.py   # mergeUserRows keeps createdBy:user
 npm test
 npm run lint:charts
 ```
 
-## R2 changes
+## R3 changes
 
-- Canonical grain → form × type slot (1,214 rows); species charts filter `type_slot=Primary`.
-- Both-slot type analysis + primary-slot comparison panels.
-- Archetypes tab (glass / tank z-score cut); shared `yDomain` on rate and offense/bulk siblings.
-- `BookDocument.pages` → Overview / Deep dive (sidebar mounts only because pages exist).
-- Summary uses `ref` (no copied queries). `mergeUserRows` still applied in `build_rows.py`.
+- Speed-tier cut for team-building pool (`in_team_pool`: non-leg, BST≥500, primary form) — shares + counts + mean BST.
+- Preserved Overview `md-analyst-speed-tiers` (`createdBy: "user"`) via `mergeUserRows`.
+- Honesty pass: split mixed-metric sibling rows (phys lean vs raw means; gen means vs counts; legendary BST vs six-stat means; archetype counts vs mean Speed); shared `mean_stat` keys for Attack/Sp.Atk and Defense/Sp.Def/Speed siblings.
 
 ## Friction vs skill
 
-- Stock RechartsSpec still enough — **no renderer/App/theme forks**.
-- `scaffold-files.txt` still omits `scripts/`; `npm run check` unavailable without copying scripts.
-- Sibling shared-scale lint keys off identical `xKey` + series `dataKey`; renamed aggregates to a shared `mean_stat` / `rate` so honesty is lint-enforced.
-- `valueFormat: "percent"` expects 0–1 rates (boolean means) — domain stays `[0, 0.35]`.
-- Boolean `mean` for shares is the stock substitute for a missing pivot/share aggregate.
-
-## Population reminder
-
-See `src/data/understanding.md` and `BookDocument.conventions`.
+- Stock RechartsSpec only — **no renderer forks**.
+- Shared-scale lint needs identical series `dataKey` → `mean_stat` / `rate` / `share` aliases.
+- Pool shares use `sum(pool_share_unit)` (no window/`ratio` over grand total).
+- `npm run check` still unavailable (`scripts/` not copied by scaffold-files.txt).
+- `valueFormat: "percent"` expects 0–1 shares.

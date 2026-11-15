@@ -139,6 +139,19 @@ def main() -> None:
             archetype = "Tank"
         else:
             archetype = "Neither"
+        speed = f["speed"]
+        if speed < 60:
+            speed_tier, tier_rank = "<60", 0
+        elif speed < 80:
+            speed_tier, tier_rank = "60-79", 1
+        elif speed < 100:
+            speed_tier, tier_rank = "80-99", 2
+        else:
+            speed_tier, tier_rank = "100+", 3
+
+        # Team-building pool (analyst definition): non-legendary primary form, BST ≥ 500.
+        in_team_pool = bool(f["is_primary_form"] and (not f["legendary"]) and f["total"] >= 500)
+
         f.update(
             {
                 "z_offense": round(z_off, 4),
@@ -149,8 +162,18 @@ def main() -> None:
                 "is_glass_cannon": is_glass,
                 "is_tank": is_tank,
                 "archetype": archetype,
+                "speed_tier": speed_tier,
+                "speed_tier_rank": tier_rank,
+                "speed_lt60": speed < 60,
+                "speed_60_79": 60 <= speed < 80,
+                "speed_80_99": 80 <= speed < 100,
+                "speed_100plus": speed >= 100,
+                "in_team_pool": in_team_pool,
             }
         )
+
+    n_pool = sum(1 for f in forms if f["in_team_pool"])
+    pool_share_unit = (1.0 / n_pool) if n_pool else None
 
     rows_out: list[dict] = []
     for f in forms:
@@ -196,6 +219,15 @@ def main() -> None:
                     "is_glass_cannon": f["is_glass_cannon"],
                     "is_tank": f["is_tank"],
                     "archetype": f["archetype"],
+                    "speed_tier": f["speed_tier"],
+                    "speed_tier_rank": f["speed_tier_rank"],
+                    "speed_lt60": f["speed_lt60"],
+                    "speed_60_79": f["speed_60_79"],
+                    "speed_80_99": f["speed_80_99"],
+                    "speed_100plus": f["speed_100plus"],
+                    "in_team_pool": f["in_team_pool"],
+                    # sum(pool_share_unit) by speed_tier = share of the team-building pool.
+                    "pool_share_unit": pool_share_unit if f["in_team_pool"] else None,
                     "total_legendary": f["total"] if legendary else None,
                     "total_nonlegendary": f["total"] if not legendary else None,
                 }
@@ -300,6 +332,32 @@ def main() -> None:
                 "nullable": False,
                 "levels": ["Glass cannon", "Tank", "Neither"],
             },
+            {
+                "name": "speed_tier",
+                "type": "categorical",
+                "label": "Speed tier",
+                "nullable": False,
+                "levels": ["<60", "60-79", "80-99", "100+"],
+            },
+            {"name": "speed_tier_rank", "type": "quantitative", "label": "Speed tier rank", "nullable": False},
+            {"name": "speed_lt60", "type": "boolean", "label": "Speed <60", "nullable": False},
+            {"name": "speed_60_79", "type": "boolean", "label": "Speed 60-79", "nullable": False},
+            {"name": "speed_80_99", "type": "boolean", "label": "Speed 80-99", "nullable": False},
+            {"name": "speed_100plus", "type": "boolean", "label": "Speed 100+", "nullable": False},
+            {
+                "name": "in_team_pool",
+                "type": "boolean",
+                "label": "Team-building pool",
+                "nullable": False,
+                "description": "Primary form, non-legendary, total ≥ 500.",
+            },
+            {
+                "name": "pool_share_unit",
+                "type": "quantitative",
+                "label": "Pool share unit",
+                "nullable": True,
+                "description": "1/n_pool on team-pool species; sum by speed_tier = share.",
+            },
             {"name": "total_legendary", "type": "quantitative", "label": "Total if legendary", "nullable": True},
             {
                 "name": "total_nonlegendary",
@@ -315,6 +373,7 @@ def main() -> None:
             "csvRowCount": len(forms),
             "canonicalRowCount": len(rows_out),
             "primarySpecies": n_primary_species,
+            "teamPoolSize": n_pool,
             "archetypeParams": {
                 "fitOn": "is_primary_form",
                 "gap": ARCHETYPE_GAP,

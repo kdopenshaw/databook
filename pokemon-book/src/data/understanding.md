@@ -2,7 +2,7 @@
 
 ## Question
 
-How do base stats differ across **types** (both slots), **generations**, **legendary status**, and **glass-cannon / tank archetypes**?
+How do base stats differ across **types** (both slots), **generations**, **legendary status**, **glass-cannon / tank archetypes**, and **speed tiers in the team-building pool**?
 
 ## Sources
 
@@ -10,57 +10,51 @@ How do base stats differ across **types** (both slots), **generations**, **legen
 |--------|------|-------|
 | `data/Pokemon.csv` | 800 | Public Gen 1–6 form table (National Dex `#` 1–721). SHA-256 `02eabc49d3c70bc1e150891bdb9acb254910adfdfc12a6020c7b7117b2eca32f`. |
 
-Columns: `#`, `Name`, `Type 1`, `Type 2`, `Total`, `HP`, `Attack`, `Defense`, `Sp. Atk`, `Sp. Def`, `Speed`, `Generation`, `Legendary`.
-
-Rebuild: `python3 src/data/transforms/build_canonical.py` then `python3 src/data/transforms/build_rows.py`, then `npm test`.
-
-## Profile
-
-- 800 CSV forms; `#` is not unique (721 dex numbers + Mega/alternate formes).
-- `Type 2` blank on 386 mono-type forms.
-- `Total` always equals the six-stat sum.
-- Legendary flag: 65 / 800 forms (46 / 721 primary forms).
+Rebuild: `python3 src/data/transforms/build_canonical.py` then `python3 src/data/transforms/build_rows.py`, then `npm test`. Generators call `mergeUserRows` so `createdBy: "user"` rows (e.g. Overview `md-analyst-speed-tiers`) survive regen.
 
 ## Grain
 
-**Canonical grain:** one row per **form × type slot** (1,214 rows). Dual-types get a Primary and a Secondary row; mono-types get Primary only.
+**Canonical:** one row per **form × type slot** (1,214).
 
-| Population | Filter | Rows (approx.) | Use |
-|------------|--------|----------------|-----|
-| Per-species | `is_primary_form` && `type_slot = Primary` | 721 | Generations, legendary, distributions, archetype counts |
-| Type participation | `is_primary_form` (any slot) | ~1,071 | Type means / rates (dual-types under both types) |
-| Type 1 only | species filter above | 721 | Side-by-side vs both-slots |
+| Population | Filter | Rows | Use |
+|------------|--------|------|-----|
+| Per-species | `is_primary_form` && `type_slot=Primary` | 721 | Gens, legendary, distributions, archetypes |
+| Type participation | `is_primary_form` (any slot) | ~1,071 | Type means / rates |
+| Team-building pool | `in_team_pool` (+ species filters in charts) | **134** | Speed-tier shares |
+
+`in_team_pool` = primary form ∧ non-legendary ∧ `total ≥ 500` (analyst definition).
+
+## Speed tiers
+
+Bands on raw Speed: **&lt;60** · **60–79** · **80–99** · **100+** (`speed_tier` + `speed_tier_rank` for sort).
+
+Pool shares: `sum(pool_share_unit)` by tier where `pool_share_unit = 1/134` on pool species (null elsewhere). Counts and shares are charted on **separate rows** (different scales).
+
+Observed pool shares (~): &lt;60 19% · 60–79 25% · 80–99 30% · 100+ 25%.
 
 ## Archetypes
 
-Fit on the **721 primary forms**, then copied to every slot row of that form:
+Fit on 721 primary forms: offense = max(Attack, Sp. Atk); bulk = mean(HP, Defense, Sp. Def).
 
-- `offense` = max(Attack, Sp. Atk); `bulk` = mean(HP, Defense, Sp. Def)
-- z-scores vs primary-form mean/SD
-- **Glass cannon:** `z(offense) − z(bulk) ≥ 1` and `z(offense) ≥ 0.5` → **61** species
-- **Tank:** `z(bulk) − max(z(offense), z(Speed)) ≥ 1` and `z(bulk) ≥ 0.5` → **41** species
-- Else **Neither**. If both fire (rare), the larger gap wins.
+- Glass: `z(offense)−z(bulk) ≥ 1` and `z(offense) ≥ 0.5` → **61**
+- Tank: `z(bulk)−max(z(offense),z(Speed)) ≥ 1` and `z(bulk) ≥ 0.5` → **41**
 
-Thresholds (`gap=1.0`, `floor=0.5`) are a judgment call — descriptive labels, not competitive roles.
+## Pages
 
-## Pages / IA
+- **Overview** → Summary (refs + analyst notes)
+- **Deep dive** → Types · Generations · Legendary · Distributions · Archetypes · Team pool
 
-- **Overview** page → Summary tab (refs into deep-dive charts)
-- **Deep dive** page → By type, By generation, Legendary, Distributions, Archetypes
+## Honesty conventions
 
-Sidebar lists pages only because `BookDocument.pages` is set.
+- Bar value axes include **0**.
+- Sibling panels that share a measure use a shared `yDomain` (and shared series `dataKey` where lint requires it).
+- Polarity metrics (Attack−Sp. Atk) are **not** siblings of raw means.
+- Counts are **not** siblings of means / BST totals without a matching scale.
+- Type-1-only traps: primary-slot panels are labeled; both-slot is the default for type identity.
 
 ## Caveats
 
-- Legendary / mythical flag inconsistency in the source CSV.
-- Mega/alternate formes excluded from default populations via `is_primary_form`.
-- Both-slot type charts **intentionally double-count** dual-type species.
-- Stats are design constants — differences are descriptive, not inferential.
-- Gen 1–6 only.
-
-## Headline findings
-
-- Legendary ~**620** vs non-legendary ~**404** mean BST (species grain).
-- Both-slot cut: **Flying** participation jumps (~80 non-legendary participations vs ~2 as Type 1).
-- Gen 4 strongest / Gen 3 weakest among non-legendary means — no monotonic power creep.
-- Glass cannons lean fast and high-offense; tanks lean high-bulk / lower Speed.
+- Legendary/mythical flag inconsistency in the CSV.
+- Mega/alternate formes excluded via `is_primary_form`.
+- Both-slot type charts double-count dual-types by design.
+- Stats are design constants — descriptive only.

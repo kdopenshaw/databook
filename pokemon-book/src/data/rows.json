@@ -1,8 +1,8 @@
 {
   "title": "Pok\u00e9mon base stats \u2014 Gen 1\u20136",
-  "experimentId": "pokemon-gen1-6-reaudit-r2",
-  "description": "Base stats by type (both slots), generation, legendary status, and glass/tank archetypes.",
-  "generatedAt": "2026-11-15T07:39:03.672Z",
+  "experimentId": "pokemon-gen1-6-reaudit-r3",
+  "description": "Base stats by type slots, generation, legendary status, archetypes, and team-pool speed tiers.",
+  "generatedAt": "2026-11-15T07:44:37.770Z",
   "defaultTabId": "summary",
   "pages": [
     {
@@ -22,28 +22,31 @@
         "generations",
         "legendary",
         "distributions",
-        "archetypes"
+        "archetypes",
+        "team-pool"
       ]
     }
   ],
   "conventions": {
     "zeroBaselineBars": true,
-    "population": "Per-species charts: is_primary_form && type_slot=Primary (721). Type-participation charts: is_primary_form any slot (dual-types counted twice). Archetype z-scores fit on primary forms; thresholds gap=1.0, floor=0.5.",
+    "population": "Per-species: is_primary_form && type_slot=Primary (721). Type-participation: is_primary_form any slot (dual-types counted twice). Team-building pool: primary form, non-legendary, total\u2265500 (134) \u2014 in_team_pool. Archetype z-scores on primary forms; gap=1.0, floor=0.5.",
     "palette": {
-      "0": "HP / non-legendary / Neither",
+      "0": "HP / non-legendary / Neither / pool counts",
       "1": "Attack / legendary / Glass cannon",
-      "2": "Defense / primary-slot totals",
+      "2": "Defense / primary-slot totals / pool BST",
       "3": "Sp. Atk",
       "4": "Sp. Def / Tank / bulk",
-      "5": "Speed / physical lean"
+      "5": "Speed / physical lean / pool shares"
     },
     "notes": [
       "Bar charts must include 0 on the value axis (omit yDomain or set yDomain[0] <= 0).",
       "Sibling panels that share measures use the same explicit yDomain (and xDomain for histograms).",
-      "Canonical grain is form \u00d7 type slot \u2014 always filter type_slot=Primary for per-species charts.",
-      "Both-slot type charts use column `type` with is_primary_form; they intentionally double-count dual-types.",
-      "Legendary uses the CSV flag as-is (mythicals inconsistently tagged).",
-      "Archetypes are descriptive design labels, not battle roles."
+      "Do not place polarity metrics (Attack\u2212Sp. Atk) beside raw means in the same component row.",
+      "Do not mix counts and means (or BST totals vs six-stat means) as unlabeled siblings.",
+      "Canonical grain is form \u00d7 type slot \u2014 filter type_slot=Primary for per-species charts.",
+      "Both-slot type charts use column `type`; they intentionally double-count dual-types.",
+      "Team-pool speed shares use sum(pool_share_unit) by speed_tier (axis at 0).",
+      "mergeUserRows preserves createdBy:user rows (e.g. md-analyst-speed-tiers) across regen."
     ]
   },
   "tabs": [
@@ -57,7 +60,7 @@
           "type": "markdown",
           "order": 0,
           "createdBy": "skill",
-          "body": "## Summary\n\n**Pages:** Overview (this tab) \u00b7 Deep dive (types, generations, legendary, distributions, archetypes).\n\n1. **Legendary gap** \u2014 ~620 vs ~404 mean BST (primary forms).\n2. **Types** \u2014 both-slot cut restores Flying participation; Bug still weakest on mean BST among non-legendaries.\n3. **Generations** \u2014 Gen 4 strongest non-legendary mean; Gen 3 weakest.\n4. **Archetypes** \u2014 glass cannons (high offense vs bulk) vs tanks (high bulk vs offense/speed); z-scores on the primary-form pool.\n\nCaveats and grain: `src/data/understanding.md`."
+          "body": "## Summary\n\n**Pages:** Overview (this tab) \u00b7 Deep dive (types, generations, legendary, distributions, archetypes, team pool).\n\n1. **Legendary gap** \u2014 ~620 vs ~404 mean BST (primary forms).\n2. **Types** \u2014 both-slot cut restores Flying participation; Bug still weakest on mean BST among non-legendaries.\n3. **Generations** \u2014 Gen 4 strongest non-legendary mean; Gen 3 weakest.\n4. **Archetypes** \u2014 glass cannons vs tanks (z-score cut on the primary-form pool).\n5. **Team pool speed** \u2014 among non-legendary BST\u2265500, Speed bands &lt;60 / 60\u201379 / 80\u201399 / 100+ are fairly even (~19\u201330% each).\n\nCaveats and grain: `src/data/understanding.md`."
         },
         {
           "id": "md-analyst-speed-tiers",
@@ -90,9 +93,9 @@
               "flex": 1
             },
             {
-              "id": "summary-ref-arch",
-              "ref": "chart-arch-counts",
-              "title": "Archetypes",
+              "id": "summary-ref-pool",
+              "ref": "chart-pool-speed-share",
+              "title": "Team-pool speed",
               "flex": 1
             }
           ]
@@ -424,7 +427,7 @@
           "type": "markdown",
           "order": 3,
           "createdBy": "skill",
-          "body": "### Offense identity (both slots)\n\nShared 0\u2013130 value scale."
+          "body": "### Offense (both slots)\n\nAttack and Sp. Atk share a 0\u2013130 scale (lint-enforced via shared measure key)."
         },
         {
           "id": "comp-type-offense",
@@ -441,7 +444,7 @@
               "id": "chart-type-attack",
               "title": "Mean Attack (both slots)",
               "query": {
-                "label": "mean attack by type",
+                "label": "mean attack by type both slots",
                 "filter": [
                   {
                     "column": "is_primary_form",
@@ -461,7 +464,7 @@
                   {
                     "fn": "mean",
                     "column": "attack",
-                    "as": "mean_attack"
+                    "as": "mean_stat"
                   },
                   {
                     "fn": "count",
@@ -470,14 +473,14 @@
                 ],
                 "orderBy": [
                   {
-                    "column": "mean_attack",
+                    "column": "mean_stat",
                     "direction": "desc"
                   }
                 ]
               },
               "encoding": {
                 "category": "type",
-                "value": "mean_attack"
+                "value": "mean_stat"
               },
               "recharts": {
                 "chart": "BarChart",
@@ -486,7 +489,7 @@
                 "series": [
                   {
                     "mark": "Bar",
-                    "dataKey": "mean_attack",
+                    "dataKey": "mean_stat",
                     "name": "Attack",
                     "colorIndex": 1
                   }
@@ -504,13 +507,13 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Non-legendary primary forms \u00b7 both type slots"
+              "subtitle": "Non-legendary \u00b7 both slots \u00b7 shared 0\u2013130 with Sp. Atk"
             },
             {
               "id": "chart-type-spatk",
               "title": "Mean Sp. Atk (both slots)",
               "query": {
-                "label": "mean sp_atk by type",
+                "label": "mean spatk by type both slots",
                 "filter": [
                   {
                     "column": "is_primary_form",
@@ -530,7 +533,7 @@
                   {
                     "fn": "mean",
                     "column": "sp_atk",
-                    "as": "mean_sp_atk"
+                    "as": "mean_stat"
                   },
                   {
                     "fn": "count",
@@ -539,14 +542,14 @@
                 ],
                 "orderBy": [
                   {
-                    "column": "mean_sp_atk",
+                    "column": "mean_stat",
                     "direction": "desc"
                   }
                 ]
               },
               "encoding": {
                 "category": "type",
-                "value": "mean_sp_atk"
+                "value": "mean_stat"
               },
               "recharts": {
                 "chart": "BarChart",
@@ -555,7 +558,7 @@
                 "series": [
                   {
                     "mark": "Bar",
-                    "dataKey": "mean_sp_atk",
+                    "dataKey": "mean_stat",
                     "name": "Sp. Atk",
                     "colorIndex": 3
                   }
@@ -573,8 +576,28 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Non-legendary primary forms \u00b7 both type slots"
-            },
+              "subtitle": "Non-legendary \u00b7 both slots \u00b7 shared 0\u2013130 with Attack"
+            }
+          ]
+        },
+        {
+          "id": "md-types-phys",
+          "type": "markdown",
+          "order": 5,
+          "createdBy": "skill",
+          "body": "### Physical vs special lean\n\nPolarity metric on its own row (domain crosses 0; not comparable to raw means)."
+        },
+        {
+          "id": "comp-type-phys",
+          "type": "component",
+          "order": 6,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
             {
               "id": "chart-type-phys-lean",
               "title": "Mean Attack \u2212 Sp. Atk (both slots)",
@@ -642,21 +665,22 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Positive = physical lean \u00b7 both slots"
+              "subtitle": "Own row \u2014 polarity metric, not comparable to raw means \u00b7 axis includes 0",
+              "notes": "Kept off the Attack/Sp. Atk sibling row so mixed scales are not implied."
             }
           ]
         },
         {
           "id": "md-types-bulk",
           "type": "markdown",
-          "order": 5,
+          "order": 7,
           "createdBy": "skill",
-          "body": "### Bulk and Speed (both slots)"
+          "body": "### Bulk and Speed (both slots)\n\nShared 0\u2013130 scale."
         },
         {
           "id": "comp-type-bulk",
           "type": "component",
-          "order": 6,
+          "order": 8,
           "createdBy": "skill",
           "layout": {
             "gap": 16,
@@ -688,7 +712,7 @@
                   {
                     "fn": "mean",
                     "column": "defense",
-                    "as": "mean_defense"
+                    "as": "mean_stat"
                   },
                   {
                     "fn": "count",
@@ -697,14 +721,14 @@
                 ],
                 "orderBy": [
                   {
-                    "column": "mean_defense",
+                    "column": "mean_stat",
                     "direction": "desc"
                   }
                 ]
               },
               "encoding": {
                 "category": "type",
-                "value": "mean_defense"
+                "value": "mean_stat"
               },
               "recharts": {
                 "chart": "BarChart",
@@ -713,7 +737,7 @@
                 "series": [
                   {
                     "mark": "Bar",
-                    "dataKey": "mean_defense",
+                    "dataKey": "mean_stat",
                     "name": "Defense",
                     "colorIndex": 2
                   }
@@ -731,13 +755,13 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Both type slots \u00b7 non-legendary"
+              "subtitle": "Both slots \u00b7 shared 0\u2013130 with Sp. Def / Speed"
             },
             {
               "id": "chart-type-spdef",
               "title": "Mean Sp. Def (both slots)",
               "query": {
-                "label": "mean sp_def by type",
+                "label": "mean spdef by type",
                 "filter": [
                   {
                     "column": "is_primary_form",
@@ -757,7 +781,7 @@
                   {
                     "fn": "mean",
                     "column": "sp_def",
-                    "as": "mean_sp_def"
+                    "as": "mean_stat"
                   },
                   {
                     "fn": "count",
@@ -766,14 +790,14 @@
                 ],
                 "orderBy": [
                   {
-                    "column": "mean_sp_def",
+                    "column": "mean_stat",
                     "direction": "desc"
                   }
                 ]
               },
               "encoding": {
                 "category": "type",
-                "value": "mean_sp_def"
+                "value": "mean_stat"
               },
               "recharts": {
                 "chart": "BarChart",
@@ -782,7 +806,7 @@
                 "series": [
                   {
                     "mark": "Bar",
-                    "dataKey": "mean_sp_def",
+                    "dataKey": "mean_stat",
                     "name": "Sp. Def",
                     "colorIndex": 4
                   }
@@ -800,7 +824,7 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Both type slots \u00b7 non-legendary"
+              "subtitle": "Both slots \u00b7 shared 0\u2013130 with Defense / Speed"
             },
             {
               "id": "chart-type-speed",
@@ -826,7 +850,7 @@
                   {
                     "fn": "mean",
                     "column": "speed",
-                    "as": "mean_speed"
+                    "as": "mean_stat"
                   },
                   {
                     "fn": "count",
@@ -835,14 +859,14 @@
                 ],
                 "orderBy": [
                   {
-                    "column": "mean_speed",
+                    "column": "mean_stat",
                     "direction": "desc"
                   }
                 ]
               },
               "encoding": {
                 "category": "type",
-                "value": "mean_speed"
+                "value": "mean_stat"
               },
               "recharts": {
                 "chart": "BarChart",
@@ -851,7 +875,7 @@
                 "series": [
                   {
                     "mark": "Bar",
-                    "dataKey": "mean_speed",
+                    "dataKey": "mean_stat",
                     "name": "Speed",
                     "colorIndex": 5
                   }
@@ -869,7 +893,7 @@
                 ]
               },
               "flex": 1,
-              "subtitle": "Both type slots \u00b7 non-legendary"
+              "subtitle": "Both slots \u00b7 shared 0\u2013130 with Defense / Sp. Def"
             }
           ]
         }
@@ -885,10 +909,10 @@
           "type": "markdown",
           "order": 0,
           "createdBy": "skill",
-          "body": "## By generation\n\nSpecies grain (`type_slot=Primary`). Means exclude legendaries; stacked counts include them."
+          "body": "## By generation\n\nSpecies grain (`type_slot=Primary`). Means exclude legendaries; stacked counts include them. Means and counts are on separate rows so scales are not mixed."
         },
         {
-          "id": "comp-gen-overview",
+          "id": "comp-gen-total",
           "type": "component",
           "order": 1,
           "createdBy": "skill",
@@ -971,7 +995,20 @@
               "flex": 1,
               "subtitle": "Non-legendary primary forms \u00b7 primary slot",
               "notes": "Gen 4 leads; Gen 3 weakest \u2014 no steady power creep."
-            },
+            }
+          ]
+        },
+        {
+          "id": "comp-gen-counts",
+          "type": "component",
+          "order": 2,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
             {
               "id": "chart-gen-counts",
               "title": "Species count by generation and status",
@@ -1052,9 +1089,16 @@
           ]
         },
         {
+          "id": "md-gen-stats",
+          "type": "markdown",
+          "order": 3,
+          "createdBy": "skill",
+          "body": "### Stat profiles\n\nOffense vs bulk lines \u2014 both include 0 on the value axis."
+        },
+        {
           "id": "comp-gen-stats",
           "type": "component",
-          "order": 2,
+          "order": 4,
           "createdBy": "skill",
           "layout": {
             "gap": 16,
@@ -1280,10 +1324,10 @@
           "type": "markdown",
           "order": 0,
           "createdBy": "skill",
-          "body": "## Legendary status\n\nSpecies grain. Source flag kept as-is (mythicals inconsistently tagged)."
+          "body": "## Legendary status\n\nSpecies grain. Source flag kept as-is (mythicals inconsistently tagged). BST totals and six-stat means are separate rows (different scales)."
         },
         {
-          "id": "comp-leg-gap",
+          "id": "comp-leg-total",
           "type": "component",
           "order": 1,
           "createdBy": "skill",
@@ -1361,7 +1405,20 @@
               },
               "flex": 1,
               "subtitle": "Primary forms \u00b7 primary slot"
-            },
+            }
+          ]
+        },
+        {
+          "id": "comp-leg-means",
+          "type": "component",
+          "order": 2,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
             {
               "id": "chart-leg-means",
               "title": "Mean stats: legendary vs non-legendary",
@@ -1490,7 +1547,7 @@
         {
           "id": "comp-leg-scatter",
           "type": "component",
-          "order": 2,
+          "order": 3,
           "createdBy": "skill",
           "layout": {
             "gap": 16,
@@ -1936,7 +1993,20 @@
               "flex": 1,
               "subtitle": "z-score cut: gap\u22651.0 and floor\u22650.5 vs primary-form pool",
               "notes": "Glass = high offense vs bulk; Tank = high bulk vs offense/speed."
-            },
+            }
+          ]
+        },
+        {
+          "id": "comp-arch-speed",
+          "type": "component",
+          "order": 2,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
             {
               "id": "chart-arch-speed",
               "title": "Mean Speed by archetype",
@@ -2011,7 +2081,7 @@
         {
           "id": "comp-arch-bst",
           "type": "component",
-          "order": 2,
+          "order": 3,
           "createdBy": "skill",
           "layout": {
             "gap": 16,
@@ -2093,14 +2163,14 @@
         {
           "id": "md-arch-means",
           "type": "markdown",
-          "order": 3,
+          "order": 4,
           "createdBy": "skill",
           "body": "### Offense vs bulk\n\nShared 0\u2013140 scale (same measure key across panels)."
         },
         {
           "id": "comp-arch-means",
           "type": "component",
-          "order": 4,
+          "order": 5,
           "createdBy": "skill",
           "layout": {
             "gap": 16,
@@ -2251,14 +2321,14 @@
         {
           "id": "md-arch-rates",
           "type": "markdown",
-          "order": 5,
+          "order": 6,
           "createdBy": "skill",
           "body": "### Type composition\n\nShare = mean of the boolean flag. Shared 0\u201335% rate scale \u00b7 both type slots."
         },
         {
           "id": "comp-arch-rates",
           "type": "component",
-          "order": 6,
+          "order": 7,
           "createdBy": "skill",
           "layout": {
             "gap": 16,
@@ -2404,7 +2474,7 @@
         {
           "id": "comp-arch-scatter",
           "type": "component",
-          "order": 7,
+          "order": 8,
           "createdBy": "skill",
           "layout": {
             "gap": 16,
@@ -2483,6 +2553,279 @@
                 "decimals": 2
               },
               "flex": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "team-pool",
+      "label": "Team pool",
+      "order": 6,
+      "rows": [
+        {
+          "id": "md-pool",
+          "type": "markdown",
+          "order": 0,
+          "createdBy": "skill",
+          "body": "## Team-building pool \u2014 speed tiers\n\n**Pool:** primary forms, non-legendary, base total \u2265 **500** (**134** species). Analyst definition for OU-ish fully evolved threats.\n\n**Speed tiers:** &lt;60 \u00b7 60\u201379 \u00b7 80\u201399 \u00b7 100+.\n\nShares sum to 100% via `sum(pool_share_unit)`. Bar axes include 0."
+        },
+        {
+          "id": "comp-pool-share",
+          "type": "component",
+          "order": 1,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-pool-speed-share",
+              "title": "Speed-tier share (team-building pool)",
+              "query": {
+                "label": "speed tier share in team pool",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "in_team_pool",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "speed_tier_rank",
+                  "speed_tier"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "sum",
+                    "column": "pool_share_unit",
+                    "as": "share"
+                  },
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "speed_tier_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "speed_tier",
+                "y": "share"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "speed_tier",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "share",
+                    "name": "Share",
+                    "colorIndex": 5
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  0.4
+                ],
+                "yLabel": "Share of pool",
+                "valueFormat": "percent"
+              },
+              "flex": 1,
+              "subtitle": "Non-legendary \u00b7 BST \u2265 500 \u00b7 primary forms (n=134) \u00b7 axis at 0",
+              "notes": "sum(pool_share_unit)=1 across tiers. Tiers: <60 / 60-79 / 80-99 / 100+."
+            }
+          ]
+        },
+        {
+          "id": "comp-pool-counts",
+          "type": "component",
+          "order": 2,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-pool-speed-counts",
+              "title": "Speed-tier counts (team-building pool)",
+              "query": {
+                "label": "speed tier counts in team pool",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "in_team_pool",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "speed_tier_rank",
+                  "speed_tier"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "speed_tier_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "speed_tier",
+                "y": "n"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "speed_tier",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "n",
+                    "name": "Species",
+                    "colorIndex": 0
+                  }
+                ],
+                "height": 320,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 0,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  50
+                ],
+                "yLabel": "Species"
+              },
+              "flex": 1,
+              "subtitle": "Same pool \u00b7 counts \u00b7 axis at 0"
+            }
+          ]
+        },
+        {
+          "id": "comp-pool-bst",
+          "type": "component",
+          "order": 3,
+          "createdBy": "skill",
+          "layout": {
+            "gap": 16,
+            "align": "stretch",
+            "wrap": true
+          },
+          "components": [
+            {
+              "id": "chart-pool-mean-total",
+              "title": "Mean BST by speed tier (pool)",
+              "query": {
+                "label": "mean total by speed tier in pool",
+                "filter": [
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "in_team_pool",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "speed_tier_rank",
+                  "speed_tier"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total",
+                    "as": "mean_total"
+                  },
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "speed_tier_rank",
+                    "direction": "asc"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "speed_tier",
+                "y": "mean_total"
+              },
+              "recharts": {
+                "chart": "BarChart",
+                "xKey": "speed_tier",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_total",
+                    "name": "Mean total",
+                    "colorIndex": 2
+                  }
+                ],
+                "height": 300,
+                "showGrid": true,
+                "showTooltip": true,
+                "showLegend": false,
+                "decimals": 1,
+                "barCategoryGap": "22%",
+                "yDomain": [
+                  0,
+                  700
+                ],
+                "yLabel": "Mean BST"
+              },
+              "flex": 1,
+              "subtitle": "Team pool only \u00b7 axis at 0",
+              "notes": "All pool members already have BST \u2265 500; this shows residual spread by Speed band."
             }
           ]
         }
