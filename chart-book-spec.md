@@ -41,7 +41,7 @@ The skill is **experiment-agnostic**: it does not hard-code domain workflows (fi
 - Arbitrary notebook code cells executed in the browser.
 - Hosting charts inside Cursor `.canvas.tsx` (incompatible with Recharts / npm).
 - Replacing Plotly Studio / Hex for warehouse BI; this is a **repo-local / skill-emitted chart book**.
-- Nested rows, free-form grids, or drag-and-drop layout editors.
+- Nested rows, free-form grids, or drag-and-drop layout editors (in-place **(+)** markdown insert between rows is in scope).
 - A pre-filled / restricted starter chart catalog (the agent uses Recharts’ full API).
 - A separate user-facing `databook init` command (init is automatic when the skill runs).
 - Generating a README inside emitted chart-book folders in other projects.
@@ -182,7 +182,7 @@ The agent **decides** which tab a set of rows belongs to, and **per row** which 
 
 | Type | Role |
 |------|------|
-| `markdown` | Full-width narrative row: experiment framing, how aggregations work, caveats, takeaways. Rendered with **react-markdown**. |
+| `markdown` | Full-width narrative row: experiment framing, how aggregations work, caveats, findings. Rendered with **react-markdown**. Do **not** title blocks “Analyst ask/take/note” unless the human asks. |
 | `component` | Flex container row that holds **one or more** self-describing chart blocks side by side. |
 
 Future (out of scope for v1 wiring, reserved ids): `callout`, `table`, `stat_row` as additional row types or as children of `component`.
@@ -270,7 +270,7 @@ When emitting a set of charts, the skill picks **per row**:
 
 | Situation | Prefer |
 |-----------|--------|
-| Framing, caveats, aggregation explanation, takeaways | `markdown` row (full width) |
+| Framing, caveats, aggregation explanation, findings | `markdown` row (full width) |
 | One standalone viz that needs breathing room | `component` row with a **single** chart block |
 | Related metrics to compare at a glance (e.g. three distributions, three segments) | `component` row with **multiple** chart blocks side by side |
 | Unrelated charts that each need a long narrative | Separate `markdown` + single-chart `component` pairs, or stacked single-chart rows |
@@ -289,9 +289,11 @@ Markdown rows are rendered with **[react-markdown](https://github.com/remarkjs/r
 - State the experiment question before the first chart group  
 - Explain non-obvious aggregations (“revenue is sum of `amount_usd` after excluding refunds”)  
 - Call out outlier handling and excluded cohorts  
-- Summarize findings after key chart groups  
+- Summarize findings after key chart groups as normal prose (headings that state the finding)
 
-Humans may edit markdown; the skill may regenerate sections marked `<!-- skill:managed -->` if that convention is adopted.
+**Do not** invent meta sections titled “Analyst ask”, “Analyst take”, “Analyst takeaways”, “Analyst note”, or similar role labels unless the human explicitly requests that framing.
+
+Humans may insert and edit markdown in the running book via the scaffold **(+)** control between rows (`createdBy: "user"`). The skill may regenerate skill-authored sections; generators must preserve user rows via `mergeUserRows`.
 
 ### 3.6 Renderer
 
@@ -299,8 +301,8 @@ Scaffold shell:
 
 1. **`BookTabs`** — primary section nav (sticky strip, arrow-key roving tabindex, `?tab=` via `pushState`).  
 2. **`Sidebar`** — only when `pages[]` is set; lists pages (not a duplicate of tabs). Hidden on narrow viewports.  
-3. **`RowRenderer`** — maps the active tab’s `rows` sorted by `order` → React nodes:
-   - `markdown` → `MarkdownRow` via **react-markdown**, full content width (`createdBy: "user"` callout)  
+3. **`RowRenderer`** — maps the active tab’s `rows` sorted by `order` → React nodes, with a quiet **(+)** insert gap before/between/after rows:
+   - `markdown` → `MarkdownRow` via **react-markdown**, full content width (user rows are editable; no “Analyst …” chrome)  
    - `component` → `ComponentRow` → horizontal flex of chart slots → each runs its **inlined** query → renders the block’s Recharts composition  
 
 Empty query results: omit that chart slot (reflow remaining flex children) and show a short inline note *or* omit the whole component row if every slot is empty (prefer skill-side omission of empty charts).
@@ -561,7 +563,8 @@ Bundled Anthropic references are **required package contents**, but they are **n
 - Do not emit ad-hoc CSS grid/float layouts instead of `component` rows.  
 - Do not replace or fork **Sidebar** / **BookTabs** (Geist) with per-book custom nav.  
 - Do not generate a README inside emitted books in other projects.  
-- Do not require the user to run a separate init command.
+- Do not require the user to run a separate init command.  
+- Do not invent “Analyst ask / take / takeaways / note” (or similar meta role labels) as default markdown section titles unless the human explicitly asks.
 
 ### 7.5 Built-in `databook init`
 
@@ -596,6 +599,8 @@ If a book scaffold already exists, init is a no-op or a version-aware refresh �
 - [ ] Tabs group rows into sections (primary nav); optional pages drive Sidebar (no 1:1 tab duplicate).  
 - [ ] Geist provides typography/spacing tokens + Tabs; page shell, sidebar, row container, markdown block, chart slot are custom on those tokens.  
 - [ ] `rows.json` (`BookDocument`) renders markdown rows (**react-markdown**) and component rows in order inside the active tab.  
+- [ ] Running book offers a quiet **(+)** between rows to insert editable user markdown; inserts persist (browser overlay + `mergeUserRows` shape).  
+- [ ] Skill markdown is findings prose — no default “Analyst ask/take” framing.  
 - [ ] A component row can hold multiple charts side by side; `ref` reuses charts; `npm run lint:charts` gates honesty.   
 - [ ] Chart blocks carry **inlined** query objects; no separate queries/recipe file.  
 - [ ] Canonical data is **one JSON file** of normalized rows; queries shape data at read time.  

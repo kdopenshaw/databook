@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useThemeKey } from './components/charts/ResponsiveFrame';
 import { PageLayout } from './components/layout/PageLayout';
 import { RowRenderer } from './components/rows/RowRenderer';
+import { insertMarkdownRow, updateMarkdownBody } from './data/insertMarkdown';
 import { getCanonicalMeta, loadCanonical } from './data/loadCanonical';
 import type { BookDocument, BookPage } from './data/types';
+import { loadBookWithUserRows, saveUserRows } from './data/userBookStore';
 import rowsJson from './data/rows.json';
 
 function readTabFromUrl(fallback: string): string {
@@ -39,7 +41,9 @@ function pageForTab(pages: BookPage[], tabId: string): BookPage | undefined {
 }
 
 export default function App() {
-  const book = rowsJson as BookDocument;
+  const baseBook = rowsJson as BookDocument;
+  const [book, setBook] = useState<BookDocument>(() => loadBookWithUserRows(baseBook));
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const table = useMemo(() => loadCanonical(), []);
   const meta = useMemo(() => getCanonicalMeta(), []);
   const allTabs = useMemo(() => [...book.tabs].sort((a, b) => a.order - b.order), [book.tabs]);
@@ -116,6 +120,22 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const insertMarkdown = (afterRowId: string | null) => {
+    if (!activeTab) return;
+    const { book: next, row } = insertMarkdownRow(book, activeTab.id, afterRowId, '');
+    setBook(next);
+    saveUserRows(next);
+    setEditingRowId(row.id);
+  };
+
+  const saveMarkdown = (rowId: string, body: string) => {
+    if (!activeTab) return;
+    const next = updateMarkdownBody(book, activeTab.id, rowId, body);
+    setBook(next);
+    saveUserRows(next);
+    setEditingRowId(null);
+  };
+
   return (
     <PageLayout
       title={book.title}
@@ -134,7 +154,17 @@ export default function App() {
         </>
       }
     >
-      {activeTab ? <RowRenderer key={themeKey} rows={activeTab.rows} table={table} book={book} /> : null}
+      {activeTab ? (
+        <RowRenderer
+          key={themeKey}
+          rows={activeTab.rows}
+          table={table}
+          book={book}
+          onInsertMarkdown={insertMarkdown}
+          onSaveMarkdown={saveMarkdown}
+          editingRowId={editingRowId}
+        />
+      ) : null}
     </PageLayout>
   );
 }

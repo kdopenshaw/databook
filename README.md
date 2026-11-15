@@ -74,13 +74,16 @@ npm run lint:charts # chart honesty lint only
 npm run check       # lint:charts (blocking on extend)
 npm run extend-check
 npm run check:visual -- --url http://127.0.0.1:5173/   # Playwright / chromium screenshot
+npm run smoke:insert -- --url http://127.0.0.1:5173/   # (+) markdown insert + persist
 ```
+
+User-inserted markdown (`createdBy: "user"`) is kept in the live book document and persisted in `localStorage` under `databook:user-rows:v1:<experimentId>` so refresh keeps edits. Generators still merge those rows via `mergeUserRows` when rewriting `rows.json`.
 
 ## Document model (short)
 
 - **Tabs** — primary section nav (`BookTabs`, sticky, keyboard arrows, overflow fade + scroll cue, `?tab=` history).
 - **Pages** (optional) — Sidebar on desktop; mobile page switcher when sidebar is hidden. Tabs show that page’s sections. Without pages, no sidebar (avoids duplicating tabs).
-- **Markdown row** — full width; `createdBy: "user"` gets an analyst callout.
+- **Markdown row** — full width. In-app **(+)** inserts user markdown between rows (`createdBy: "user"`, editable). Skill narrative stays findings prose — no default “Analyst ask/take” sections.
 - **Component row** — flex/wrap container for one or more chart blocks (aligned headers). Related measures use **`scaleGroup`** + shared `yDomain`.
 - Each chart block is **self-describing** or a **`ref`** to another chart id (Summary without copied queries).
 - Query helpers: **`share` / `count_if` / `sum_if` / `mean_if`** for rates and conditional aggregates.

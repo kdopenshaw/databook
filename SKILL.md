@@ -119,11 +119,18 @@ Prefer first-class helpers over pivot columns:
 | `sum_if` / `mean_if` | Sum/mean of `column` over rows matching `where` |
 | `ratio` | Sum(numerator) / sum(denominator) |
 
-### User rows
+### Markdown voice (default)
 
-- `createdBy: "user"` marks analyst edits. Generators must call `mergeUserRows(previous, next)` (see `src/data/mergeUserRows.ts`) so regeneration does not wipe them.
+Write findings as normal prose and section headings that state the point (“HP rises with generation”, “Caveats”).
+
+**Do not** invent meta framing blocks titled **“Analyst ask”**, **“Analyst take”**, **“Analyst takeaways”**, **“Analyst note”**, or similar role labels — unless the human explicitly asks for that framing. Prefer the finding itself, not a label about who is speaking.
+
+### User rows (in-app inserts)
+
+- Humans can insert markdown between rows via the scaffold **(+)** control. Those rows use `createdBy: "user"`.
+- Generators must call `mergeUserRows(previous, next)` (see `src/data/mergeUserRows.ts`) so regeneration does not wipe user rows.
 - Fractional `order` (e.g. `1.5`) is valid for slotting between skill rows.
-- User markdown renders with an “Analyst note” callout in the scaffold.
+- Do **not** emit `createdBy: "user"` rows from the skill unless mirroring an explicit human insert; skill-authored narrative stays `createdBy: "skill"`.
 
 ## Document model (reminders)
 
@@ -135,7 +142,7 @@ Prefer first-class helpers over pivot columns:
 ## Locked choices
 
 - Charts: **Recharts** only (stock renderer fields above).
-- Markdown: **react-markdown** + GFM.
+- Markdown: **react-markdown** + GFM. In-app **(+)** inserts user markdown; skill output stays findings prose (no default “Analyst ask/take” sections).
 - Typography: **`geist`** font package. Tabs: Geist-styled `BookTabs`.
 - Theme: CSS variables + class `dark` on `<html>` via `ThemeToggle` + `localStorage`. Charts remount on theme change.
 - Product docs live in this repo’s root `README.md` only.

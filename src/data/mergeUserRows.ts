@@ -1,7 +1,7 @@
 import type { BookDocument, BookRow, TabSection } from './types';
 
 /**
- * Preserve analyst/user rows when regenerating a book from a generator.
+ * Preserve human-inserted (`createdBy: "user"`) rows when regenerating a book.
  *
  * Semantics:
  * - Every row with `createdBy: "user"` in `previous` is kept verbatim.

@@ -11,7 +11,7 @@ const base = (): BookDocument => ({
       order: 0,
       rows: [
         { id: 'md-1', order: 0, createdBy: 'skill', type: 'markdown', body: 'Skill' },
-        { id: 'md-user', order: 1.5, createdBy: 'user', type: 'markdown', body: 'Analyst note' },
+        { id: 'md-user', order: 1.5, createdBy: 'user', type: 'markdown', body: 'Human note' },
       ],
     },
   ],
@@ -36,7 +36,7 @@ describe('mergeUserRows', () => {
     };
     const merged = mergeUserRows(prev, next);
     expect(merged.tabs[0].rows.map((r) => r.id)).toEqual(['md-1', 'md-user', 'md-2']);
-    expect(merged.tabs[0].rows[1]).toMatchObject({ createdBy: 'user', body: 'Analyst note' });
+    expect(merged.tabs[0].rows[1]).toMatchObject({ createdBy: 'user', body: 'Human note' });
   });
 
   it('throws if the user tab disappeared', () => {
