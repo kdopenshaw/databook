@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useThemeKey } from './components/charts/ResponsiveFrame';
 import { PageLayout } from './components/layout/PageLayout';
 import { RowRenderer } from './components/rows/RowRenderer';
 import { getCanonicalMeta, loadCanonical } from './data/loadCanonical';
@@ -28,6 +29,7 @@ export default function App() {
   const tabs = useMemo(() => [...book.tabs].sort((a, b) => a.order - b.order), [book.tabs]);
   const defaultId = book.defaultTabId ?? tabs[0]?.id ?? '';
   const [activeTabId, setActiveTabId] = useState(() => readTabFromUrl(defaultId));
+  const themeKey = useThemeKey();
 
   useEffect(() => {
     if (!tabs.some((t) => t.id === activeTabId) && defaultId) {
@@ -61,7 +63,7 @@ export default function App() {
         </>
       }
     >
-      {activeTab ? <RowRenderer rows={activeTab.rows} table={table} /> : null}
+      {activeTab ? <RowRenderer key={themeKey} rows={activeTab.rows} table={table} /> : null}
     </PageLayout>
   );
 }

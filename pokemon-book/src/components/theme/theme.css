@@ -329,6 +329,35 @@ button {
   background: none;
 }
 
+.cb-markdown table {
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  margin: var(--cb-space-3) 0;
+}
+
+.cb-markdown th,
+.cb-markdown td {
+  border-bottom: 1px solid var(--cb-border);
+  padding: 4px 12px 4px 0;
+  text-align: left;
+}
+
+.cb-markdown th {
+  color: var(--cb-muted);
+  font-weight: 600;
+}
+
+.cb-markdown th[align='right'],
+.cb-markdown td[align='right'] {
+  text-align: right;
+  padding: 4px 0 4px 12px;
+}
+
+.cb-markdown tbody tr:hover {
+  background: var(--cb-hover);
+}
+
 .cb-component-row {
   display: flex;
   align-items: stretch;

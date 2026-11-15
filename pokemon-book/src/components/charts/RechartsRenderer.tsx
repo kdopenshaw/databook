@@ -56,6 +56,10 @@ export function RechartsRenderer({ data, spec }: Props) {
   const fmt = valueFormatter(spec);
   const colorOf = (s: RechartsSeriesSpec, i: number) =>
     s.stroke ?? s.fill ?? colors.series[(s.colorIndex ?? i) % colors.series.length];
+  const shift = spec.xType === 'number' && spec.xShift ? spec.xShift : 0;
+  const plotData = shift
+    ? data.map((r) => ({ ...r, [spec.xKey]: typeof r[spec.xKey] === 'number' ? (r[spec.xKey] as number) + shift : r[spec.xKey] }))
+    : data;
   const seriesOrder = new Map(series.map((s, i) => [s.dataKey, i]));
   const bySeriesOrder = (item: { dataKey?: unknown }) => seriesOrder.get(String(item.dataKey)) ?? 0;
 
@@ -80,7 +84,7 @@ export function RechartsRenderer({ data, spec }: Props) {
   } else if (vertical) {
     axes = (
       <>
-        <XAxis type="number" label={xLabel} tickFormatter={fmt} domain={spec.yDomain} {...axisProps} />
+        <XAxis type="number" label={xLabel} tickFormatter={fmt} domain={spec.yDomain} ticks={spec.valueTicks} {...axisProps} />
         <YAxis type="category" dataKey={spec.xKey} width={spec.categoryWidth ?? 96} interval={0} label={yLabel} {...axisProps} />
       </>
     );
@@ -97,7 +101,7 @@ export function RechartsRenderer({ data, spec }: Props) {
           label={xLabel}
           {...axisProps}
         />
-        <YAxis width={48} label={yLabel} tickFormatter={fmt} domain={spec.yDomain} allowDataOverflow={Boolean(spec.yDomain)} {...axisProps} />
+        <YAxis width={48} label={yLabel} tickFormatter={fmt} domain={spec.yDomain} ticks={spec.valueTicks} allowDataOverflow={Boolean(spec.yDomain)} {...axisProps} />
       </>
     );
   }
@@ -136,6 +140,7 @@ export function RechartsRenderer({ data, spec }: Props) {
             contentStyle={tooltipStyle}
             labelStyle={{ color: colors.muted }}
             formatter={(v) => fmt(v)}
+            labelFormatter={shift ? (v) => (typeof v === 'number' ? `${v - shift}–${v + shift}` : String(v)) : undefined}
             itemSorter={bySeriesOrder}
             cursor={{ fill: colors.grid }}
           />
@@ -217,7 +222,7 @@ export function RechartsRenderer({ data, spec }: Props) {
     );
   } else if (chartName.includes('bar')) {
     chart = (
-      <BarChart data={data} margin={margin} layout={layout} barCategoryGap={spec.barCategoryGap}>
+      <BarChart data={plotData} margin={margin} layout={layout} barCategoryGap={spec.barCategoryGap}>
         {axes}
         {extras}
         {series.map((s, i) => renderMark(s, i, 'bar'))}
@@ -225,7 +230,7 @@ export function RechartsRenderer({ data, spec }: Props) {
     );
   } else if (chartName.includes('area')) {
     chart = (
-      <AreaChart data={data} margin={margin} layout={layout}>
+      <AreaChart data={plotData} margin={margin} layout={layout}>
         {axes}
         {extras}
         {series.map((s, i) => renderMark(s, i, 'area'))}
@@ -234,7 +239,7 @@ export function RechartsRenderer({ data, spec }: Props) {
   } else {
     // Default / LineChart and any unrecognized root that still has line-like series
     chart = (
-      <LineChart data={data} margin={margin} layout={layout}>
+      <LineChart data={plotData} margin={margin} layout={layout}>
         {axes}
         {extras}
         {series.map((s, i) => renderMark(s, i, 'line'))}

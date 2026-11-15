@@ -127,6 +127,13 @@ export type RechartsSpec = {
   xType?: 'category' | 'number';
   xDomain?: [number, number];
   xTicks?: number[];
+  /**
+   * Numeric x only: plot each row at xKey + xShift. For histograms, use half the bin
+   * step so bars span [start, end); tooltips then show the bin range.
+   */
+  xShift?: number;
+  /** Explicit ticks on the value axis (Y, or X in vertical layout). */
+  valueTicks?: number[];
 };
 
 export type ChartEncoding = {

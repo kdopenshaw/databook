@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { ResponsiveContainer } from 'recharts';
 
 type Props = {
@@ -21,6 +21,18 @@ export function readCssVar(name: string, fallback: string): string {
   if (typeof window === 'undefined') return fallback;
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || fallback;
+}
+
+/** Changes whenever the <html> class (light/dark) changes; chartColors() is read at render time only. */
+export function useThemeKey(): string {
+  const read = () => (typeof document === 'undefined' ? '' : document.documentElement.className);
+  const [key, setKey] = useState(read);
+  useEffect(() => {
+    const obs = new MutationObserver(() => setKey(read()));
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+  return key;
 }
 
 export function chartColors() {
