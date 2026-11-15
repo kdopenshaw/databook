@@ -21,10 +21,13 @@ NONLEG = {"column": "legendary", "op": "eq", "value": False}
 STATS = [("hp", "HP"), ("attack", "Attack"), ("defense", "Defense"), ("sp_atk", "Sp. Atk"), ("sp_def", "Sp. Def"), ("speed", "Speed")]
 STAT_AGGS = [{"fn": "mean", "column": k, "as": f"mean_{k}", "label": f"Mean {l}"} for k, l in STATS]
 STAT_SERIES = [{"mark": "Bar", "dataKey": f"mean_{k}", "name": l} for k, l in STATS]
+STAT_BARS = [{"mark": "Bar", "dataKey": k, "name": l} for k, l in STATS]
+STARTER = {"column": "is_starter_final", "op": "eq", "value": True}
 
 
 CANONICAL = json.loads((Path(__file__).resolve().parents[1] / "canonical.json").read_text(encoding="utf-8"))
 SPECIES = [r for r in CANONICAL["rows"] if r["type_slot"] == "Primary" and r["is_primary_form"]]
+STARTERS = [r for r in SPECIES if r["is_starter_final"]]
 
 
 def pearson(xs, ys):
@@ -93,6 +96,37 @@ def tab(id, label, rows):
     for i, r in enumerate(rows):
         r["order"] = i
     return {"id": id, "label": label, "rows": rows}
+
+
+def starter_gen_chart(chart_id, gen, title=None):
+    title = title or f"Starter finals · {gen}"
+    return chart(
+        chart_id,
+        title,
+        "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
+        {"filter": BASE + [STARTER, {"column": "generation", "op": "eq", "value": gen}],
+         "orderBy": [{"column": "starter_type"}]},
+        {"chart": "BarChart", "xKey": "starter_type", "series": STAT_BARS, "yLabel": "Base stat", "decimals": 0},
+        {"x": "starter_type", "y": "hp", "color": "stat"},
+    )
+
+
+def starter_insights_md():
+    """Short prose for the Generations → starter section (derived from canonical)."""
+    by_gen = {}
+    for r in STARTERS:
+        by_gen.setdefault(r["generation"], []).append(r)
+    totals = {role: [x["total"] for x in STARTERS if x["starter_type"] == role] for role in ("Grass", "Fire", "Water")}
+    role_means = {k: round(statistics.fmean(v)) for k, v in totals.items()}
+    spread = max(r["total"] for r in STARTERS) - min(r["total"] for r in STARTERS)
+    widest = max(by_gen, key=lambda g: max(x["total"] for x in by_gen[g]) - min(x["total"] for x in by_gen[g]))
+    return f"""
+### Starter final evolutions
+
+Each generation ships a **Grass / Fire / Water** trio. Here we compare their **final stages only** (18 species): the stat profile bars show all six base stats side by side; the line chart tracks how each role's total moves across gens 1–6.
+
+Across all six generations, **role averages cluster tightly** (Grass {role_means['Grass']}, Fire {role_means['Fire']}, Water {role_means['Water']}; the entire band from min to max is only {spread} points). **{widest}** has the widest within-gen gap between its three finals (most gens are within 5–9 points; **Gen 5** ties all three at 528). Fire finals nudge slightly higher on average, but no starter line breaks out of the ~525–535 window Game Freak has used since Gen 1.
+""".strip()
 
 
 overview = tab("overview", "Overview", [
@@ -373,6 +407,42 @@ Is there power creep? **Not a steady one.** Non-legendary strength dips in Gen 3
                "yLabel": "Mean base stat", "yDomain": [50, 90], "decimals": 1},
               {"x": "generation", "y": "mean_attack", "color": "stat"},
               "Y axis starts at 50 to show the spread; every stat moves within about 20 points. Gen 4's bump is broad (HP, Attack, Defense, and Sp. Def all rise), and Attack keeps climbing into Gen 5."),
+    ),
+    md("md-gen-starters", starter_insights_md()),
+    comp("comp-starter-totals",
+        chart("chart-starter-total-lines", "Starter final base stat total by generation", "One point per generation for each starter role",
+              {"filter": BASE + [STARTER], "groupBy": ["generation"],
+               "aggregate": [
+                   {"fn": "mean", "column": "total_starter_grass", "as": "grass", "label": "Grass"},
+                   {"fn": "mean", "column": "total_starter_fire", "as": "fire", "label": "Fire"},
+                   {"fn": "mean", "column": "total_starter_water", "as": "water", "label": "Water"},
+               ],
+               "orderBy": [{"column": "generation"}]},
+              {"chart": "LineChart", "xKey": "generation", "series": [
+                  {"mark": "Line", "dataKey": "grass", "name": "Grass", "dot": True, "type": "linear", "colorIndex": 0},
+                  {"mark": "Line", "dataKey": "fire", "name": "Fire", "dot": True, "type": "linear", "colorIndex": 3},
+                  {"mark": "Line", "dataKey": "water", "name": "Water", "dot": True, "type": "linear", "colorIndex": 4}],
+               "yLabel": "Base stat total", "yDomain": [500, 630], "decimals": 0},
+              {"x": "generation", "y": "fire", "color": "starter_type"},
+              "Lines stay flat: every final sits between 525 and 535; Gen 5 is a perfect three-way tie.", flex=2),
+        chart("chart-starter-total-bars", "Starter finals: mean total by role", "Averaged across gens 1–6",
+              {"filter": BASE + [STARTER], "groupBy": ["starter_type"],
+               "aggregate": [{"fn": "mean", "column": "total", "as": "mean_total", "label": "Mean total"}],
+               "orderBy": [{"column": "starter_type"}]},
+              {"chart": "BarChart", "xKey": "starter_type", "series": [{"mark": "Bar", "dataKey": "mean_total", "name": "Mean base stat total"}],
+               "yLabel": "Mean base stat total", "yDomain": [520, 540], "decimals": 0},
+              {"x": "starter_type", "y": "mean_total"},
+              "Y axis is zoomed to the 520–540 band; all 18 finals fall inside it."),
+    ),
+    comp("comp-starter-gens-1-3",
+        starter_gen_chart("chart-starter-gen1", "Gen 1"),
+        starter_gen_chart("chart-starter-gen2", "Gen 2"),
+        starter_gen_chart("chart-starter-gen3", "Gen 3"),
+    ),
+    comp("comp-starter-gens-4-6",
+        starter_gen_chart("chart-starter-gen4", "Gen 4"),
+        starter_gen_chart("chart-starter-gen5", "Gen 5"),
+        starter_gen_chart("chart-starter-gen6", "Gen 6"),
     ),
 ])
 

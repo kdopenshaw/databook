@@ -2040,6 +2040,702 @@
             }
           ],
           "order": 2
+        },
+        {
+          "id": "md-gen-starters",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "### Starter final evolutions\n\nEach generation ships a **Grass / Fire / Water** trio. Here we compare their **final stages only** (18 species): the stat profile bars show all six base stats side by side; the line chart tracks how each role's total moves across gens 1–6.\n\nAcross all six generations, **role averages cluster tightly** (Grass 527, Fire 532, Water 530; the entire band from min to max is only 10 points). **Gen 1** has the widest within-gen gap between its three finals (most gens are within 5–9 points; **Gen 5** ties all three at 528). Fire finals nudge slightly higher on average, but no starter line breaks out of the ~525–535 window Game Freak has used since Gen 1.",
+          "order": 3
+        },
+        {
+          "id": "comp-starter-totals",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-starter-total-lines",
+              "title": "Starter final base stat total by generation",
+              "subtitle": "One point per generation for each starter role",
+              "query": {
+                "label": "Starter final base stat total by generation",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "is_starter_final",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "generation"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total_starter_grass",
+                    "as": "grass",
+                    "label": "Grass"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "total_starter_fire",
+                    "as": "fire",
+                    "label": "Fire"
+                  },
+                  {
+                    "fn": "mean",
+                    "column": "total_starter_water",
+                    "as": "water",
+                    "label": "Water"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "generation"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "generation",
+                "y": "fire",
+                "color": "starter_type"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "LineChart",
+                "xKey": "generation",
+                "series": [
+                  {
+                    "mark": "Line",
+                    "dataKey": "grass",
+                    "name": "Grass",
+                    "dot": true,
+                    "type": "linear",
+                    "colorIndex": 0
+                  },
+                  {
+                    "mark": "Line",
+                    "dataKey": "fire",
+                    "name": "Fire",
+                    "dot": true,
+                    "type": "linear",
+                    "colorIndex": 3
+                  },
+                  {
+                    "mark": "Line",
+                    "dataKey": "water",
+                    "name": "Water",
+                    "dot": true,
+                    "type": "linear",
+                    "colorIndex": 4
+                  }
+                ],
+                "yLabel": "Base stat total",
+                "yDomain": [
+                  500,
+                  630
+                ],
+                "decimals": 0
+              },
+              "flex": 2,
+              "notes": "Lines stay flat: every final sits between 525 and 535; Gen 5 is a perfect three-way tie."
+            },
+            {
+              "id": "chart-starter-total-bars",
+              "title": "Starter finals: mean total by role",
+              "subtitle": "Averaged across gens 1–6",
+              "query": {
+                "label": "Starter finals: mean total by role",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "is_starter_final",
+                    "op": "eq",
+                    "value": true
+                  }
+                ],
+                "groupBy": [
+                  "starter_type"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "mean",
+                    "column": "total",
+                    "as": "mean_total",
+                    "label": "Mean total"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "starter_type"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "starter_type",
+                "y": "mean_total"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "starter_type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "mean_total",
+                    "name": "Mean base stat total"
+                  }
+                ],
+                "yLabel": "Mean base stat total",
+                "yDomain": [
+                  520,
+                  540
+                ],
+                "decimals": 0
+              },
+              "flex": 1,
+              "notes": "Y axis is zoomed to the 520–540 band where most finals live."
+            }
+          ],
+          "order": 4
+        },
+        {
+          "id": "comp-starter-gens-1-3",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-starter-gen1",
+              "title": "Starter finals · Gen 1",
+              "subtitle": "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
+              "query": {
+                "label": "Starter finals · Gen 1",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "is_starter_final",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "generation",
+                    "op": "eq",
+                    "value": "Gen 1"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "starter_type"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "starter_type",
+                "y": "hp",
+                "color": "stat"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "starter_type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "hp",
+                    "name": "HP"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "attack",
+                    "name": "Attack"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "defense",
+                    "name": "Defense"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_atk",
+                    "name": "Sp. Atk"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_def",
+                    "name": "Sp. Def"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "speed",
+                    "name": "Speed"
+                  }
+                ],
+                "yLabel": "Base stat",
+                "decimals": 0
+              },
+              "flex": 1
+            },
+            {
+              "id": "chart-starter-gen2",
+              "title": "Starter finals · Gen 2",
+              "subtitle": "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
+              "query": {
+                "label": "Starter finals · Gen 2",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "is_starter_final",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "generation",
+                    "op": "eq",
+                    "value": "Gen 2"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "starter_type"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "starter_type",
+                "y": "hp",
+                "color": "stat"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "starter_type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "hp",
+                    "name": "HP"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "attack",
+                    "name": "Attack"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "defense",
+                    "name": "Defense"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_atk",
+                    "name": "Sp. Atk"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_def",
+                    "name": "Sp. Def"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "speed",
+                    "name": "Speed"
+                  }
+                ],
+                "yLabel": "Base stat",
+                "decimals": 0
+              },
+              "flex": 1
+            },
+            {
+              "id": "chart-starter-gen3",
+              "title": "Starter finals · Gen 3",
+              "subtitle": "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
+              "query": {
+                "label": "Starter finals · Gen 3",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "is_starter_final",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "generation",
+                    "op": "eq",
+                    "value": "Gen 3"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "starter_type"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "starter_type",
+                "y": "hp",
+                "color": "stat"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "starter_type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "hp",
+                    "name": "HP"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "attack",
+                    "name": "Attack"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "defense",
+                    "name": "Defense"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_atk",
+                    "name": "Sp. Atk"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_def",
+                    "name": "Sp. Def"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "speed",
+                    "name": "Speed"
+                  }
+                ],
+                "yLabel": "Base stat",
+                "decimals": 0
+              },
+              "flex": 1
+            }
+          ],
+          "order": 5
+        },
+        {
+          "id": "comp-starter-gens-4-6",
+          "type": "component",
+          "createdBy": "skill",
+          "layout": {
+            "gap": 0,
+            "align": "stretch",
+            "wrap": false
+          },
+          "components": [
+            {
+              "id": "chart-starter-gen4",
+              "title": "Starter finals · Gen 4",
+              "subtitle": "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
+              "query": {
+                "label": "Starter finals · Gen 4",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "is_starter_final",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "generation",
+                    "op": "eq",
+                    "value": "Gen 4"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "starter_type"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "starter_type",
+                "y": "hp",
+                "color": "stat"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "starter_type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "hp",
+                    "name": "HP"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "attack",
+                    "name": "Attack"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "defense",
+                    "name": "Defense"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_atk",
+                    "name": "Sp. Atk"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_def",
+                    "name": "Sp. Def"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "speed",
+                    "name": "Speed"
+                  }
+                ],
+                "yLabel": "Base stat",
+                "decimals": 0
+              },
+              "flex": 1
+            },
+            {
+              "id": "chart-starter-gen5",
+              "title": "Starter finals · Gen 5",
+              "subtitle": "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
+              "query": {
+                "label": "Starter finals · Gen 5",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "is_starter_final",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "generation",
+                    "op": "eq",
+                    "value": "Gen 5"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "starter_type"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "starter_type",
+                "y": "hp",
+                "color": "stat"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "starter_type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "hp",
+                    "name": "HP"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "attack",
+                    "name": "Attack"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "defense",
+                    "name": "Defense"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_atk",
+                    "name": "Sp. Atk"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_def",
+                    "name": "Sp. Def"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "speed",
+                    "name": "Speed"
+                  }
+                ],
+                "yLabel": "Base stat",
+                "decimals": 0
+              },
+              "flex": 1
+            },
+            {
+              "id": "chart-starter-gen6",
+              "title": "Starter finals · Gen 6",
+              "subtitle": "Final evolutions only (e.g. Venusaur / Charizard / Blastoise)",
+              "query": {
+                "label": "Starter finals · Gen 6",
+                "filter": [
+                  {
+                    "column": "type_slot",
+                    "op": "eq",
+                    "value": "Primary"
+                  },
+                  {
+                    "column": "is_primary_form",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "is_starter_final",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "column": "generation",
+                    "op": "eq",
+                    "value": "Gen 6"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "starter_type"
+                  }
+                ]
+              },
+              "encoding": {
+                "x": "starter_type",
+                "y": "hp",
+                "color": "stat"
+              },
+              "recharts": {
+                "showGrid": true,
+                "showTooltip": true,
+                "chart": "BarChart",
+                "xKey": "starter_type",
+                "series": [
+                  {
+                    "mark": "Bar",
+                    "dataKey": "hp",
+                    "name": "HP"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "attack",
+                    "name": "Attack"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "defense",
+                    "name": "Defense"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_atk",
+                    "name": "Sp. Atk"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "sp_def",
+                    "name": "Sp. Def"
+                  },
+                  {
+                    "mark": "Bar",
+                    "dataKey": "speed",
+                    "name": "Speed"
+                  }
+                ],
+                "yLabel": "Base stat",
+                "decimals": 0
+              },
+              "flex": 1
+            }
+          ],
+          "order": 6
         }
       ]
     },

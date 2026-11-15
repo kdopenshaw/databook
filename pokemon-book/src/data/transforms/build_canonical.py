@@ -45,6 +45,28 @@ TEAM_POOL_MIN_TOTAL = 500
 SPEED_TIERS = ["<60", "60–79", "80–99", "100+"]
 SPEED_TIER_FLAGS = ["speed_lt60", "speed_60_79", "speed_80_99", "speed_100plus"]
 TOTAL_BANDS = ["<300", "300–399", "400–499", "500+"]
+STARTER_TYPES = ["Grass", "Fire", "Water"]
+# Final evolutions of each region's Grass / Fire / Water starter line (gens 1–6).
+STARTER_FINAL_SPECIES: dict[str, str] = {
+    "Venusaur": "Grass",
+    "Charizard": "Fire",
+    "Blastoise": "Water",
+    "Meganium": "Grass",
+    "Typhlosion": "Fire",
+    "Feraligatr": "Water",
+    "Sceptile": "Grass",
+    "Blaziken": "Fire",
+    "Swampert": "Water",
+    "Torterra": "Grass",
+    "Infernape": "Fire",
+    "Empoleon": "Water",
+    "Serperior": "Grass",
+    "Emboar": "Fire",
+    "Samurott": "Water",
+    "Chesnaught": "Grass",
+    "Delphox": "Fire",
+    "Greninja": "Water",
+}
 
 
 GLUED_FORM = re.compile(r"^(.+?[a-z])(?=[A-Z0-9])(.*(?:Forme|Cloak|Mode|Size|Male|Confined))$")
@@ -160,6 +182,13 @@ def main() -> None:
         row["total_mono"] = None if row["is_dual_type"] else t
         row["total_dual"] = t if row["is_dual_type"] else None
 
+        st = STARTER_FINAL_SPECIES.get(row["species"]) if row["is_primary_form"] else None
+        row["is_starter_final"] = st is not None
+        row["starter_type"] = st if st else None
+        for role in STARTER_TYPES:
+            col = f"total_starter_{role.lower()}"
+            row[col] = t if st == role else None
+
     q = lambda name, label, unit=None, **kw: {"name": name, "type": "quantitative", "label": label, "nullable": False, **({"unit": unit} if unit else {}), **kw}
     c = lambda name, label, levels=None, **kw: {"name": name, "type": "categorical", "label": label, "nullable": False, **({"levels": levels} if levels else {}), **kw}
     b = lambda name, label, **kw: {"name": name, "type": "boolean", "label": label, "nullable": False, **kw}
@@ -202,6 +231,13 @@ def main() -> None:
         c("total_band", "Total band", TOTAL_BANDS),
         q("total_mono", "Total (mono-type only)", "points", nullable=True, description="Pivot helper: total if mono-type else null"),
         q("total_dual", "Total (dual-type only)", "points", nullable=True, description="Pivot helper: total if dual-type else null"),
+        b("is_starter_final", "Starter final evolution", description="Base form of a Gen 1–6 starter's last stage (18 species)"),
+        c("starter_type", "Starter type", STARTER_TYPES, nullable=True, description="Grass / Fire / Water role; null outside starter finals"),
+        *[
+            q(f"total_starter_{role.lower()}", f"Total (starter {role.lower()} only)", "points", nullable=True,
+              description=f"Pivot helper: total if starter_type = {role} else null")
+            for role in STARTER_TYPES
+        ],
     ]
 
     built_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
