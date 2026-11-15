@@ -11,7 +11,8 @@ function readIsDark(): boolean {
   } catch {
     // ignore
   }
-  return document.documentElement.classList.contains('dark');
+  // Dark is the product default when nothing is stored yet.
+  return true;
 }
 
 function applyDark(dark: boolean) {
