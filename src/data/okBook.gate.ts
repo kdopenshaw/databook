@@ -11,7 +11,7 @@ import bookJson from './rows.json';
 const book = bookJson as BookDocument;
 
 describe('ok book (live)', () => {
-  it('passes live honesty lint + nonempty query smoke', () => {
+  it('passes nonempty query smoke', () => {
     const table = loadCanonical();
     const result = checkLiveBook(book, table);
     if (!result.ok) {

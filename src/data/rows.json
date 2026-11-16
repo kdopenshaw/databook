@@ -13,13 +13,8 @@
     }
   ],
   "conventions": {
-    "zeroBaselineBars": true,
     "population": "Synthetic init sample (replace on real books).",
-    "notes": [
-      "Bar yDomain must include 0.",
-      "Sibling panels sharing measures use the same scaleGroup + yDomain.",
-      "Do not chart near-flat bands as trends without acknowledging flatness."
-    ]
+    "notes": ["Init sample: replace canonical.json, understanding.md, and charts when profiling a real experiment."]
   },
   "tabs": [
     {
@@ -45,27 +40,10 @@
               "id": "chart-exp",
               "title": "Exponential curve",
               "subtitle": "y = e^x · synthetic init points",
+              "component": "ExpCurve",
               "query": {
                 "label": "all exponential points",
                 "orderBy": [{ "column": "x", "direction": "asc" }]
-              },
-              "encoding": { "x": "x", "y": "y" },
-              "recharts": {
-                "chart": "LineChart",
-                "xKey": "x",
-                "series": [
-                  {
-                    "mark": "Line",
-                    "dataKey": "y",
-                    "name": "e^x",
-                    "type": "monotone",
-                    "strokeWidth": 2,
-                    "dot": true
-                  }
-                ],
-                "showGrid": true,
-                "showTooltip": true,
-                "showLegend": false
               },
               "flex": 1
             }

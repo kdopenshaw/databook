@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Exploratory single gate: artifacts + live honesty lint + query nonempty smoke.
+ * Exploratory single gate: artifacts + query nonempty smoke.
  *
  *   npm run ok
  *   npm run validate          # alias
- *   npm run check             # alias → ok (not lint:charts unit tests)
+ *   npm run check             # alias → ok
  *   node scripts/ok-book.mjs --artifacts-only
  *
  * Does not run Playwright / check:visual. Does not run the full vitest suite.
@@ -86,4 +86,4 @@ if (live.status !== 0) {
   process.exit(live.status ?? 1);
 }
 
-console.log('ok: live book lint + query smoke passed');
+console.log('ok: query smoke passed');

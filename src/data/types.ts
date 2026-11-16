@@ -100,12 +100,8 @@ export type ChartQuery = {
   sample?: { n: number; seed?: number };
 };
 
-// ---- Flexible Recharts composition (not a closed catalog enum) ----
+// ---- Legacy JSON Recharts composition (optional fallback; prefer src/charts/*.tsx) ----
 
-/**
- * Supported stock marks: `Line` | `Bar` | `Area` | `Scatter` (case-insensitive).
- * Unknown marks fail chart lint; extend the stock renderer before emitting new ones.
- */
 export type RechartsSeriesSpec = {
   /** Recharts mark type — stock: Line, Bar, Area, Scatter. */
   mark: string;
@@ -123,15 +119,7 @@ export type RechartsSeriesSpec = {
   colorIndex?: number;
 };
 
-/**
- * Declarative Recharts composition the skill emitted.
- * Prefer naming real Recharts chart roots (e.g. LineChart); the scaffold
- * stock renderer maps known roots and series marks (Line/Bar/Area/Scatter).
- * Unknown marks fail chart lint — extend the renderer before emitting new ones.
- *
- * Stock-supported optional fields (see SKILL.md → RechartsSpec):
- * layout, xLabel/yLabel, yDomain/xDomain, height, stackId, colorBy, xType, …
- */
+/** Legacy declarative spec for RechartsRenderer. Prefer writing `src/charts/*.tsx`. */
 export type RechartsSpec = {
   chart: string;
   xKey: string;
@@ -187,18 +175,18 @@ export type ChartBlock = {
   subtitle?: string;
   /**
    * Reuse another chart block by id (any tab). When set, the scaffold renders the
-   * referenced block’s query/recharts; optional local title/subtitle/notes override display.
-   * Prefer refs on Summary tabs instead of copying queries.
+   * referenced block’s query + component/recharts; local title/subtitle/notes may override.
    */
   ref?: string;
   /**
-   * Sibling shared-scale group id. Related measures (e.g. mean_hp vs mean_atk) that
-   * should share yDomain set the same `scaleGroup` — no need to rename aggregates to
-   * an identical `dataKey`. Chart lint keys off this before falling back to dataKeys.
+   * Agent-authored React chart: file `src/charts/<component>.tsx` default export.
+   * Preferred over declarative `recharts`.
    */
-  scaleGroup?: string;
+  component?: string;
+  /** @deprecated Prefer `component`. Legacy JSON RechartsSpec fallback. */
   recharts?: RechartsSpec;
   query?: ChartQuery;
+  /** Optional display hint; not required by the runtime. */
   encoding?: ChartEncoding;
   notes?: string;
   flex?: number;
@@ -251,14 +239,11 @@ export type BookPage = {
  * Also document the same rules in `understanding.md`.
  */
 export type BookConventions = {
-  /** Human-readable rules (palette meanings, population filters, grain caveats). */
+  /** Human-readable notes (population filters, grain caveats, palette meanings). */
   notes?: string[];
-  /** Default true: bar charts may not use a yDomain that excludes 0. */
-  zeroBaselineBars?: boolean;
-  /** Palette slot → meaning, e.g. { "0": "HP", "1": "legendary / Attack" }. */
-  palette?: Record<string, string>;
   /** Short description of the default analysis population / filters. */
   population?: string;
+  palette?: Record<string, string>;
 };
 
 export type BookDocument = {

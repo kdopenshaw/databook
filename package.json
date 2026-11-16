@@ -12,7 +12,6 @@
     "ok": "node scripts/ok-book.mjs",
     "validate": "npm run ok",
     "print-block": "node scripts/print-block.mjs",
-    "lint:charts": "vitest run src/data/chartLint.test.ts",
     "check": "npm run ok",
     "check:visual": "node scripts/check-book.mjs --visual",
     "smoke:insert": "node scripts/smoke-markdown-insert.mjs",

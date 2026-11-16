@@ -42,7 +42,7 @@ The skill is **experiment-agnostic**: it does not hard-code domain workflows (fi
 - Hosting charts inside Cursor `.canvas.tsx` (incompatible with Recharts / npm).
 - Replacing Plotly Studio / Hex for warehouse BI; this is a **repo-local / skill-emitted DataBook**.
 - Nested rows, free-form grids, or drag-and-drop layout editors (in-place **(+)** markdown insert between rows is in scope).
-- An unbounded “any Recharts component” emission path (v1 uses a stock RechartsSpec set; see §4.1).
+- Cursor canvas as the chart host (use the Vite book). Agents author chart components under `src/charts/`.
 - A separate user-facing `databook init` command (init is automatic when the skill runs).
 - Generating a README inside emitted databook folders in other projects.
 
@@ -61,10 +61,10 @@ Sources (repo files | user description)
    Canonical dataset: one JSON file of normalized rows
         │
         ▼
-   Choose charts + row types + write markdown
-        │  └── skill routes agent → references/anthropic-dataviz/ …
+   Write chart components (src/charts/*.tsx) + markdown
+        │
         ▼
-   Emit / update rows (queries inlined in each chart block)
+   Emit / update rows (component + query inlined per chart block)
         │  ├── src/data/canonical.json
         │  ├── src/data/understanding.md
         │  ├── src/data/rows.json   # tabs → sections → rows
@@ -212,7 +212,6 @@ type BookPage = {
 
 type BookConventions = {
   notes?: string[];
-  zeroBaselineBars?: boolean; // default true for lint
   palette?: Record<string, string>;
   population?: string;
 };
@@ -240,9 +239,9 @@ type ChartBlock = {
   id: string;
   title: string;
   subtitle?: string;       // units, period, filters in plain language
-  ref?: string;            // reuse another chart id; omit query/recharts when set
-  scaleGroup?: string;     // related measures share yDomain without identical dataKeys
-  recharts?: RechartsSpec;
+  ref?: string;            // reuse another chart id
+  component?: string;      // src/charts/<Name>.tsx default export (preferred)
+  recharts?: RechartsSpec; // legacy JSON fallback
   query?: ChartQuery;      // inlined when not using ref
   encoding?: ChartEncoding;
   notes?: string;
@@ -262,7 +261,7 @@ type ComponentRow = RowBase & {
 type Row = MarkdownRow | ComponentRow;
 ```
 
-`ChartEncoding` maps query result columns to visual roles. Stock **`RechartsSpec`** fields (horizontal bars via `layout: "vertical"`, `stackId`, axis labels, domains, `colorBy`, numeric `xType`, …) are documented in `SKILL.md` and `src/data/types.ts`. Unknown marks fail `npm run ok` (live chart lint). Generators must preserve `createdBy: "user"` rows via `mergeUserRows`.
+Prefer `component` pointing at `src/charts/<Name>.tsx`. Legacy `recharts` JSON still works. Generators must preserve `createdBy: "user"` rows via `mergeUserRows`.
 
 ### 3.4 How the agent chooses row type
 
@@ -315,36 +314,23 @@ Init sample may use a **single** tab (still mounting Tabs + Sidebar so every boo
 
 ## 4. Chart layer
 
-### 4.1 Locked library: Recharts (stock renderer)
+### 4.1 Charts = agent React components
 
-**Charting library is locked: [Recharts](https://recharts.org/).**
+**Default path:** agents add files under `src/charts/<Name>.tsx` (default export) and set `component: "<Name>"` on the chart block in `rows.json`. The slot runs the block’s inlined `query` against `canonical.json` and passes `{ data }` into that component.
 
-- Declarative React components with React peer support in current majors.  
-- The scaffold ships a **stock renderer** with a **closed** set of chart roots and series marks (see `SKILL.md` → RechartsSpec and `src/data/types.ts`):  
-  - Roots: `LineChart`, `BarChart`, `AreaChart`, `ScatterChart`  
-  - Marks: `Line`, `Bar`, `Area`, `Scatter`  
-- Agents choose among those stock compositions (plus documented `RechartsSpec` fields: `layout`, `stackId`, domains, `colorBy`, …). Unknown roots/marks fail `npm run ok` / chart lint.  
-- Extending the visual vocabulary is a **scaffold change** (renderer + lint), not an unbounded “emit any Recharts tree” content change.  
-- Thin helpers (theme-aware strokes/fills, responsive wrappers) are allowed; do not fork a second chart library.
+- Use **Recharts** inside those files (dependency already in the scaffold), or plain SVG/HTML if simpler.  
+- Theme helpers: `ResponsiveFrame`, `chartColors()` from `src/components/charts/ResponsiveFrame.tsx`.  
+- Registry: `src/charts/registry.ts` eagerly loads `src/charts/*.tsx`.
 
-### 4.2 Correct by construction
+**Legacy fallback:** a declarative `recharts` JSON spec still renders via `RechartsRenderer` for older books. New work should use `component` files — there is **no** chart-type catalog lint.
 
-Charts must not accept arbitrary “plot these columns” without checks. The skill + runtime enforce:
+### 4.2 Queries still shape data
 
-1. **Data relationships → allowed encodings** (e.g. two quantitative → scatter-like; quantitative + time → line/area; categorical + quantitative → bar).  
-2. **Encoding validation** before render (missing columns, wrong dtypes → skill error or chart omitted).  
-3. **Sensible defaults**: bar baseline at 0; labeled axes with units; title = metric + split; subtitle = filters / period / source.  
-4. **Aggregation honesty**: if `groupBy` is set, `aggregate` is required (no accidental plotting of raw duplicated keys as if aggregated).
+`runQuery` validates filter/bin/aggregate shapes against the canonical schema (e.g. `groupBy`/`bin` require aggregates). That is data honesty, not a chart-type menu.
 
-Primary guidance for viz *decisions*: Anthropic materials under `references/` (**when** the skill routes the agent there — §11), mapped onto the stock RechartsSpec. Runtime still renders via the stock Recharts renderer.
+### 4.3 Interactivity (minimal, unchanged)
 
-### 4.3 Stock set, not an open catalog
-
-There is a documented stock list (the four roots / four marks above). That is intentional:
-
-- Anthropic `create-viz` / `data-visualization` may recommend forms outside the stock set (heatmap, sankey, …); agents must map those to stock marks or use markdown/table instead.  
-- Persist compositions in `RechartsSpec` / encoding for the scaffold to render.  
-- Adding a new visual form requires extending the stock renderer and chart lint — not only a skill-content change.
+Hover tooltips and theme-aware colors are up to the chart component. Cross-chart brushing / global filters remain out of scope for v1.
 
 ### 4.4 Interactivity (minimal)
 
@@ -399,7 +385,7 @@ See §8 open questions.
 ### 5.3 Tabs (Geist)
 
 - Use Geist’s **Tabs** component from the open-source Geist design system (e.g. `@vercel/geistcn` / published Geist Tabs API).  
-- Skill emits `tabs[]` with `id` / `label` / `rows`; optional `pages[]` for Sidebar grouping (mobile page switcher when the sidebar is hidden). Chart honesty is enforced by `src/data/chartLint.ts` via **`npm run ok`** (live book + canonical) — bar axes include 0, line zooms are stated, sibling panels share domains via identical `dataKey` aliases or `scaleGroup`, and near-flat “trend” bands are rejected unless flatness is acknowledged. `npm run lint:charts` remains unit tests of the linter only.  
+- Skill emits `tabs[]` with `id` / `label` / `rows`; optional `pages[]` for Sidebar grouping. **`npm run ok`** checks artifacts + nonempty query smoke — not a chart-type catalog.  
 - Prefer reflecting the active tab in the URL (`?tab=` via `pushState`; optional `?page=`) so refresh and Back work — scaffold-owned.  
 - Tabs are **not** generated as one-off per-book UI; only labels and row membership vary.
 
@@ -464,7 +450,7 @@ src/
       ComponentRow.tsx         # flex container for chart blocks
       ChartSlot.tsx            # title/subtitle/notes + run inlined query + Recharts
     charts/
-      # thin helpers only (e.g. ResponsiveFrame) — stock RechartsSpec set (§4.1)
+      # ResponsiveFrame + chartColors helpers; agent charts live in src/charts/
   data/
     canonical.json             # normalized rows (one file)
     rows.json                  # BookDocument: tabs → rows; queries inlined in chart blocks
@@ -525,11 +511,11 @@ The **DataBook skill** (`SKILL.md` at repo root) teaches an agent to:
 4. Infer experiment intent from user text + data shape.  
 5. Write `understanding.md`.  
 6. Design and run transforms → write **one** `canonical.json` of normalized rows.  
-7. Choose Recharts compositions from data relationships + routed viz guidance.  
-8. Decide **tabs/sections** (group related rows) and **row types**: markdown vs flex component rows.  
-9. Write **self-describing** chart blocks with **inlined** query objects + encodings.  
-10. Write markdown rows (react-markdown content) that explain aggregations and findings.  
-11. Replace the trivial init sample with real content; sanity-check non-empty queries, coherent multi-chart rows, and sidebar/tab labels that scale for large books.
+7. Write chart components under `src/charts/` and wire them in `rows.json`.  
+8. Decide **tabs/sections** and **row types**: markdown vs flex component rows.  
+9. Inlined **query** objects on each chart block.  
+10. Markdown findings (no default “Analyst ask/take” framing).  
+11. Replace the init sample; `npm run ok` for nonempty query smoke.
 
 ### 7.2 Skill structure (standard)
 
@@ -557,7 +543,7 @@ Bundled Anthropic references are **required package contents**, but they are **n
 
 - No per-chart copied JSON/CSV as source of truth.  
 - No separate query/recipe file; queries stay inlined on chart blocks.  
-- No marks outside the stock RechartsSpec set without a scaffold renderer + lint change.  
+- Prefer `src/charts/*.tsx` over inventing a second chart DSL.  
 - No theme-provider library; root class + CSS variables only.  
 - No light-only styling.  
 - No cross-chart filter wiring in v1.  
@@ -591,7 +577,7 @@ If a book scaffold already exists, init is a no-op or a version-aware refresh �
 3. **Skill hosting** — Cursor skill vs Claude skill vs both; emission path differs (local FS vs cloud agent).  
 4. **Multi-canonical datasets** — v1 assumes one JSON file; some experiments need fact + dim tables. Prefer join-into-one-canonical first; multi-file later if required.  
 5. **Component-row max children** — Soft cap at 3 vs hard validation at 4; confirm after first real multi-databooks.  
-6. **`RechartsSpec` persistence shape** — Exact JSON form for storing arbitrary Recharts compositions in `rows.json` (serializable element tree vs declarative DSL); lock after first working emitter.
+6. **Chart component ergonomics** — How much boilerplate agents need in `src/charts/*.tsx`; whether a tiny helper kit beyond `ResponsiveFrame` is worth it.
 
 ---
 
@@ -604,14 +590,14 @@ If a book scaffold already exists, init is a no-op or a version-aware refresh �
 - [ ] `rows.json` (`BookDocument`) renders markdown rows (**react-markdown**) and component rows in order inside the active tab.  
 - [ ] Running book offers a quiet **(+)** between rows to insert editable user markdown; inserts persist (browser overlay + `mergeUserRows` shape).  
 - [ ] Skill markdown is findings prose — no default “Analyst ask/take” framing.  
-- [ ] A component row can hold multiple charts side by side; `ref` reuses charts; `npm run ok` gates honesty (live lint + query smoke).   
+- [ ] A component row can hold multiple charts side by side; `ref` reuses charts; `npm run ok` gates query smoke.   
 - [ ] Chart blocks carry **inlined** query objects; no separate queries/recipe file.  
 - [ ] Canonical data is **one JSON file** of normalized rows; queries shape data at read time.  
 - [ ] Skill invoke runs **databook init** automatically and installs the trivial hello-world + exponential sample.  
 - [ ] Init into another project does **not** create a book-local README.  
 - [ ] DataBook product repo has a **root README**.  
 - [ ] `SKILL.md` routes agents to Anthropic references at the correct pipeline steps (not ambient dump).  
-- [ ] Stock RechartsSpec only (four roots / four marks); unknown marks fail `npm run ok`.  
+- [ ] Chart blocks use `component` → `src/charts/*.tsx` (legacy `recharts` optional); `npm run ok` is query smoke.  
 - [ ] Nested layout standard: `src/components`, `src/data`, `references`, top-level `SKILL.md`.  
 - [ ] No dependency on Cursor canvas for rendering.
 
@@ -656,24 +642,19 @@ Vendored copy of the [`data/`](https://github.com/anthropics/knowledge-work-plug
 
 ### 11.3 Anthropic data viz (`references/anthropic-dataviz/`)
 
-- **`METHOD.md`** — form-first, color-last procedure digest (DataBook-authored summary).  
-- Chart-type / publication skills: open the **plugin** paths `skills/create-viz/` and `skills/data-visualization/` (do not duplicate them here).
-
-**Role:** decide *what* to chart and *how* to encode it **during chart selection / encoding**, then map onto the stock RechartsSpec. Runtime still renders via the stock renderer; these files guide decisions.
+Optional. **`METHOD.md`** is a short form-first digest if an agent wants chart-choice advice. Prefer writing `src/charts/*.tsx` over reading long viz skills. Plugin `create-viz` / `data-visualization` remain available but are **not** required for book emission.
 
 ### 11.4 Router (canonical copy is `SKILL.md`)
 
-Keep the live routing table in **`SKILL.md`** only; this section states the intended shape:
-
 | Pipeline step | Open |
 |---------------|------|
-| Profiling / exploring unfamiliar sources | `references/anthropic-data-plugin/skills/explore-data/` (optional related: validate / stats / SQL skills) |
+| Profiling / exploring unfamiliar sources | `references/anthropic-data-plugin/skills/explore-data/` (optional related: validate / stats / SQL) |
 | Broader data Q&A (optional) | `references/anthropic-data-plugin/skills/analyze/` |
-| Validation / statistical checks | `references/anthropic-data-plugin/skills/validate-data/`, `statistical-analysis/`, etc. |
-| Choosing chart form / encodings | `references/anthropic-dataviz/METHOD.md`, then plugin `create-viz/` + `data-visualization/` |
-| Building the book shell / rows | DataBook rules in `SKILL.md` + this spec — not Anthropic dashboard builders |
+| Validation / statistical checks | `validate-data/`, `statistical-analysis/` as needed |
+| Charts | Write `src/charts/*.tsx` + wire `component` in `rows.json` (optional METHOD.md) |
+| Building the book shell / rows | `SKILL.md` + this spec |
 
-Do **not** instruct the agent to “read all of `references/` before starting.” Do **not** treat Anthropic dashboard builders as a replacement for the DataBook row model.
+Do **not** dump all of `references/` at start. Do **not** replace the book with Anthropic HTML dashboards.
 
 ### 11.5 Maintenance
 
