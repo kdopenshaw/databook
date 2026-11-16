@@ -64,4 +64,5 @@ describe('userBookStore', () => {
   it('returns base when store is empty', () => {
     expect(loadBookWithUserRows(base(), memoryStore())).toEqual(base());
   });
+
 });

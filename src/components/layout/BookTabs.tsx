@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { TabSection } from '../../data/types';
+import { InlineRename } from './InlineRename';
 
 type Props = {
   tabs: TabSection[];
   activeTabId: string;
   onSelect: (tabId: string) => void;
+  onAddTab?: () => void;
+  onRenameTab?: (tabId: string, label: string) => void;
   children: ReactNode;
 };
 
@@ -15,7 +18,7 @@ type Props = {
  * ArrowLeft/ArrowRight move focus with a roving tabindex.
  * Horizontal overflow shows edge fade + a subtle scroll cue when many tabs.
  */
-export function BookTabs({ tabs, activeTabId, onSelect, children }: Props) {
+export function BookTabs({ tabs, activeTabId, onSelect, onAddTab, onRenameTab, children }: Props) {
   const sorted = [...tabs].sort((a, b) => a.order - b.order);
   const listRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -102,10 +105,33 @@ export function BookTabs({ tabs, activeTabId, onSelect, children }: Props) {
                   data-state={active ? 'active' : 'inactive'}
                   onClick={() => onSelect(tab.id)}
                 >
-                  {tab.label}
+                  {onRenameTab ? (
+                    <InlineRename
+                      value={tab.label}
+                      onCommit={(label) => onRenameTab(tab.id, label)}
+                      ariaLabel={`Rename tab ${tab.label}`}
+                    />
+                  ) : (
+                    tab.label
+                  )}
                 </button>
               );
             })}
+            {onAddTab ? (
+              <div className="dbk-tabs-add">
+                <button
+                  type="button"
+                  className="dbk-tabs-add-btn"
+                  onClick={onAddTab}
+                  aria-label="Add tab"
+                  title="Add tab"
+                >
+                  <span className="dbk-insert-gap-plus" aria-hidden="true">
+                    +
+                  </span>
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
         {overflow.right ? (

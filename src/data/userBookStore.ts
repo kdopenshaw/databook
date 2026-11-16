@@ -66,16 +66,27 @@ function overlayAsBook(base: BookDocument, overlay: StoredOverlay): BookDocument
   return { ...base, tabs };
 }
 
-/** Persist all `createdBy: "user"` rows for this book. */
+/**
+ * Legacy browser overlay for user markdown only.
+ * Prefer `persistBookToSource` so edits land in `src/data/rows.json`.
+ */
 export function saveUserRows(book: BookDocument, store: KvStore = defaultKvStore()): void {
   const key = userRowsStorageKey(book);
   const overlay = extractUserRows(book);
+  if (!Object.keys(overlay.tabs).length) {
+    store.removeItem?.(key);
+    return;
+  }
   store.setItem(key, JSON.stringify(overlay));
 }
 
+export function clearUserRowsOverlay(book: BookDocument, store: KvStore = defaultKvStore()): void {
+  store.removeItem?.(userRowsStorageKey(book));
+}
+
 /**
- * Load skill-authored `base` and merge any browser-persisted user rows
- * (same shape as rows.json markdown rows; survives refresh).
+ * Merge legacy localStorage user markdown into the bundled `rows.json` base.
+ * New edits should be written to `rows.json` via the dev API instead.
  */
 export function loadBookWithUserRows(
   base: BookDocument,
@@ -96,7 +107,6 @@ export function loadBookWithUserRows(
   try {
     return mergeUserRows(previous, base);
   } catch {
-    // Tab vanished under user rows — keep base rather than crash the book.
     return base;
   }
 }

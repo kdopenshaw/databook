@@ -2,10 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { useThemeKey } from './components/charts/ResponsiveFrame';
 import { PageLayout } from './components/layout/PageLayout';
 import { RowRenderer } from './components/rows/RowRenderer';
+import {
+  addPage,
+  addTab,
+  renamePage,
+  renameTab,
+  reorderRowsBefore,
+} from './data/bookEdits';
 import { insertMarkdownRow, updateMarkdownBody } from './data/insertMarkdown';
 import { getCanonicalMeta, loadCanonical } from './data/loadCanonical';
 import type { BookDocument, BookPage } from './data/types';
-import { loadBookWithUserRows, saveUserRows } from './data/userBookStore';
+import { persistBookToSource } from './data/persistBook';
+import { loadBookWithUserRows } from './data/userBookStore';
 import rowsJson from './data/rows.json';
 
 function readTabFromUrl(fallback: string): string {
@@ -41,8 +49,7 @@ function pageForTab(pages: BookPage[], tabId: string): BookPage | undefined {
 }
 
 export default function App() {
-  const baseBook = rowsJson as BookDocument;
-  const [book, setBook] = useState<BookDocument>(() => loadBookWithUserRows(baseBook));
+  const [book, setBook] = useState<BookDocument>(() => loadBookWithUserRows(rowsJson as BookDocument));
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const table = useMemo(() => loadCanonical(), []);
   const meta = useMemo(() => getCanonicalMeta(), []);
@@ -58,6 +65,11 @@ export default function App() {
     return pageForTab(pages, tab)?.id ?? defaultPageId;
   });
   const themeKey = useThemeKey();
+
+  const persist = (next: BookDocument) => {
+    setBook(next);
+    void persistBookToSource(next);
+  };
 
   const tabs = useMemo(() => {
     if (!pages.length) return allTabs;
@@ -123,17 +135,42 @@ export default function App() {
   const insertMarkdown = (afterRowId: string | null) => {
     if (!activeTab) return;
     const { book: next, row } = insertMarkdownRow(book, activeTab.id, afterRowId, '');
-    setBook(next);
-    saveUserRows(next);
+    persist(next);
     setEditingRowId(row.id);
   };
 
   const saveMarkdown = (rowId: string, body: string) => {
     if (!activeTab) return;
     const next = updateMarkdownBody(book, activeTab.id, rowId, body);
-    setBook(next);
-    saveUserRows(next);
+    persist(next);
     setEditingRowId(null);
+  };
+
+  const handleAddTab = () => {
+    const pageId = pages.length ? activePageId : undefined;
+    const { book: next, tab } = addTab(book, { pageId });
+    persist(next);
+    setActiveTabId(tab.id);
+  };
+
+  const handleAddPage = () => {
+    const { book: next, page } = addPage(book);
+    persist(next);
+    setActivePageId(page.id);
+    setActiveTabId(page.tabIds[0] ?? next.defaultTabId ?? '');
+  };
+
+  const handleRenameTab = (tabId: string, label: string) => {
+    persist(renameTab(book, tabId, label));
+  };
+
+  const handleRenamePage = (pageId: string, label: string) => {
+    persist(renamePage(book, pageId, label));
+  };
+
+  const handleReorderRows = (movedId: string, beforeId: string) => {
+    if (!activeTab) return;
+    persist(reorderRowsBefore(book, activeTab.id, movedId, beforeId));
   };
 
   return (
@@ -143,9 +180,13 @@ export default function App() {
       tabs={tabs}
       activeTabId={activeTab?.id ?? defaultId}
       onSelectTab={selectTab}
+      onAddTab={handleAddTab}
+      onRenameTab={handleRenameTab}
       pages={pages}
       activePageId={activePageId}
       onSelectPage={pages.length ? selectPage : undefined}
+      onAddPage={handleAddPage}
+      onRenamePage={handleRenamePage}
       footer={
         <>
           canonical {meta.hash ?? '—'} · {meta.rowCount.toLocaleString('en-US')} rows
@@ -163,6 +204,7 @@ export default function App() {
           onInsertMarkdown={insertMarkdown}
           onSaveMarkdown={saveMarkdown}
           editingRowId={editingRowId}
+          onReorderRows={handleReorderRows}
         />
       ) : null}
     </PageLayout>

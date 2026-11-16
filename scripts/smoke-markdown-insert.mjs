@@ -43,9 +43,19 @@ try {
 
   await page.getByText(marker).waitFor({ state: 'visible', timeout: 5000 });
 
-  // Reload — localStorage overlay should restore the user row.
+  // Reload — user row should be in committed `src/data/rows.json` (dev API).
   await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
   await page.getByText(marker).waitFor({ state: 'visible', timeout: 5000 });
+
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
+  const rowsPath = path.join(fileURLToPath(new URL('..', import.meta.url)), 'src/data/rows.json');
+  const onDisk = fs.readFileSync(rowsPath, 'utf8');
+  if (!onDisk.includes(marker)) {
+    console.error('smoke-markdown-insert: marker missing from src/data/rows.json');
+    process.exit(1);
+  }
 
   // No "Analyst note" / "Analyst ask" chrome.
   const banned = await page.locator('text=/Analyst (note|ask|take)/i').count();
