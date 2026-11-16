@@ -106,6 +106,9 @@ button {
   border-right: 1px solid var(--dbk-border);
   background: var(--dbk-bg);
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dbk-space-3);
 }
 
 .dbk-sidebar-label {
@@ -121,6 +124,8 @@ button {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
+  min-height: 0;
 }
 
 .dbk-sidebar-item {
@@ -159,8 +164,7 @@ button {
   z-index: 10;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--dbk-space-4);
+  gap: var(--dbk-space-3);
   height: 56px;
   padding: 0 var(--dbk-space-5);
   border-bottom: 1px solid var(--dbk-border);
@@ -169,12 +173,38 @@ button {
 }
 
 .dbk-title {
+  flex: 1;
+  min-width: 0;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.dbk-panel-toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: calc(-1 * var(--dbk-space-2));
+  border-radius: var(--dbk-radius);
+  border: 0;
+  background: transparent;
+  color: var(--dbk-muted);
+  cursor: pointer;
+}
+
+.dbk-panel-toggle:hover {
+  color: var(--dbk-fg);
+  background: var(--dbk-hover);
+}
+
+.dbk-panel-toggle[aria-expanded='true'] {
+  color: var(--dbk-fg);
 }
 
 .dbk-title-sep,
@@ -381,60 +411,31 @@ button {
   gap: 8px;
 }
 
-.dbk-sidebar-toggle {
+.dbk-sidebar-add-bottom {
   appearance: none;
-  border: 1px solid var(--dbk-border);
-  background: transparent;
-  color: var(--dbk-muted);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 10px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: auto;
+  padding: 8px 10px;
+  border: 1px dashed var(--dbk-border);
   border-radius: var(--dbk-radius);
+  background: transparent;
   cursor: pointer;
+  color: var(--dbk-muted);
 }
 
-.dbk-sidebar-toggle:hover {
+.dbk-sidebar-add-bottom:hover {
   color: var(--dbk-fg);
+  border-color: var(--dbk-fg);
   background: var(--dbk-hover);
 }
 
-.dbk-sidebar-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: var(--dbk-space-3);
-}
-
-.dbk-sidebar-head .dbk-sidebar-label {
-  margin: 0;
-}
-
-.dbk-sidebar-add-btn {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  opacity: 0;
-  padding: 2px;
-  transition: opacity 0.12s ease;
-}
-
-.dbk-sidebar:hover .dbk-sidebar-add-btn,
-.dbk-sidebar:focus-within .dbk-sidebar-add-btn,
-.dbk-sidebar-add-btn:focus-visible {
-  opacity: 1;
-}
-
-.dbk-page-chip-add {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  padding-inline: 10px;
+.dbk-sidebar-add-bottom .dbk-insert-gap-plus {
+  width: 22px;
+  height: 22px;
 }
 
 .dbk-inline-rename-input {
@@ -810,9 +811,20 @@ button {
     grid-template-columns: 1fr;
   }
 
-  /* Hide page sidebar on narrow viewports — page switcher + sticky tabs */
+  /* Page switcher replaces sidebar list; drawer when panel toggle is on */
   .dbk-sidebar {
     display: none;
+  }
+
+  .dbk-shell-sidebar-open .dbk-sidebar {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 30;
+    width: min(var(--dbk-sidebar-width), 88vw);
+    box-shadow: 8px 0 24px color-mix(in srgb, #000 12%, transparent);
   }
 
   .dbk-page-switcher {

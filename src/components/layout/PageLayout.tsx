@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { ThemeToggle } from '../theme/ThemeToggle';
 import { Sidebar } from './Sidebar';
 import { BookTabs } from './BookTabs';
+import { PanelToggle } from './PanelToggle';
 import type { BookPage, TabSection } from '../../data/types';
 import { InlineRename } from './InlineRename';
 
@@ -45,27 +46,31 @@ export function PageLayout({
   children,
 }: Props) {
   const hasPages = pages.length > 0 && Boolean(onSelectPage);
+  const pageNav = Boolean(onAddPage);
   const [sidebarOpen, setSidebarOpen] = useState(pages.length > 1);
-  const showSidebar = hasPages && (pages.length > 1 || sidebarOpen);
+  const showSidebar = pageNav && sidebarOpen;
   const sortedPages = [...pages].sort((a, b) => a.order - b.order);
 
   return (
     <div
       className={`dbk-shell${
-        showSidebar ? ' dbk-shell-with-sidebar' : hasPages ? ' dbk-shell-pages-collapsed' : ' dbk-shell-tabs-only'
+        showSidebar ? ' dbk-shell-with-sidebar dbk-shell-sidebar-open' : ' dbk-shell-tabs-only'
       }`}
     >
       {showSidebar ? (
         <Sidebar
           pages={pages}
           activePageId={activePageId}
-          onSelectPage={onSelectPage!}
+          onSelectPage={onSelectPage ?? (() => {})}
           onAddPage={onAddPage}
           onRenamePage={onRenamePage}
         />
       ) : null}
       <div className="dbk-main-column">
         <header className="dbk-header">
+          {pageNav ? (
+            <PanelToggle expanded={showSidebar} onClick={() => setSidebarOpen((v) => !v)} />
+          ) : null}
           <div className="dbk-title">
             {title}
             {experimentId ? (
@@ -76,21 +81,6 @@ export function PageLayout({
             ) : null}
           </div>
           <div className="dbk-header-actions">
-            {!hasPages && onAddPage ? (
-              <button type="button" className="dbk-sidebar-toggle" onClick={onAddPage}>
-                Add page
-              </button>
-            ) : null}
-            {hasPages && pages.length === 1 ? (
-              <button
-                type="button"
-                className="dbk-sidebar-toggle"
-                aria-expanded={sidebarOpen}
-                onClick={() => setSidebarOpen((v) => !v)}
-              >
-                Pages
-              </button>
-            ) : null}
             <ThemeToggle />
           </div>
         </header>
@@ -116,19 +106,6 @@ export function PageLayout({
                   )}
                 </button>
               ))}
-              {onAddPage ? (
-                <button
-                  type="button"
-                  className="dbk-page-chip dbk-page-chip-add"
-                  onClick={onAddPage}
-                  aria-label="Add page"
-                  title="Add page"
-                >
-                  <span className="dbk-insert-gap-plus" aria-hidden="true">
-                    +
-                  </span>
-                </button>
-              ) : null}
             </div>
           </div>
         ) : null}

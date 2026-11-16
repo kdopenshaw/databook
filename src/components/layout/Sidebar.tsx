@@ -24,26 +24,10 @@ export function Sidebar({
   activeTabId,
   onSelectTab,
 }: Props) {
-  if (pages.length) {
+  if (pages.length || onAddPage) {
     const sorted = [...pages].sort((a, b) => a.order - b.order);
     return (
       <aside className="dbk-sidebar" aria-label="Book pages">
-        <div className="dbk-sidebar-head">
-          <p className="dbk-sidebar-label">Pages</p>
-          {onAddPage ? (
-            <button
-              type="button"
-              className="dbk-sidebar-add-btn"
-              onClick={onAddPage}
-              aria-label="Add page"
-              title="Add page"
-            >
-              <span className="dbk-insert-gap-plus" aria-hidden="true">
-                +
-              </span>
-            </button>
-          ) : null}
-        </div>
         <nav className="dbk-sidebar-nav">
           {sorted.map((page) => (
             <button
@@ -65,6 +49,19 @@ export function Sidebar({
             </button>
           ))}
         </nav>
+        {onAddPage ? (
+          <button
+            type="button"
+            className="dbk-sidebar-add-bottom"
+            onClick={onAddPage}
+            aria-label="Add page"
+            title="Add page"
+          >
+            <span className="dbk-insert-gap-plus" aria-hidden="true">
+              +
+            </span>
+          </button>
+        ) : null}
       </aside>
     );
   }
@@ -74,7 +71,6 @@ export function Sidebar({
   const sorted = [...tabs].sort((a, b) => a.order - b.order);
   return (
     <aside className="dbk-sidebar" aria-label="Book sections">
-      <p className="dbk-sidebar-label">Sections</p>
       <nav className="dbk-sidebar-nav">
         {sorted.map((tab) => (
           <button
