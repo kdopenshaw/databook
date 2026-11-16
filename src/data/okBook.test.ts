@@ -38,7 +38,7 @@ describe('okBook', () => {
         {
           id: 'empty',
           title: 'Empty',
-          recharts: { chart: 'LineChart', xKey: 'x', series: [{ mark: 'Line', dataKey: 'y' }] },
+          component: 'MonthlyRevenue',
           query: { filter: [{ column: 'x', op: 'eq', value: 999 }] },
         },
       ],
@@ -57,7 +57,7 @@ describe('okBook', () => {
         {
           id: 'curve',
           title: 'Curve',
-          recharts: { chart: 'LineChart', xKey: 'x', series: [{ mark: 'Line', dataKey: 'y' }] },
+          component: 'MonthlyRevenue',
           query: {},
         },
       ],

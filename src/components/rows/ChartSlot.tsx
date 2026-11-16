@@ -1,9 +1,8 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo } from 'react';
 import { resolveBookChart } from '../../charts/registry';
 import type { BookDocument, ChartBlock, Table } from '../../data/types';
 import { resolveChartBlock } from '../../data/resolveChartBlock';
 import { QueryError, runQuery } from '../../data/runQuery';
-import { RechartsRenderer } from '../charts/RechartsRenderer';
 
 type Props = {
   block: ChartBlock;
@@ -75,23 +74,14 @@ export function ChartSlot({ block, table, book, flex = 1 }: Props) {
     );
   }
 
-  let body: ReactNode = null;
-  if (live.component) {
-    const Comp = resolveBookChart(live.component);
-    if (!Comp) {
-      body = (
-        <div className="dbk-chart-error">
-          Unknown chart component "{live.component}". Add src/charts/{live.component}.tsx
-        </div>
-      );
-    } else {
-      body = <Comp data={result.rows} />;
-    }
-  } else if (live.recharts) {
-    body = <RechartsRenderer data={result.rows} spec={live.recharts} />;
-  } else {
-    body = <div className="dbk-chart-error">Chart has no component or recharts spec</div>;
-  }
+  const Comp = resolveBookChart(live.component!);
+  const body = Comp ? (
+    <Comp data={result.rows} />
+  ) : (
+    <div className="dbk-chart-error">
+      Unknown chart component "{live.component}". Add src/charts/{live.component}.tsx
+    </div>
+  );
 
   return (
     <div className="dbk-chart-slot" style={style}>

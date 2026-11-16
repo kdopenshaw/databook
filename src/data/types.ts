@@ -44,11 +44,7 @@ export type BinSpec = {
   step: number;
   /** Output column for the bin start; `${as}_end` holds the exclusive end. Defaults to `${column}_bin`. */
   as?: string;
-  /**
-   * When true (default), aggregated results include empty bins between the
-   * observed min and max so categorical axes do not hide gaps. Prefer
-   * `recharts.xType: "number"` + shared `xDomain` for small multiples.
-   */
+  /** When true (default), fill empty histogram bins between observed min and max. */
   fillEmpty?: boolean;
 };
 
@@ -61,24 +57,15 @@ export type AggFn =
   | 'max'
   | 'count_distinct'
   | 'ratio'
-  /** Proportion of rows in the group matching `where`, or mean of a boolean/`column` truthy rate. */
   | 'share'
-  /** Count rows in the group matching `where` (requires `where`). */
   | 'count_if'
-  /** Sum `column` over rows matching `where` (requires `where`). */
   | 'sum_if'
-  /** Mean of `column` over rows matching `where` (requires `where`). */
   | 'mean_if';
 
 export type AggSpec = {
   fn: AggFn;
   column?: string;
   denominator?: string;
-  /**
-   * Row filter applied inside each group for `share` / `count_if` / `sum_if` / `mean_if`.
-   * For `share` without `where`, a boolean/quantitative `column` is treated as a rate
-   * (mean of truthy / numeric values).
-   */
   where?: FilterExpr;
   as: string;
   label?: string;
@@ -88,7 +75,6 @@ export type AggSpec = {
 export type OrderSpec = { column: string; direction?: 'asc' | 'desc' };
 
 export type ChartQuery = {
-  /** Optional id for debugging / error messages */
   id?: string;
   label?: string;
   filter?: FilterExpr[];
@@ -100,101 +86,21 @@ export type ChartQuery = {
   sample?: { n: number; seed?: number };
 };
 
-// ---- Legacy JSON Recharts composition (optional fallback; prefer src/charts/*.tsx) ----
-
-export type RechartsSeriesSpec = {
-  /** Recharts mark type — stock: Line, Bar, Area, Scatter. */
-  mark: string;
-  dataKey: string;
-  name?: string;
-  stroke?: string;
-  fill?: string;
-  type?: 'monotone' | 'linear' | 'step' | 'basis' | 'natural';
-  strokeWidth?: number;
-  strokeDasharray?: string;
-  dot?: boolean;
-  /** Bars/areas sharing a stackId stack on top of each other. */
-  stackId?: string;
-  /** Index into the --dbk-series-* palette; defaults to the series position. */
-  colorIndex?: number;
-};
-
-/** Legacy declarative spec for RechartsRenderer. Prefer writing `src/charts/*.tsx`. */
-export type RechartsSpec = {
-  chart: string;
-  xKey: string;
-  yKeys?: string[];
-  series?: RechartsSeriesSpec[];
-  margin?: { top?: number; right?: number; bottom?: number; left?: number };
-  showGrid?: boolean;
-  showLegend?: boolean;
-  showTooltip?: boolean;
-  /** Recharts `layout`; "vertical" draws horizontal bars with `xKey` on the category (Y) axis. */
-  layout?: 'horizontal' | 'vertical';
-  xLabel?: string;
-  yLabel?: string;
-  /** Category-axis width in px for vertical layout (long labels). */
-  categoryWidth?: number;
-  height?: number;
-  /** Value-axis domain. Bars must include 0 (lint). Line zoom requires a stated reason. */
-  yDomain?: [number, number];
-  valueFormat?: 'number' | 'percent';
-  /** Max fraction digits in tooltips and ticks. */
-  decimals?: number;
-  barCategoryGap?: number | string;
-  /** Result columns listed in the scatter tooltip (e.g. a name column). */
-  tooltipKeys?: string[];
-  /** Scatter only: split result rows by a categorical column, one coloured series per listed level. */
-  colorBy?: { key: string; levels: { value: string; label?: string; colorIndex?: number }[] };
-  /** "number" puts `xKey` on a continuous axis (e.g. histogram bins aligned across small multiples). */
-  xType?: 'category' | 'number';
-  xDomain?: [number, number];
-  xTicks?: number[];
-  /**
-   * Numeric x only: plot each row at xKey + xShift. For histograms, use half the bin
-   * step so bars span [start, end); tooltips then show the bin range.
-   */
-  xShift?: number;
-  /** Explicit ticks on the value axis (Y, or X in vertical layout). */
-  valueTicks?: number[];
-};
-
-export type ChartEncoding = {
-  x?: string;
-  y?: string;
-  category?: string;
-  value?: string;
-  color?: string;
-  size?: string;
-  stack?: boolean;
-};
-
 export type ChartBlock = {
   id: string;
   title: string;
   subtitle?: string;
-  /**
-   * Reuse another chart block by id (any tab). When set, the scaffold renders the
-   * referenced block’s query + component/recharts; local title/subtitle/notes may override.
-   */
+  /** Reuse another chart by id (query + component). */
   ref?: string;
-  /**
-   * Agent-authored React chart: file `src/charts/<component>.tsx` default export.
-   * Preferred over declarative `recharts`.
-   */
+  /** `src/charts/<component>.tsx` default export. Required unless `ref` is set. */
   component?: string;
-  /** @deprecated Prefer `component`. Legacy JSON RechartsSpec fallback. */
-  recharts?: RechartsSpec;
   query?: ChartQuery;
-  /** Optional display hint; not required by the runtime. */
-  encoding?: ChartEncoding;
   notes?: string;
   flex?: number;
 };
 
 export type RowBase = {
   id: string;
-  /** Sort key within the tab; fractional values (e.g. 1.5) slot between neighbors. */
   order: number;
   createdBy: 'skill' | 'user';
 };
@@ -223,10 +129,6 @@ export type TabSection = {
   rows: BookRow[];
 };
 
-/**
- * Optional top-level grouping above tabs. When present, Sidebar lists pages
- * (not a duplicate of tabs); BookTabs shows only the active page’s tabs.
- */
 export type BookPage = {
   id: string;
   label: string;
@@ -234,14 +136,8 @@ export type BookPage = {
   tabIds: string[];
 };
 
-/**
- * Book-level house rules inherited by cold agents and consumed by chart lint.
- * Also document the same rules in `understanding.md`.
- */
 export type BookConventions = {
-  /** Human-readable notes (population filters, grain caveats, palette meanings). */
   notes?: string[];
-  /** Short description of the default analysis population / filters. */
   population?: string;
   palette?: Record<string, string>;
 };
