@@ -126,8 +126,8 @@ export type RechartsSeriesSpec = {
 /**
  * Declarative Recharts composition the skill emitted.
  * Prefer naming real Recharts chart roots (e.g. LineChart); the scaffold
- * renderer maps known roots and series marks without restricting the skill
- * to a documented starter menu of chart types.
+ * stock renderer maps known roots and series marks (Line/Bar/Area/Scatter).
+ * Unknown marks fail chart lint — extend the renderer before emitting new ones.
  *
  * Stock-supported optional fields (see SKILL.md → RechartsSpec):
  * layout, xLabel/yLabel, yDomain/xDomain, height, stackId, colorBy, xType, …
