@@ -639,7 +639,6 @@ references/
     LICENSE
     CONNECTORS.md
     skills/                      # explore-data, create-viz, data-visualization, analyze, …
-    quarantined/                 # build-dashboard, data-context-extractor (not discovered)
   anthropic-dataviz/             # form-first digest only (no duplicated create-viz copies)
     METHOD.md
     UPSTREAM.md
@@ -647,10 +646,10 @@ references/
 
 ### 11.2 Anthropic data plugin (`references/anthropic-data-plugin/`)
 
-Vendored copy of the [`data/`](https://github.com/anthropics/knowledge-work-plugins/tree/main/data) plugin from [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) (Apache-2.0), with DataBook packaging notes:
+Vendored copy of the [`data/`](https://github.com/anthropics/knowledge-work-plugins/tree/main/data) plugin from [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) (Apache-2.0), trimmed for DataBook:
 
-- **Active** under `skills/`: profiling, explore, validate, stats, SQL, `create-viz`, `data-visualization`, optional `analyze`.  
-- **Quarantined** under `quarantined/` (not under `skills/`, so agents do not auto-discover them): `build-dashboard`, `data-context-extractor` — they conflict with the DataBook row model / pipeline.  
+- **Shipped** under `skills/`: profiling, explore, validate, stats, SQL, `create-viz`, `data-visualization`, optional `analyze`.  
+- **Omitted** (not in this tree): upstream `build-dashboard`, `data-context-extractor` — they conflict with the DataBook row model / pipeline.  
 - Single copies of `create-viz` and `data-visualization` live here (not also under `anthropic-dataviz/`), so `CONNECTORS.md` relative links resolve.
 
 **Role:** profiling, exploration, SQL/stats/validation habits, and chart-type tables. Used when the skill routes the agent there — not as a blanket read at session start. `analyze` is optional for Q&A-shaped asks, not required for book emission.
@@ -672,9 +671,9 @@ Keep the live routing table in **`SKILL.md`** only; this section states the inte
 | Broader data Q&A (optional) | `references/anthropic-data-plugin/skills/analyze/` |
 | Validation / statistical checks | `references/anthropic-data-plugin/skills/validate-data/`, `statistical-analysis/`, etc. |
 | Choosing chart form / encodings | `references/anthropic-dataviz/METHOD.md`, then plugin `create-viz/` + `data-visualization/` |
-| Building the book shell / rows | DataBook rules in `SKILL.md` + this spec — never quarantined `build-dashboard` |
+| Building the book shell / rows | DataBook rules in `SKILL.md` + this spec — not Anthropic dashboard builders |
 
-Do **not** instruct the agent to “read all of `references/` before starting.” Do **not** open `quarantined/`. Do **not** treat Anthropic dashboard builders as a replacement for the DataBook row model.
+Do **not** instruct the agent to “read all of `references/` before starting.” Do **not** treat Anthropic dashboard builders as a replacement for the DataBook row model.
 
 ### 11.5 Maintenance
 

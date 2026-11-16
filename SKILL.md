@@ -74,7 +74,7 @@ House rules that must not live only in a private `AGENT_NOTES.md`:
 
 ## Reference router (not ambient)
 
-Open bundled references **only at the step that needs them**. Do **not** dump all of `references/` into context at start. Do **not** open `references/anthropic-data-plugin/quarantined/` (excluded upstream skills).
+Open bundled references **only at the step that needs them**. Do **not** dump all of `references/` into context at start.
 
 | When | Read |
 |------|------|
