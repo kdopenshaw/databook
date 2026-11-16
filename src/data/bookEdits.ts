@@ -1,13 +1,4 @@
-import { orderBetween } from './insertMarkdown';
-import type { BookDocument, BookPage, BookRow, TabSection } from './types';
-
-export type TabCatalogEntry = { id: string; label: string; order: number };
-
-export type BookStructureOverlay = {
-  tabCatalog?: TabCatalogEntry[];
-  pages?: BookPage[];
-  rowOrders?: Record<string, string[]>;
-};
+import type { BookDocument, BookPage, ContentBlock, TabSection } from './types';
 
 function newSuffix(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -25,89 +16,11 @@ export function newUserPageId(): string {
 
 export const DEFAULT_HOME_PAGE_ID = 'page-home';
 
-export function sortedRowIds(rows: BookRow[]): string[] {
-  return [...rows].sort((a, b) => a.order - b.order).map((r) => r.id);
-}
-
-export function extractStructureOverlay(book: BookDocument, base: BookDocument): BookStructureOverlay | undefined {
-  const tabCatalogChanged =
-    book.tabs.length !== base.tabs.length ||
-    book.tabs.some((t) => {
-      const b = base.tabs.find((x) => x.id === t.id);
-      return !b || b.label !== t.label || b.order !== t.order;
-    });
-
-  const pagesChanged =
-    JSON.stringify(book.pages ?? null) !== JSON.stringify(base.pages ?? null);
-
-  const rowOrders: Record<string, string[]> = {};
-  for (const tab of book.tabs) {
-    const baseTab = base.tabs.find((t) => t.id === tab.id);
-    if (!baseTab) continue;
-    const a = sortedRowIds(tab.rows).join('\0');
-    const b = sortedRowIds(baseTab.rows).join('\0');
-    if (a !== b) rowOrders[tab.id] = sortedRowIds(tab.rows);
-  }
-
-  const overlay: BookStructureOverlay = {};
-  if (tabCatalogChanged) {
-    overlay.tabCatalog = book.tabs.map(({ id, label, order }) => ({ id, label, order }));
-  }
-  if (pagesChanged && book.pages) overlay.pages = book.pages;
-  if (Object.keys(rowOrders).length) overlay.rowOrders = rowOrders;
-
-  return Object.keys(overlay).length ? overlay : undefined;
-}
-
-export function applyStructureOverlay(base: BookDocument, overlay?: BookStructureOverlay | null): BookDocument {
-  if (!overlay) return base;
-
-  let book = base;
-  if (overlay.tabCatalog?.length) {
-    const baseById = new Map(base.tabs.map((t) => [t.id, t]));
-    const tabs: TabSection[] = [...overlay.tabCatalog]
-      .sort((a, b) => a.order - b.order)
-      .map((meta) => {
-        const skill = baseById.get(meta.id);
-        if (skill) return { ...skill, label: meta.label, order: meta.order };
-        return { id: meta.id, label: meta.label, order: meta.order, rows: [] };
-      });
-    book = { ...book, tabs };
-  }
-
-  if (overlay.pages) {
-    book = { ...book, pages: overlay.pages };
-  }
-
-  if (overlay.rowOrders) {
-    const tabs = book.tabs.map((tab) => {
-      const order = overlay.rowOrders![tab.id];
-      if (!order?.length) return tab;
-      return applyRowOrder(tab, order);
-    });
-    book = { ...book, tabs };
-  }
-
-  return book;
-}
-
-export function applyRowOrder(tab: TabSection, ids: string[]): TabSection {
-  const byId = new Map(tab.rows.map((r) => [r.id, r]));
-  const used = new Set<string>();
-  const rows: BookRow[] = [];
-  for (const id of ids) {
-    const row = byId.get(id);
-    if (!row || used.has(id)) continue;
-    used.add(id);
-    rows.push({ ...row, order: rows.length });
-  }
-  const rest = [...tab.rows]
-    .filter((r) => !used.has(r.id))
-    .sort((a, b) => a.order - b.order);
-  for (const row of rest) {
-    rows.push({ ...row, order: rows.length });
-  }
-  return { ...tab, rows };
+function nextTabFilename(book: BookDocument, id: string): string {
+  const max = book.tabs.reduce((m, t) => Math.max(m, t.order), 0);
+  const pad = String(max + 1).padStart(2, '0');
+  const slug = id.replace(/[^a-zA-Z0-9_-]+/g, '-') || 'tab';
+  return `${pad}-${slug}.md`;
 }
 
 /** Each tab id appears on at most one page; later pages win ties; orphans attach to the first page. */
@@ -136,17 +49,24 @@ export function addTab(
   opts?: { label?: string; pageId?: string; attachToPage?: boolean },
 ): { book: BookDocument; tab: TabSection } {
   const id = newUserTabId();
-  const order = book.tabs.reduce((m, t) => Math.max(m, t.order), -1) + 1;
+  const order = book.tabs.reduce((m, t) => Math.max(m, t.order), 0) + 1;
   const tab: TabSection = {
     id,
     label: opts?.label ?? 'New tab',
     order,
-    rows: [],
+    sourceFile: nextTabFilename({ ...book, tabs: [...book.tabs, { id, label: '', order, sourceFile: '', blocks: [] }] }, id),
+    blocks: [],
+    page: opts?.pageId,
   };
+  // Fix sourceFile with correct order padding
+  const pad = String(order).padStart(2, '0');
+  tab.sourceFile = `${pad}-${id.replace(/[^a-zA-Z0-9_-]+/g, '-')}.md`;
+
   let pages = book.pages;
   const attach = opts?.attachToPage !== false;
   if (pages?.length && attach) {
     const pageId = opts?.pageId ?? pages[0]?.id;
+    tab.page = pageId;
     pages = pages.map((p) => ({
       ...p,
       tabIds:
@@ -170,7 +90,12 @@ export function ensureDefaultPage(book: BookDocument, label = 'Home'): BookDocum
       order: 0,
       tabIds: [tab.id],
     };
-    return normalizePageTabIds({ ...withTab, pages: [page], defaultTabId: tab.id });
+    return normalizePageTabIds({
+      ...withTab,
+      pages: [page],
+      defaultTabId: tab.id,
+      tabs: withTab.tabs.map((t) => (t.id === tab.id ? { ...t, page: page.id } : t)),
+    });
   }
   const page: BookPage = {
     id: DEFAULT_HOME_PAGE_ID,
@@ -178,7 +103,11 @@ export function ensureDefaultPage(book: BookDocument, label = 'Home'): BookDocum
     order: 0,
     tabIds: book.tabs.map((t) => t.id),
   };
-  return normalizePageTabIds({ ...book, pages: [page] });
+  return normalizePageTabIds({
+    ...book,
+    pages: [page],
+    tabs: book.tabs.map((t) => ({ ...t, page: t.page ?? page.id })),
+  });
 }
 
 export function addPage(book: BookDocument, label = 'New page'): { book: BookDocument; page: BookPage } {
@@ -198,9 +127,10 @@ export function addPage(book: BookDocument, label = 'New page'): { book: BookDoc
 
   const { book: withTab, tab } = addTab(book, { label: 'New tab', attachToPage: false });
   const page: BookPage = { id, label, order, tabIds: [tab.id] };
+  const tabs = withTab.tabs.map((t) => (t.id === tab.id ? { ...t, page: id } : t));
   const pages = [...(withTab.pages ?? []), page];
   return {
-    book: normalizePageTabIds({ ...withTab, pages, tabs: withTab.tabs }),
+    book: normalizePageTabIds({ ...withTab, pages, tabs }),
     page,
   };
 }
@@ -216,8 +146,7 @@ export function renamePage(book: BookDocument, pageId: string, label: string): B
   return { ...book, pages };
 }
 
-/** Move `movedId` before `targetId` within a tab (recomputes fractional orders). */
-export function reorderRowsBefore(
+export function reorderBlocksBefore(
   book: BookDocument,
   tabId: string,
   movedId: string,
@@ -228,69 +157,63 @@ export function reorderRowsBefore(
   if (tabIndex < 0) return book;
 
   const tab = book.tabs[tabIndex];
-  const sorted = [...tab.rows].sort((a, b) => a.order - b.order);
-  const from = sorted.findIndex((r) => r.id === movedId);
-  const to = sorted.findIndex((r) => r.id === targetId);
+  const from = tab.blocks.findIndex((b) => b.id === movedId);
+  const to = tab.blocks.findIndex((b) => b.id === targetId);
   if (from < 0 || to < 0) return book;
 
-  const next = sorted.filter((r) => r.id !== movedId);
-  const targetIdx = next.findIndex((r) => r.id === targetId);
-  if (targetIdx < 0) return book;
-
-  const before = targetIdx > 0 ? next[targetIdx - 1].order : undefined;
-  const after = next[targetIdx].order;
-  const moved = { ...sorted[from], order: orderBetween(before, after) };
+  const next = [...tab.blocks];
+  const [moved] = next.splice(from, 1);
+  const targetIdx = next.findIndex((b) => b.id === targetId);
   next.splice(targetIdx, 0, moved);
 
-  const tabs = book.tabs.map((t, i) => (i === tabIndex ? { ...t, rows: next } : t));
+  const tabs = book.tabs.map((t, i) => (i === tabIndex ? { ...t, blocks: next } : t));
   return { ...book, tabs };
 }
 
-/** Move `movedId` after `afterRowId` within a tab. */
-export function reorderRowsAfter(
+export function reorderBlocksAfter(
   book: BookDocument,
   tabId: string,
   movedId: string,
-  afterRowId: string,
+  afterBlockId: string,
 ): BookDocument {
-  if (movedId === afterRowId) return book;
+  if (movedId === afterBlockId) return book;
   const tabIndex = book.tabs.findIndex((t) => t.id === tabId);
   if (tabIndex < 0) return book;
 
   const tab = book.tabs[tabIndex];
-  const sorted = [...tab.rows].sort((a, b) => a.order - b.order);
-  const from = sorted.findIndex((r) => r.id === movedId);
-  const afterIdx = sorted.findIndex((r) => r.id === afterRowId);
+  const from = tab.blocks.findIndex((b) => b.id === movedId);
+  const afterIdx = tab.blocks.findIndex((b) => b.id === afterBlockId);
   if (from < 0 || afterIdx < 0) return book;
 
-  const next = sorted.filter((r) => r.id !== movedId);
-  const insertAt = next.findIndex((r) => r.id === afterRowId) + 1;
-  const before = insertAt > 0 ? next[insertAt - 1].order : undefined;
-  const after = insertAt < next.length ? next[insertAt].order : undefined;
-  const moved = { ...sorted[from], order: orderBetween(before, after) };
+  const next = [...tab.blocks];
+  const [moved] = next.splice(from, 1);
+  const insertAt = next.findIndex((b) => b.id === afterBlockId) + 1;
   next.splice(insertAt, 0, moved);
 
-  const tabs = book.tabs.map((t, i) => (i === tabIndex ? { ...t, rows: next } : t));
+  const tabs = book.tabs.map((t, i) => (i === tabIndex ? { ...t, blocks: next } : t));
   return { ...book, tabs };
 }
 
-export function moveRowInTab(
+export function moveBlockInTab(
   book: BookDocument,
   tabId: string,
-  rowId: string,
+  blockId: string,
   direction: 'up' | 'down',
 ): BookDocument {
   const tab = book.tabs.find((t) => t.id === tabId);
   if (!tab) return book;
-  const sorted = [...tab.rows].sort((a, b) => a.order - b.order);
-  const i = sorted.findIndex((r) => r.id === rowId);
+  const i = tab.blocks.findIndex((b) => b.id === blockId);
   if (i < 0) return book;
-  if (direction === 'up' && i > 0) return reorderRowsBefore(book, tabId, rowId, sorted[i - 1].id);
-  if (direction === 'down' && i < sorted.length - 1) {
-    return reorderRowsAfter(book, tabId, rowId, sorted[i + 1].id);
+  if (direction === 'up' && i > 0) return reorderBlocksBefore(book, tabId, blockId, tab.blocks[i - 1].id);
+  if (direction === 'down' && i < tab.blocks.length - 1) {
+    return reorderBlocksAfter(book, tabId, blockId, tab.blocks[i + 1].id);
   }
   return book;
 }
+
+/** @deprecated aliases for older call sites */
+export const reorderRowsBefore = reorderBlocksBefore;
+export const moveRowInTab = moveBlockInTab;
 
 export function deleteTab(book: BookDocument, tabId: string): BookDocument {
   const tabs = book.tabs.filter((t) => t.id !== tabId);
@@ -303,7 +226,7 @@ export function deleteTab(book: BookDocument, tabId: string): BookDocument {
   return normalizePageTabIds({ ...book, tabs, pages, defaultTabId });
 }
 
-/** Deletes the page and every tab listed on it (rows included). */
+/** Deletes the page and every tab listed on it. */
 export function deletePage(book: BookDocument, pageId: string): BookDocument {
   const pages = book.pages ?? [];
   const victim = pages.find((p) => p.id === pageId);
@@ -318,4 +241,8 @@ export function deletePage(book: BookDocument, pageId: string): BookDocument {
   const partial = { ...book, tabs, pages: nextPages.length ? nextPages : undefined, defaultTabId };
   if (!nextPages.length) return ensureDefaultPage(partial);
   return normalizePageTabIds(partial);
+}
+
+export function reindexBlockIds(blocks: ContentBlock[], prefix: string): ContentBlock[] {
+  return blocks.map((b, i) => ({ ...b, id: `${prefix}-${i}` }));
 }

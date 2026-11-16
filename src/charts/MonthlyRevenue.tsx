@@ -1,6 +1,17 @@
 import { Area, AreaChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
 import { ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
+import type { ChartMeta } from '../data/types';
 import type { BookChartProps } from './registry';
+
+export const meta: ChartMeta = {
+  title: 'Monthly revenue',
+  subtitle: 'Sum of line-item amount · all cafes',
+  query: {
+    groupBy: ['month'],
+    aggregate: [{ fn: 'sum', column: 'amount', as: 'revenue' }],
+    orderBy: [{ column: 'month', direction: 'asc' }],
+  },
+};
 
 export default function MonthlyRevenue({ data }: BookChartProps) {
   const c = chartColors();

@@ -1,6 +1,20 @@
 import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from 'recharts';
 import { ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
+import type { ChartMeta } from '../data/types';
 import type { BookChartProps } from './registry';
+
+export const meta: ChartMeta = {
+  title: 'Category mix by month',
+  subtitle: 'Stacked revenue · Drink / Food / Merch',
+  query: {
+    groupBy: ['month', 'category'],
+    aggregate: [{ fn: 'sum', column: 'amount', as: 'revenue' }],
+    orderBy: [
+      { column: 'month', direction: 'asc' },
+      { column: 'category', direction: 'asc' },
+    ],
+  },
+};
 
 /** Expects rows with month + category + revenue; pivots for stacked bars. */
 export default function CategoryMix({ data }: BookChartProps) {

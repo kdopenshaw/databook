@@ -6,8 +6,8 @@ import type { BookDocument } from './types';
 const bookWithDupPages = (): BookDocument => ({
   title: 'T',
   tabs: [
-    { id: 't1', label: 'A', order: 0, rows: [] },
-    { id: 't2', label: 'B', order: 1, rows: [] },
+    { id: 't1', label: 'A', order: 1, sourceFile: '01-t1.md', blocks: [] },
+    { id: 't2', label: 'B', order: 2, sourceFile: '02-t2.md', blocks: [] },
   ],
   pages: [
     { id: 'p1', label: 'P1', order: 0, tabIds: ['t1', 't2'] },
@@ -34,7 +34,7 @@ describe('navBook', () => {
   it('validateTabId falls back when invalid', () => {
     const book = ensureDefaultPage({
       title: 'T',
-      tabs: [{ id: 'x', label: 'X', order: 0, rows: [] }],
+      tabs: [{ id: 'x', label: 'X', order: 1, sourceFile: '01-x.md', blocks: [] }],
     });
     expect(validateTabId(book, 'missing')).toBe('x');
   });
@@ -42,7 +42,7 @@ describe('navBook', () => {
   it('deleteTab on last tab leaves empty page without cross-page fallback', () => {
     let book = ensureDefaultPage({
       title: 'T',
-      tabs: [{ id: 'only', label: 'Only', order: 0, rows: [] }],
+      tabs: [{ id: 'only', label: 'Only', order: 1, sourceFile: '01-only.md', blocks: [] }],
       pages: [{ id: 'page-home', label: 'Home', order: 0, tabIds: ['only'] }],
     });
     book = deleteTab(book, 'only');

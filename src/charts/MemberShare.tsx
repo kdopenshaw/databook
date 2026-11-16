@@ -1,6 +1,17 @@
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
+import type { ChartMeta } from '../data/types';
 import type { BookChartProps } from './registry';
+
+export const meta: ChartMeta = {
+  title: 'Member share of tickets',
+  subtitle: 'Share of line items with is_member',
+  query: {
+    groupBy: ['month'],
+    aggregate: [{ fn: 'share', column: 'is_member', as: 'member_share' }],
+    orderBy: [{ column: 'month', direction: 'asc' }],
+  },
+};
 
 export default function MemberShare({ data }: BookChartProps) {
   const c = chartColors();

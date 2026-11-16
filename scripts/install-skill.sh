@@ -141,11 +141,13 @@ package.json
 package-lock.json
 tsconfig.json
 vite.config.ts
+vitest.ok.config.ts
 public/
-src/
-scripts/                 # ok-book.mjs + print-block.mjs — required for `npm run ok` / `print-block`; check-book.mjs for optional visual
-.gitignore               # scaffold gitignore (node_modules, dist, …)
-# After copy: set index.html <title> from BookDocument.title; replace sample data.
+src/                     # includes src/book/, src/charts/, src/data/, src/components/
+scripts/                 # ok-book.mjs, print-block.mjs, snap-charts.mjs, rows-to-markdown.mjs, …
+.gitignore               # scaffold gitignore (includes .snaps/); copy from product root — not symlinked here
+# After copy: set index.html <title> from book.yaml title; replace sample data.
+# Init does not need to copy .snaps/ contents — only the gitignore rule.
 EOF
 }
 
@@ -172,6 +174,7 @@ link_skill() {
     package-lock.json \
     index.html \
     vite.config.ts \
+    vitest.ok.config.ts \
     tsconfig.json \
     public
   do

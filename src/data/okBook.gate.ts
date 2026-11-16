@@ -3,15 +3,13 @@
  * (see vitest.ok.config.ts).
  */
 import { describe, expect, it } from 'vitest';
-import type { BookDocument } from './types';
 import { checkLiveBook, formatOkIssues } from './okBook';
+import { loadBook } from './loadBook';
 import { loadCanonical } from './loadCanonical';
-import bookJson from './rows.json';
-
-const book = bookJson as BookDocument;
 
 describe('ok book (live)', () => {
-  it('passes nonempty query smoke', () => {
+  it('passes structure + nonempty query smoke', () => {
+    const book = loadBook();
     const table = loadCanonical();
     const result = checkLiveBook(book, table);
     if (!result.ok) {

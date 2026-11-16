@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Smoke: insert markdown via (+), save, reload, assert persistence.
+ * Smoke: insert markdown via (+), save, reload, assert persistence to tab .md.
  * Requires a running Vite server: npm run dev
  * Requires Playwright: npm i -D playwright && npx playwright install chromium
  *
@@ -29,7 +29,6 @@ try {
   const page = await context.newPage();
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
-  // Force-show first insert gap and click.
   const gap = page.locator('.dbk-insert-gap-btn').first();
   await gap.evaluate((el) => {
     el.style.opacity = '1';
@@ -43,28 +42,27 @@ try {
 
   await page.getByText(marker).waitFor({ state: 'visible', timeout: 5000 });
 
-  // Reload — user row should be in committed `src/data/rows.json` (dev API).
   await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
   await page.getByText(marker).waitFor({ state: 'visible', timeout: 5000 });
 
   const fs = await import('node:fs');
   const path = await import('node:path');
   const { fileURLToPath } = await import('node:url');
-  const rowsPath = path.join(fileURLToPath(new URL('..', import.meta.url)), 'src/data/rows.json');
-  const onDisk = fs.readFileSync(rowsPath, 'utf8');
+  const bookDir = path.join(fileURLToPath(new URL('..', import.meta.url)), 'src/book');
+  const files = fs.readdirSync(bookDir).filter((f) => f.endsWith('.md'));
+  const onDisk = files.map((f) => fs.readFileSync(path.join(bookDir, f), 'utf8')).join('\n');
   if (!onDisk.includes(marker)) {
-    console.error('smoke-markdown-insert: marker missing from src/data/rows.json');
+    console.error('smoke-markdown-insert: marker missing from src/book/*.md');
     process.exit(1);
   }
 
-  // No "Analyst note" / "Analyst ask" chrome.
   const banned = await page.locator('text=/Analyst (note|ask|take)/i').count();
   if (banned > 0) {
     console.error('smoke-markdown-insert: found banned Analyst framing in DOM');
     process.exit(1);
   }
 
-  console.log('smoke-markdown-insert: ok — insert, save, reload persisted');
+  console.log('smoke-markdown-insert: ok — insert, save, reload persisted to src/book/');
 } finally {
   await browser.close();
 }

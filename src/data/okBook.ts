@@ -1,10 +1,12 @@
 /**
- * Lightweight gate: query nonempty smoke (no chart-type catalog lint).
+ * Book gate: tab parse, chart resolve, query validate + nonempty, unused charts.
  * Invoked by `npm run ok` (see scripts/ok-book.mjs).
  */
-import type { BookDocument, ChartBlock, ChartQuery, Table } from './types';
-import { resolveChartBlock } from './resolveChartBlock';
+import { listBookCharts, resolveChartMeta } from '../charts/registry';
+import { uniqueChartNames } from './parseBook';
+import type { BookDocument, ChartMeta, Table } from './types';
 import { runQuery } from './runQuery';
+import { validateQuery } from './validate';
 
 export type OkIssue = {
   level: 'error' | 'warning';
@@ -19,65 +21,74 @@ export type OkResult = {
   issues: OkIssue[];
 };
 
-/** Opt-in: chart may return zero rows without failing query smoke. */
-export function allowsEmptyQuery(block: ChartBlock): boolean {
-  const notes = `${block.subtitle ?? ''} ${block.notes ?? ''}`.toLowerCase();
-  return (
-    (block as ChartBlock & { allowEmpty?: boolean }).allowEmpty === true ||
-    /\ballow(?:s|ed)?\s+empty\b/.test(notes) ||
-    /\bempty\s+ok\b/.test(notes)
-  );
+export function allowsEmptyQuery(meta: ChartMeta): boolean {
+  if (meta.allowEmpty) return true;
+  const notes = `${meta.subtitle ?? ''} ${meta.notes ?? ''}`.toLowerCase();
+  return /\ballow(?:s|ed)?\s+empty\b/.test(notes) || /\bempty\s+ok\b/.test(notes);
 }
 
-function collectComponentBlocks(book: BookDocument): Array<{ tabId: string; block: ChartBlock }> {
-  const out: Array<{ tabId: string; block: ChartBlock }> = [];
+export function checkBookStructure(book: BookDocument): OkIssue[] {
+  const issues: OkIssue[] = [];
+  if (!book.title) {
+    issues.push({ level: 'error', code: 'missing-title', message: 'book.yaml missing title' });
+  }
+  if (!book.tabs.length) {
+    issues.push({ level: 'error', code: 'no-tabs', message: 'no tab markdown files under src/book/' });
+  }
   for (const tab of book.tabs) {
-    for (const row of tab.rows) {
-      if (row.type !== 'component') continue;
-      for (const block of row.components) out.push({ tabId: tab.id, block });
+    if (!tab.sourceFile) {
+      issues.push({
+        level: 'error',
+        code: 'tab-file',
+        message: `tab "${tab.id}" missing sourceFile`,
+        tabId: tab.id,
+      });
+    }
+    for (const block of tab.blocks) {
+      if (block.type !== 'charts') continue;
+      for (const ref of block.charts) {
+        const meta = resolveChartMeta(ref.name);
+        if (!meta) {
+          issues.push({
+            level: 'error',
+            code: 'unknown-chart',
+            message: `chart "${ref.name}" not found in src/charts/`,
+            chartId: ref.name,
+            tabId: tab.id,
+          });
+        }
+      }
     }
   }
-  return out;
+  return issues;
 }
 
-export function smokeQueries(book: BookDocument, table: Table): OkIssue[] {
+export function smokeChartQueries(book: BookDocument, table: Table): OkIssue[] {
   const issues: OkIssue[] = [];
-  for (const { tabId, block: raw } of collectComponentBlocks(book)) {
-    let block: ChartBlock;
-    try {
-      block = resolveChartBlock(book, raw);
-    } catch (err) {
+  for (const name of uniqueChartNames(book)) {
+    const meta = resolveChartMeta(name);
+    if (!meta) continue;
+    const vErrors = validateQuery(meta.query, table.schema);
+    for (const message of vErrors) {
       issues.push({
         level: 'error',
-        code: 'resolve-failed',
-        message: err instanceof Error ? err.message : String(err),
-        chartId: raw.id,
-        tabId,
+        code: 'query-invalid',
+        message: `chart "${name}": ${message}`,
+        chartId: name,
       });
-      continue;
     }
-    if (!block.query) {
-      issues.push({
-        level: 'error',
-        code: 'missing-query',
-        message: `chart "${block.id}" has no query after resolve`,
-        chartId: block.id,
-        tabId,
-      });
-      continue;
-    }
-    if (allowsEmptyQuery(block)) continue;
+    if (vErrors.length) continue;
+    if (allowsEmptyQuery(meta)) continue;
 
     let rows;
     try {
-      rows = runQuery(table, block.query as ChartQuery);
+      rows = runQuery(table, meta.query);
     } catch (err) {
       issues.push({
         level: 'error',
         code: 'query-failed',
-        message: `chart "${block.id}" query threw: ${err instanceof Error ? err.message : err}`,
-        chartId: block.id,
-        tabId,
+        message: `chart "${name}" query threw: ${err instanceof Error ? err.message : err}`,
+        chartId: name,
       });
       continue;
     }
@@ -85,18 +96,37 @@ export function smokeQueries(book: BookDocument, table: Table): OkIssue[] {
       issues.push({
         level: 'error',
         code: 'query-empty',
-        message: `chart "${block.id}" query returned 0 rows (set allowEmpty or note "empty ok" if intentional)`,
-        chartId: block.id,
-        tabId,
+        message: `chart "${name}" query returned 0 rows (set meta.allowEmpty or note "empty ok" if intentional)`,
+        chartId: name,
       });
     }
   }
   return issues;
 }
 
-/** Nonempty query smoke against canonical table. */
+export function checkUnusedCharts(book: BookDocument): OkIssue[] {
+  const referenced = new Set(uniqueChartNames(book));
+  const issues: OkIssue[] = [];
+  for (const name of listBookCharts()) {
+    if (!referenced.has(name)) {
+      issues.push({
+        level: 'error',
+        code: 'unused-chart',
+        message: `src/charts/${name}.tsx is never referenced in a \`\`\`chart block`,
+        chartId: name,
+      });
+    }
+  }
+  return issues;
+}
+
+/** Full live book check used by `npm run ok`. */
 export function checkLiveBook(book: BookDocument, table: Table): OkResult {
-  const issues = smokeQueries(book, table);
+  const issues = [
+    ...checkBookStructure(book),
+    ...smokeChartQueries(book, table),
+    ...checkUnusedCharts(book),
+  ];
   return { ok: issues.every((i) => i.level !== 'error'), issues };
 }
 

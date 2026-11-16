@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useThemeKey } from './components/charts/ResponsiveFrame';
 import { ConfirmDialog } from './components/layout/ConfirmDialog';
 import { PageLayout } from './components/layout/PageLayout';
-import { PersistBanner } from './components/layout/PersistBanner';
 import { RowRenderer } from './components/rows/RowRenderer';
 import {
   addPage,
@@ -10,18 +9,20 @@ import {
   deletePage,
   deleteTab,
   ensureDefaultPage,
-  moveRowInTab,
+  moveBlockInTab,
   normalizePageTabIds,
   renamePage,
   renameTab,
-  reorderRowsBefore,
+  reorderBlocksBefore,
 } from './data/bookEdits';
-import { loadBookForApp } from './data/loadBookForApp';
+import { deleteTabFile, writeBookYaml, writeTabFile } from './data/bookPersist';
 import {
-  insertMarkdownRow,
-  removeMarkdownRow,
+  insertMarkdownBlock,
+  removeMarkdownBlock,
+  tabFileContents,
   updateMarkdownBody,
 } from './data/insertMarkdown';
+import { loadBook } from './data/loadBook';
 import { loadCanonical } from './data/loadCanonical';
 import {
   adjacentPageAfterDelete,
@@ -33,10 +34,8 @@ import {
   validatePageId,
   validateTabId,
 } from './data/navBook';
-import type { PersistResult } from './data/persistBook';
-import { flushPersistBook, schedulePersistBook } from './data/persistBook';
-import type { BookDocument } from './data/types';
-import rowsJson from './data/rows.json';
+import { serializeBookYaml } from './data/serializeMeta';
+import type { BookDocument, TabSection } from './data/types';
 
 function readTabFromUrl(fallback: string): string {
   if (typeof window === 'undefined') return fallback;
@@ -71,12 +70,20 @@ type ConfirmState = {
   onResolve: (ok: boolean) => void;
 };
 
+async function persistTab(tab: TabSection): Promise<string | null> {
+  const r = await writeTabFile(tab.sourceFile, tabFileContents(tab));
+  return r.ok ? null : r.error ?? 'Save failed';
+}
+
+async function persistMeta(book: BookDocument): Promise<string | null> {
+  const r = await writeBookYaml(serializeBookYaml(book));
+  return r.ok ? null : r.error ?? 'Save failed';
+}
+
 export default function App() {
-  const baseBook = rowsJson as BookDocument;
-  const [book, setBook] = useState<BookDocument>(() => loadBookForApp(baseBook));
-  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [book, setBook] = useState<BookDocument>(() => loadBook());
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [persistError, setPersistError] = useState<string | null>(null);
-  const [lastPersist, setLastPersist] = useState<PersistResult | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const userNavRef = useRef(false);
   const table = useMemo(() => loadCanonical(), []);
@@ -85,10 +92,10 @@ export default function App() {
   const defaultId = book.defaultTabId ?? allTabs[0]?.id ?? '';
 
   const [activeTabId, setActiveTabId] = useState(() =>
-    validateTabId(loadBookForApp(baseBook), readTabFromUrl(defaultId)) ?? defaultId,
+    validateTabId(loadBook(), readTabFromUrl(defaultId)) ?? defaultId,
   );
   const [activePageId, setActivePageId] = useState(() => {
-    const loaded = loadBookForApp(baseBook);
+    const loaded = loadBook();
     const pgs = loaded.pages ?? [];
     const fromUrl = validatePageId(loaded, readPageFromUrl('')) ?? '';
     if (fromUrl) return fromUrl;
@@ -97,17 +104,19 @@ export default function App() {
   });
 
   const themeKey = useThemeKey();
-  const previewMode = !import.meta.env.DEV;
+  const canEdit = import.meta.env.DEV;
 
-  const applyBook = useCallback((next: BookDocument, opts?: { persist?: boolean }) => {
+  // Hot reload when agents edit book files on disk.
+  useEffect(() => {
+    if (!import.meta.hot) return;
+    const reload = () => setBook(loadBook());
+    import.meta.hot.accept(() => reload());
+    import.meta.hot.on('vite:beforeUpdate', reload);
+  }, []);
+
+  const applyBook = useCallback((next: BookDocument) => {
     const normalized = ensureDefaultPage(normalizePageTabIds(next));
     setBook(normalized);
-    if (opts?.persist !== false) {
-      void schedulePersistBook(normalized).then((r) => {
-        setLastPersist(r);
-        setPersistError(r.ok ? null : r.error ?? 'Save failed');
-      });
-    }
     return normalized;
   }, []);
 
@@ -154,13 +163,6 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, [book, defaultId, pages]);
 
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    if (baseBook.pages?.length) return;
-    const initial = loadBookForApp(baseBook);
-    if (initial.pages?.length) void flushPersistBook(initial);
-  }, [baseBook]);
-
   const selectTab = (tabId: string) => {
     userNavRef.current = true;
     setActiveTabId(tabId);
@@ -181,96 +183,145 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const insertMarkdown = (afterRowId: string | null) => {
-    if (!activeTab) return;
-    const { book: next, row } = insertMarkdownRow(book, activeTab.id, afterRowId, '');
-    setBook(ensureDefaultPage(normalizePageTabIds(next)));
-    setEditingRowId(row.id);
+  const insertMarkdown = (afterBlockId: string | null) => {
+    if (!activeTab || !canEdit) return;
+    const { book: next, block, tab } = insertMarkdownBlock(book, activeTab.id, afterBlockId, '');
+    applyBook(next);
+    setEditingBlockId(block.id);
+    void persistTab(tab).then((err) => setPersistError(err));
   };
 
-  const saveMarkdown = (rowId: string, body: string) => {
-    if (!activeTab) return;
-    applyBook(updateMarkdownBody(book, activeTab.id, rowId, body));
-    setEditingRowId(null);
+  const saveMarkdown = (blockId: string, body: string) => {
+    if (!activeTab || !canEdit) return;
+    const next = updateMarkdownBody(book, activeTab.id, blockId, body);
+    const normalized = applyBook(next);
+    const tab = normalized.tabs.find((t) => t.id === activeTab.id)!;
+    setEditingBlockId(null);
+    void persistTab(tab).then((err) => setPersistError(err));
   };
 
-  const cancelMarkdown = (rowId: string) => {
-    if (!activeTab) return;
-    const row = activeTab.rows.find((r) => r.id === rowId);
-    if (row?.type === 'markdown' && row.createdBy === 'user' && !row.body.trim()) {
-      applyBook(removeMarkdownRow(book, activeTab.id, rowId));
+  const cancelMarkdown = (blockId: string) => {
+    if (!activeTab || !canEdit) return;
+    const block = activeTab.blocks.find((b) => b.id === blockId);
+    if (block?.type === 'markdown' && !block.body.trim()) {
+      const next = removeMarkdownBlock(book, activeTab.id, blockId);
+      const normalized = applyBook(next);
+      const tab = normalized.tabs.find((t) => t.id === activeTab.id)!;
+      void persistTab(tab).then((err) => setPersistError(err));
     }
-    setEditingRowId(null);
+    setEditingBlockId(null);
   };
 
   const handleAddTab = () => {
+    if (!canEdit) return;
     const pageId = pages.length ? activePageId : undefined;
     const { book: next, tab } = addTab(book, { pageId });
-    applyBook(next);
+    const normalized = applyBook(next);
     userNavRef.current = true;
     setActiveTabId(tab.id);
+    void (async () => {
+      const errTab = await persistTab(tab);
+      const errMeta = await persistMeta(normalized);
+      setPersistError(errTab ?? errMeta);
+    })();
   };
 
   const handleAddPage = () => {
+    if (!canEdit) return;
     const { book: next, page } = addPage(book);
-    applyBook(next);
+    const normalized = applyBook(next);
     userNavRef.current = true;
     setActivePageId(page.id);
     setActiveTabId(page.tabIds[0] ?? next.defaultTabId ?? '');
+    void (async () => {
+      const newTabs = normalized.tabs.filter((t) => page.tabIds.includes(t.id));
+      for (const t of newTabs) {
+        const err = await persistTab(t);
+        if (err) {
+          setPersistError(err);
+          return;
+        }
+      }
+      setPersistError(await persistMeta(normalized));
+    })();
   };
 
   const handleRenameTab = (tabId: string, label: string) => {
-    applyBook(renameTab(book, tabId, label));
+    if (!canEdit) return;
+    const normalized = applyBook(renameTab(book, tabId, label));
+    const tab = normalized.tabs.find((t) => t.id === tabId);
+    if (tab) void persistTab(tab).then((err) => setPersistError(err));
   };
 
   const handleRenamePage = (pageId: string, label: string) => {
-    applyBook(renamePage(book, pageId, label));
+    if (!canEdit) return;
+    const normalized = applyBook(renamePage(book, pageId, label));
+    void persistMeta(normalized).then((err) => setPersistError(err));
   };
 
-  const handleReorderRows = (movedId: string, beforeId: string) => {
-    if (!activeTab) return;
-    applyBook(reorderRowsBefore(book, activeTab.id, movedId, beforeId));
+  const handleReorderBlocks = (movedId: string, beforeId: string) => {
+    if (!activeTab || !canEdit) return;
+    const normalized = applyBook(reorderBlocksBefore(book, activeTab.id, movedId, beforeId));
+    const tab = normalized.tabs.find((t) => t.id === activeTab.id)!;
+    void persistTab(tab).then((err) => setPersistError(err));
   };
 
-  const handleMoveRow = (rowId: string, direction: 'up' | 'down') => {
-    if (!activeTab) return;
-    applyBook(moveRowInTab(book, activeTab.id, rowId, direction));
+  const handleMoveBlock = (blockId: string, direction: 'up' | 'down') => {
+    if (!activeTab || !canEdit) return;
+    const normalized = applyBook(moveBlockInTab(book, activeTab.id, blockId, direction));
+    const tab = normalized.tabs.find((t) => t.id === activeTab.id)!;
+    void persistTab(tab).then((err) => setPersistError(err));
   };
 
   const handleDeleteTab = async (tabId: string) => {
+    if (!canEdit) return;
     const tab = book.tabs.find((t) => t.id === tabId);
     if (!tab) return;
     const ok = await requestConfirm(
       'Delete tab',
-      `Delete tab “${tab.label}” and all blocks in it? This cannot be undone.`,
+      `Delete tab “${tab.label}” and its markdown file? This cannot be undone.`,
     );
     if (!ok) return;
     const pageTabs = pages.length
       ? (pages.find((p) => p.id === activePageId)?.tabIds ?? [])
       : allTabs.map((t) => t.id);
     const fallback = pickTabOnPageAfterDelete(pageTabs, tabId);
-    applyBook(deleteTab(book, tabId));
+    const file = tab.sourceFile;
+    const normalized = applyBook(deleteTab(book, tabId));
     if (fallback) setActiveTabId(fallback);
+    const errDel = await deleteTabFile(file);
+    const errMeta = await persistMeta(normalized);
+    setPersistError(errDel.error ?? errMeta);
   };
 
   const handleDeletePage = async (pageId: string) => {
+    if (!canEdit) return;
     const page = pages.find((p) => p.id === pageId);
     if (!page) return;
     const tabCount = page.tabIds.length;
     const ok = await requestConfirm(
       'Delete page',
-      `Delete page “${page.label}” and ${tabCount} tab${tabCount === 1 ? '' : 's'} on it (all rows inside)? This cannot be undone.`,
+      `Delete page “${page.label}” and ${tabCount} tab${tabCount === 1 ? '' : 's'} on it? This cannot be undone.`,
     );
     if (!ok) return;
     const neighbor = adjacentPageAfterDelete(pages, pageId);
+    const doomed = book.tabs.filter((t) => page.tabIds.includes(t.id));
     const next = deletePage(book, pageId);
-    applyBook(next);
+    const normalized = applyBook(next);
     if (neighbor) {
       setActivePageId(neighbor.id);
       setActiveTabId(neighbor.tabIds[0] ?? next.defaultTabId ?? '');
     } else if (next.tabs[0]) {
       setActiveTabId(next.tabs[0].id);
     }
+    for (const t of doomed) {
+      const err = await deleteTabFile(t.sourceFile);
+      if (!err.ok) {
+        setPersistError(err.error ?? 'Delete failed');
+        return;
+      }
+    }
+    setPersistError(await persistMeta(normalized));
   };
 
   return (
@@ -280,38 +331,44 @@ export default function App() {
         tabs={tabs}
         activeTabId={activeTab?.id ?? ''}
         onSelectTab={selectTab}
-        onAddTab={handleAddTab}
-        onRenameTab={handleRenameTab}
-        onDeleteTab={handleDeleteTab}
+        onAddTab={canEdit ? handleAddTab : undefined}
+        onRenameTab={canEdit ? handleRenameTab : undefined}
+        onDeleteTab={canEdit ? handleDeleteTab : undefined}
         pages={pages}
         activePageId={activePageId}
         onSelectPage={selectPage}
-        onAddPage={handleAddPage}
-        onRenamePage={handleRenamePage}
-        onDeletePage={handleDeletePage}
+        onAddPage={canEdit ? handleAddPage : undefined}
+        onRenamePage={canEdit ? handleRenamePage : undefined}
+        onDeletePage={canEdit ? handleDeletePage : undefined}
         banner={
-          <PersistBanner last={lastPersist} error={persistError} previewMode={previewMode} />
+          persistError ? (
+            <div className="dbk-persist-banner dbk-persist-banner-error" role="status">
+              Could not save: {persistError}
+            </div>
+          ) : null
         }
       >
         {activeTab ? (
           <RowRenderer
             key={themeKey}
-            rows={activeTab.rows}
+            blocks={activeTab.blocks}
             table={table}
-            book={book}
-            onInsertMarkdown={insertMarkdown}
-            onSaveMarkdown={saveMarkdown}
-            onCancelMarkdown={cancelMarkdown}
-            editingRowId={editingRowId}
-            onReorderRows={handleReorderRows}
-            onMoveRow={handleMoveRow}
+            editableMarkdown={canEdit}
+            onInsertMarkdown={canEdit ? insertMarkdown : undefined}
+            onSaveMarkdown={canEdit ? saveMarkdown : undefined}
+            onCancelMarkdown={canEdit ? cancelMarkdown : undefined}
+            editingBlockId={editingBlockId}
+            onReorderBlocks={canEdit ? handleReorderBlocks : undefined}
+            onMoveBlock={canEdit ? handleMoveBlock : undefined}
           />
         ) : (
           <p className="dbk-empty-tab">
             No tabs on this page.{' '}
-            <button type="button" className="dbk-link-btn" onClick={handleAddTab}>
-              Add a tab
-            </button>
+            {canEdit ? (
+              <button type="button" className="dbk-link-btn" onClick={handleAddTab}>
+                Add a tab
+              </button>
+            ) : null}
           </p>
         )}
       </PageLayout>

@@ -1,6 +1,17 @@
 import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
 import { ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
+import type { ChartMeta } from '../data/types';
 import type { BookChartProps } from './registry';
+
+export const meta: ChartMeta = {
+  title: 'Revenue by cafe',
+  subtitle: 'H1 total · ranked',
+  query: {
+    groupBy: ['cafe'],
+    aggregate: [{ fn: 'sum', column: 'amount', as: 'revenue' }],
+    orderBy: [{ column: 'revenue', direction: 'desc' }],
+  },
+};
 
 export default function RevenueByCafe({ data }: BookChartProps) {
   const c = chartColors();

@@ -1,27 +1,34 @@
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { MarkdownRow as MarkdownRowModel } from '../../data/types';
+import type { MarkdownBlock } from '../../data/types';
 
 type Props = {
-  row: MarkdownRowModel;
+  block: MarkdownBlock;
+  editable?: boolean;
   onSave?: (body: string) => void;
   onCancel?: () => void;
   startEditing?: boolean;
 };
 
-export function MarkdownRow({ row, onSave, onCancel, startEditing = false }: Props) {
-  const editable = Boolean(onSave) && row.createdBy === 'user';
-  const [editing, setEditing] = useState(editable && (startEditing || row.body === ''));
-  const [draft, setDraft] = useState(row.body);
+export function MarkdownRow({
+  block,
+  editable = false,
+  onSave,
+  onCancel,
+  startEditing = false,
+}: Props) {
+  const canEdit = Boolean(onSave) && editable;
+  const [editing, setEditing] = useState(canEdit && (startEditing || block.editing || block.body === ''));
+  const [draft, setDraft] = useState(block.body);
 
   useEffect(() => {
-    setDraft(row.body);
-  }, [row.body, row.id]);
+    setDraft(block.body);
+  }, [block.body, block.id]);
 
   useEffect(() => {
-    if (startEditing && editable) setEditing(true);
-  }, [startEditing, editable, row.id]);
+    if ((startEditing || block.editing) && canEdit) setEditing(true);
+  }, [startEditing, block.editing, canEdit, block.id]);
 
   const save = () => {
     onSave?.(draft);
@@ -29,16 +36,16 @@ export function MarkdownRow({ row, onSave, onCancel, startEditing = false }: Pro
   };
 
   const cancel = () => {
-    setDraft(row.body);
+    setDraft(block.body);
     setEditing(false);
     onCancel?.();
   };
 
-  const showBody = row.body.trim().length > 0;
+  const showBody = block.body.trim().length > 0;
 
   return (
-    <article className={`dbk-row dbk-markdown${editable ? ' dbk-markdown-user' : ''}`}>
-      {editable && !editing ? (
+    <article className={`dbk-row dbk-markdown${canEdit ? ' dbk-markdown-user' : ''}`}>
+      {canEdit && !editing ? (
         <div className="dbk-markdown-toolbar">
           <button type="button" className="dbk-markdown-edit-btn" onClick={() => setEditing(true)}>
             Edit
@@ -67,9 +74,9 @@ export function MarkdownRow({ row, onSave, onCancel, startEditing = false }: Pro
           </div>
         </div>
       ) : showBody ? (
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{row.body}</ReactMarkdown>
-      ) : editable ? null : (
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{row.body}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{block.body}</ReactMarkdown>
+      ) : canEdit ? null : (
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{block.body}</ReactMarkdown>
       )}
     </article>
   );

@@ -1,0 +1,22 @@
+title: Cafe network — H1 2025
+experimentId: demo-cafes-h1
+description: "Demo DataBook: revenue, mix, ticket size, wait vs rating, member share."
+generatedAt: 2026-11-16T00:00:00.000Z
+defaultTabId: overview
+pages:
+  - id: page-main
+    label: Cafes
+    order: 0
+    tabIds:
+      - overview
+      - sales
+      - experience
+conventions:
+  population: All line items Jan–Jun 2025 across Harbor, Market, Campus.
+  notes:
+    - Charts are src/charts/*.tsx components.
+    - Amounts are USD line-item totals.
+  palette:
+    "0": Drink / primary series
+    "1": Food / Harbor emphasis
+    "2": Merch / member share
