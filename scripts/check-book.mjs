@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Optional visual / HTTP check for handoff or UI suspicion.
- * Honesty lint lives in `npm run ok` — this script does not re-run unit tests.
+ * Query smoke lives in `npm run ok` — this script does not re-run unit tests.
  *
  * Usage:
  *   npm run check:visual -- --url http://127.0.0.1:5173/
@@ -34,7 +34,7 @@ const screenshot = flagValue('--screenshot');
 const wantVisual = args.includes('--visual') || Boolean(screenshot);
 
 if (!wantVisual && !url) {
-  console.error('check-book: use `npm run ok` for honesty lint; pass --visual --url … for screenshots');
+  console.error('check-book: use `npm run ok` for query smoke; pass --visual --url … for screenshots');
   process.exit(2);
 }
 

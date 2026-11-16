@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
+import { resolveBookChart } from '../../charts/registry';
 import type { BookDocument, ChartBlock, Table } from '../../data/types';
 import { resolveChartBlock } from '../../data/resolveChartBlock';
 import { QueryError, runQuery } from '../../data/runQuery';
@@ -37,7 +38,11 @@ export function ChartSlot({ block, table, book, flex = 1 }: Props) {
   const header = (
     <div className="dbk-chart-header">
       <h3 className="dbk-chart-title">{title}</h3>
-      {subtitle ? <p className="dbk-chart-subtitle">{subtitle}</p> : <p className="dbk-chart-subtitle dbk-chart-subtitle-spacer" aria-hidden />}
+      {subtitle ? (
+        <p className="dbk-chart-subtitle">{subtitle}</p>
+      ) : (
+        <p className="dbk-chart-subtitle dbk-chart-subtitle-spacer" aria-hidden />
+      )}
     </div>
   );
 
@@ -70,10 +75,28 @@ export function ChartSlot({ block, table, book, flex = 1 }: Props) {
     );
   }
 
+  let body: ReactNode = null;
+  if (live.component) {
+    const Comp = resolveBookChart(live.component);
+    if (!Comp) {
+      body = (
+        <div className="dbk-chart-error">
+          Unknown chart component "{live.component}". Add src/charts/{live.component}.tsx
+        </div>
+      );
+    } else {
+      body = <Comp data={result.rows} />;
+    }
+  } else if (live.recharts) {
+    body = <RechartsRenderer data={result.rows} spec={live.recharts} />;
+  } else {
+    body = <div className="dbk-chart-error">Chart has no component or recharts spec</div>;
+  }
+
   return (
     <div className="dbk-chart-slot" style={style}>
       {header}
-      <RechartsRenderer data={result.rows} spec={live.recharts!} />
+      {body}
       {live.notes ? <p className="dbk-chart-notes">{live.notes}</p> : null}
     </div>
   );

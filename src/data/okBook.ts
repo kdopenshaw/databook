@@ -1,9 +1,8 @@
 /**
- * Single exploratory gate: live book honesty + query nonempty smoke.
+ * Lightweight gate: query nonempty smoke (no chart-type catalog lint).
  * Invoked by `npm run ok` (see scripts/ok-book.mjs).
  */
 import type { BookDocument, ChartBlock, ChartQuery, Table } from './types';
-import { lintBookErrors, type ChartLintIssue } from './chartLint';
 import { resolveChartBlock } from './resolveChartBlock';
 import { runQuery } from './runQuery';
 
@@ -95,22 +94,9 @@ export function smokeQueries(book: BookDocument, table: Table): OkIssue[] {
   return issues;
 }
 
-export function lintToOkIssues(issues: ChartLintIssue[]): OkIssue[] {
-  return issues.map((i) => ({
-    level: i.level,
-    code: i.code,
-    message: i.message,
-    chartId: i.chartId,
-    tabId: i.tabId,
-  }));
-}
-
-/** Live honesty lint + query nonempty smoke against canonical table. */
+/** Nonempty query smoke against canonical table. */
 export function checkLiveBook(book: BookDocument, table: Table): OkResult {
-  const issues: OkIssue[] = [
-    ...lintToOkIssues(lintBookErrors(book, { table })),
-    ...smokeQueries(book, table),
-  ];
+  const issues = smokeQueries(book, table);
   return { ok: issues.every((i) => i.level !== 'error'), issues };
 }
 

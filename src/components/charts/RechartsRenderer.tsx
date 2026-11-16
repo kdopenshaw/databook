@@ -40,9 +40,7 @@ function valueFormatter(spec: RechartsSpec) {
 }
 
 /**
- * Thin flexible Recharts renderer.
- * Accepts a declarative `recharts` spec (chart root + series marks).
- * Stock marks: Line, Bar, Area, Scatter — plus layout/domains/stackId/colorBy/… (see types).
+ * Legacy JSON → Recharts fallback. Prefer agent-authored `src/charts/*.tsx` + `component`.
  */
 export function RechartsRenderer({ data, spec }: Props) {
   const colors = chartColors();

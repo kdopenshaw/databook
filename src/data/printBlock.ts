@@ -3,7 +3,7 @@
  * Invoked by `npm run print-block -- <chartId>` (see scripts/print-block.mjs).
  */
 import type { BookDocument, ChartBlock, ChartQuery, DataRow, Table, Value } from './types';
-import { collectBlocks } from './chartLint';
+import { collectBlocks } from './chartBlocks';
 import { resolveChartBlock } from './resolveChartBlock';
 import { runQuery } from './runQuery';
 
