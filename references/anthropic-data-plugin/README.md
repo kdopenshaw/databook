@@ -1,5 +1,7 @@
 # Data Analyst Plugin
 
+> **DataBook packaging:** This tree is a vendored upstream plugin. Under DataBook, `skills/build-dashboard` and `skills/data-context-extractor` are moved to `quarantined/` (not agent-discovered). Chart-form skills (`create-viz`, `data-visualization`) live only here — not duplicated under `references/anthropic-dataviz/`. See `quarantined/README.md` and repo `SKILL.md` router.
+
 A data analyst plugin primarily designed for [Cowork](https://claude.com/product/cowork), Anthropic's agentic desktop application — though it also works in Claude Code. SQL queries, data exploration, visualization, dashboards, and insight generation. Works with any data warehouse, any SQL dialect, and any analytics stack.
 
 ## Installation

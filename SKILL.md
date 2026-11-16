@@ -35,7 +35,7 @@ Do **not** re-init. **Every** extend round (including R2/R3/cold) must complete 
 | 3 | Find the generator (`src/data/transforms/…`) | Prefer editing it over hand-editing `rows.json` |
 | 4 | Apply → `mergeUserRows` → **`npm run ok`** (blocking) | Artifacts + live `lintBook(rows, { table })` + nonempty query smoke green |
 | 5 | Inspect query (when editing a chart) | **`npm run print-block -- <chartId>`** — same `runQuery` as the app; CSV/table on stdout (no browser) |
-| 6 | Open **validate-data** / **create-viz** | **Only when choosing new chart forms / cuts** — not every regen |
+| 6 | Open chart-form refs (only for **new** forms/cuts) | Read `references/anthropic-dataviz/METHOD.md`, then `references/anthropic-data-plugin/skills/create-viz/` and `…/data-visualization/` — not every regen |
 | 7 | Visual | **Optional** on handoff or UI doubt: `npm run check:visual -- --url http://127.0.0.1:5173/` |
 
 **Exploratory loop:** leave `npm run dev` running; after each edit run **`npm run ok`**. To inspect a chart’s query slice without the browser, run **`npm run print-block -- <chartId>`** (optional `--format table`, `--limit N`). Do **not** also run `lint:charts`, `check`, `extend-check`, `npm test`, or `check:visual` every round (`check`/`validate`/`extend-check` are aliases or subsets of `ok`).
@@ -66,7 +66,7 @@ House rules that must not live only in a private `AGENT_NOTES.md`:
 | 1 | **Init** (automatic if needed) | scaffold + trivial sample **including `scripts/`** |
 | 2 | **Profile** sources | → Anthropic data plugin → `src/data/understanding.md` |
 | 3 | **Transform** | `src/data/canonical.json` — **one** JSON file of normalized rows |
-| 4 | **Choose charts** | → Anthropic dataviz; pick Recharts compositions from **stock RechartsSpec** |
+| 4 | **Choose charts** | Read `references/anthropic-dataviz/METHOD.md`, then plugin `create-viz/` + `data-visualization/`; emit **stock RechartsSpec** only |
 | 5 | **Emit document** | `src/data/rows.json` (`BookDocument`); inlined `query` + `recharts` + `encoding`; set `conventions` |
 | 6 | **Sanity-check (blocking)** | **`npm run ok`** (artifacts + live honesty lint with canonical + query nonempty smoke). After chart/query edits, **`npm run print-block -- <chartId>`** to confirm the slice. Optional: `check:visual` on handoff. Multi-chart rows need a clear comparison purpose. |
 
@@ -74,19 +74,22 @@ House rules that must not live only in a private `AGENT_NOTES.md`:
 
 ## Reference router (not ambient)
 
-Open bundled references **only at the step that needs them**. Do **not** dump all of `references/` into context at start.
+Open bundled references **only at the step that needs them**. Do **not** dump all of `references/` into context at start. Do **not** open `references/anthropic-data-plugin/quarantined/` (excluded upstream skills).
 
 | When | Read |
 |------|------|
-| Profiling / exploring unfamiliar sources | `references/anthropic-data-plugin/skills/explore-data/` and related (`validate-data`, `statistical-analysis`, `sql-queries`, `analyze`, …) |
-| Validation / statistical checks when cutting new analysis | `references/anthropic-data-plugin/skills/validate-data/`, `statistical-analysis/`, plus dataviz zero-baseline / scale guidance |
-| Choosing chart form / encodings | `references/anthropic-dataviz/METHOD.md`, then `create-viz/` / `data-visualization/` |
+| Profiling / exploring unfamiliar sources | `references/anthropic-data-plugin/skills/explore-data/` (optional related: `validate-data`, `statistical-analysis`, `sql-queries`, `write-query`) |
+| Broader “answer this data question” workflows | `references/anthropic-data-plugin/skills/analyze/` — **optional**, not required for book emission |
+| Validation / statistical checks when cutting new analysis | `references/anthropic-data-plugin/skills/validate-data/`, `statistical-analysis/`; for chart honesty prefer this file’s house rules + `npm run ok` |
+| Choosing chart form / encodings | `references/anthropic-dataviz/METHOD.md`, then `references/anthropic-data-plugin/skills/create-viz/` and `references/anthropic-data-plugin/skills/data-visualization/` |
 | Layout / rows / scaffold rules | This file + `databook-spec.md` + `src/data/types.ts` |
 
 ## RechartsSpec (stock renderer)
 
+DataBook’s scaffold renderer is a **closed stock set** (not “any Recharts component”).  
 Supported chart roots: `LineChart`, `BarChart`, `AreaChart`, `ScatterChart`.  
-Supported series marks: `Line`, `Bar`, `Area`, `Scatter`.
+Supported series marks: `Line`, `Bar`, `Area`, `Scatter`.  
+Unknown roots/marks fail `npm run ok` / chart lint — extend the stock renderer before emitting new ones.
 
 Important optional fields (all in `src/data/types.ts`):
 

@@ -20,5 +20,8 @@ Avoid pie/donut for fine comparisons (prefer bar); never 3D; prefer small multip
 
 ## How DataBook uses this
 
-- DataBook skill reads this method **and** `create-viz/` + `data-visualization/` before choosing chart types or encodings.
-- Runtime still renders via the DataBook catalog (Recharts by default)—these references guide *decisions*, not a second renderer.
+- Before choosing chart types or encodings, read this method **and** the plugin skills:
+  - `references/anthropic-data-plugin/skills/create-viz/`
+  - `references/anthropic-data-plugin/skills/data-visualization/`
+- Map recommendations onto DataBook’s **stock RechartsSpec** (`LineChart` / `BarChart` / `AreaChart` / `ScatterChart` and marks `Line` / `Bar` / `Area` / `Scatter`). Forms outside that set (heatmap, sankey, etc.) need a different cut or prose — do not invent unsupported marks.
+- Runtime still renders via the DataBook stock renderer — these references guide *decisions*, not a second renderer.
