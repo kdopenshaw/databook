@@ -3,7 +3,11 @@ import {
   addPage,
   addTab,
   applyStructureOverlay,
+  deletePage,
+  deleteTab,
+  ensureDefaultPage,
   extractStructureOverlay,
+  normalizePageTabIds,
   reorderRowsBefore,
   renameTab,
 } from './bookEdits';
@@ -31,6 +35,12 @@ describe('bookEdits', () => {
     expect(book.tabs).toHaveLength(2);
   });
 
+  it('ensureDefaultPage creates a home page when missing', () => {
+    const next = ensureDefaultPage(base());
+    expect(next.pages).toHaveLength(1);
+    expect(next.pages![0].tabIds).toEqual(['overview']);
+  });
+
   it('addPage wraps existing tabs on first page', () => {
     const { book, page } = addPage(base());
     expect(page.tabIds).toEqual(['overview']);
@@ -48,6 +58,39 @@ describe('bookEdits', () => {
       .sort((x, y) => x.order - y.order)
       .map((r) => r.id);
     expect(ids).toEqual(['b', 'a']);
+  });
+
+  it('normalizePageTabIds keeps each tab on one page', () => {
+    const book: BookDocument = {
+      title: 'T',
+      tabs: [
+        { id: 't1', label: 'A', order: 0, rows: [] },
+        { id: 't2', label: 'B', order: 1, rows: [] },
+      ],
+      pages: [
+        { id: 'p1', label: 'P1', order: 0, tabIds: ['t1', 't2'] },
+        { id: 'p2', label: 'P2', order: 1, tabIds: ['t2'] },
+      ],
+    };
+    const next = normalizePageTabIds(book);
+    expect(next.pages![0].tabIds).toEqual(['t1']);
+    expect(next.pages![1].tabIds).toEqual(['t2']);
+  });
+
+  it('deleteTab removes tab and membership', () => {
+    const book = addPage(base()).book;
+    const tabId = book.tabs[0].id;
+    const next = deleteTab(book, tabId);
+    expect(next.tabs).toHaveLength(0);
+    expect(next.pages![0].tabIds).toEqual([]);
+  });
+
+  it('deletePage removes listed tabs', () => {
+    const book = addPage(base()).book;
+    const pageId = book.pages![0].id;
+    const next = deletePage(book, pageId);
+    expect(next.pages).toBeUndefined();
+    expect(next.tabs).toHaveLength(0);
   });
 
   it('round-trips structure overlay', () => {

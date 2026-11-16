@@ -8,17 +8,18 @@ import { InlineRename } from './InlineRename';
 
 type Props = {
   title: string;
-  experimentId?: string;
   tabs: TabSection[];
   activeTabId: string;
   onSelectTab: (tabId: string) => void;
   onAddTab?: () => void;
   onRenameTab?: (tabId: string, label: string) => void;
+  onDeleteTab?: (tabId: string) => void;
   pages?: BookPage[];
   activePageId?: string;
   onSelectPage?: (pageId: string) => void;
   onAddPage?: () => void;
   onRenamePage?: (pageId: string, label: string) => void;
+  onDeletePage?: (pageId: string) => void;
   footer?: ReactNode;
   children: ReactNode;
 };
@@ -31,17 +32,18 @@ type Props = {
  */
 export function PageLayout({
   title,
-  experimentId,
   tabs,
   activeTabId,
   onSelectTab,
   onAddTab,
   onRenameTab,
+  onDeleteTab,
   pages = [],
   activePageId = '',
   onSelectPage,
   onAddPage,
   onRenamePage,
+  onDeletePage,
   footer,
   children,
 }: Props) {
@@ -64,6 +66,7 @@ export function PageLayout({
           onSelectPage={onSelectPage ?? (() => {})}
           onAddPage={onAddPage}
           onRenamePage={onRenamePage}
+          onDeletePage={onDeletePage}
         />
       ) : null}
       <div className="dbk-main-column">
@@ -71,15 +74,7 @@ export function PageLayout({
           {pageNav ? (
             <PanelToggle expanded={showSidebar} onClick={() => setSidebarOpen((v) => !v)} />
           ) : null}
-          <div className="dbk-title">
-            {title}
-            {experimentId ? (
-              <>
-                <span className="dbk-title-sep"> · </span>
-                <span className="dbk-experiment">{experimentId}</span>
-              </>
-            ) : null}
-          </div>
+          <div className="dbk-title">{title}</div>
           <div className="dbk-header-actions">
             <ThemeToggle />
           </div>
@@ -116,6 +111,7 @@ export function PageLayout({
             onSelect={onSelectTab}
             onAddTab={onAddTab}
             onRenameTab={onRenameTab}
+            onDeleteTab={onDeleteTab}
           >
             {children}
           </BookTabs>

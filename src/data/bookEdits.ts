@@ -108,6 +108,27 @@ export function applyRowOrder(tab: TabSection, ids: string[]): TabSection {
   return { ...tab, rows };
 }
 
+/** Each tab id appears on at most one page; later pages win ties; orphans attach to the first page. */
+export function normalizePageTabIds(book: BookDocument): BookDocument {
+  if (!book.pages?.length) return book;
+  const sorted = [...book.pages].sort((a, b) => a.order - b.order);
+  const owner = new Map<string, string>();
+  for (const p of sorted) {
+    for (const id of p.tabIds) {
+      if (book.tabs.some((t) => t.id === id)) owner.set(id, p.id);
+    }
+  }
+  const pages = sorted.map((p) => ({
+    ...p,
+    tabIds: p.tabIds.filter((id) => owner.get(id) === p.id),
+  }));
+  const orphans = book.tabs.filter((t) => !owner.has(t.id)).map((t) => t.id);
+  if (orphans.length && pages[0]) {
+    pages[0] = { ...pages[0], tabIds: [...pages[0].tabIds, ...orphans] };
+  }
+  return { ...book, pages };
+}
+
 export function addTab(
   book: BookDocument,
   opts?: { label?: string; pageId?: string; activate?: boolean },
@@ -123,12 +144,29 @@ export function addTab(
   let pages = book.pages;
   if (pages?.length) {
     const pageId = opts?.pageId ?? pages[0]?.id;
-    pages = pages.map((p) =>
-      p.id === pageId ? { ...p, tabIds: [...p.tabIds, id] } : p,
-    );
+    pages = pages.map((p) => ({
+      ...p,
+      tabIds:
+        p.id === pageId
+          ? [...p.tabIds.filter((tid) => tid !== id), id]
+          : p.tabIds.filter((tid) => tid !== id),
+    }));
   }
-  const next = { ...book, tabs: [...book.tabs, tab], pages };
+  const next = normalizePageTabIds({ ...book, tabs: [...book.tabs, tab], pages });
   return { book: next, tab };
+}
+
+/** Tabs-only books get a single home page so the page sidebar is never empty. */
+export function ensureDefaultPage(book: BookDocument, label = 'Home'): BookDocument {
+  if (book.pages?.length) return normalizePageTabIds(book);
+  if (!book.tabs.length) return book;
+  const page: BookPage = {
+    id: newUserPageId(),
+    label,
+    order: 0,
+    tabIds: book.tabs.map((t) => t.id),
+  };
+  return normalizePageTabIds({ ...book, pages: [page] });
 }
 
 export function addPage(book: BookDocument, label = 'New page'): { book: BookDocument; page: BookPage } {
@@ -143,13 +181,16 @@ export function addPage(book: BookDocument, label = 'New page'): { book: BookDoc
       order: 0,
       tabIds: book.tabs.map((t) => t.id),
     };
-    return { book: { ...book, pages: [page] }, page };
+    return { book: normalizePageTabIds({ ...book, pages: [page] }), page };
   }
 
   const { book: withTab, tab } = addTab(book, { label: 'Overview' });
   const page: BookPage = { id, label, order, tabIds: [tab.id] };
   const pages = [...(withTab.pages ?? []), page];
-  return { book: { ...withTab, pages, tabs: withTab.tabs }, page };
+  return {
+    book: normalizePageTabIds({ ...withTab, pages, tabs: withTab.tabs }),
+    page,
+  };
 }
 
 export function renameTab(book: BookDocument, tabId: string, label: string): BookDocument {
@@ -191,4 +232,33 @@ export function reorderRowsBefore(
 
   const tabs = book.tabs.map((t, i) => (i === tabIndex ? { ...t, rows: next } : t));
   return { ...book, tabs };
+}
+
+export function deleteTab(book: BookDocument, tabId: string): BookDocument {
+  const tabs = book.tabs.filter((t) => t.id !== tabId);
+  const pages = book.pages?.map((p) => ({
+    ...p,
+    tabIds: p.tabIds.filter((id) => id !== tabId),
+  }));
+  let defaultTabId = book.defaultTabId;
+  if (defaultTabId === tabId) defaultTabId = tabs[0]?.id;
+  return normalizePageTabIds({ ...book, tabs, pages, defaultTabId });
+}
+
+/** Deletes the page and every tab listed on it (rows included). */
+export function deletePage(book: BookDocument, pageId: string): BookDocument {
+  const pages = book.pages ?? [];
+  const victim = pages.find((p) => p.id === pageId);
+  if (!victim) return book;
+
+  const removeIds = new Set(victim.tabIds);
+  const tabs = book.tabs.filter((t) => !removeIds.has(t.id));
+  const nextPages = pages.filter((p) => p.id !== pageId);
+  let defaultTabId = book.defaultTabId;
+  if (defaultTabId && removeIds.has(defaultTabId)) defaultTabId = tabs[0]?.id;
+
+  const partial = { ...book, tabs, pages: nextPages.length ? nextPages : undefined, defaultTabId };
+  if (!nextPages.length && tabs.length) return ensureDefaultPage(partial);
+  if (!nextPages.length) return partial;
+  return normalizePageTabIds(partial);
 }

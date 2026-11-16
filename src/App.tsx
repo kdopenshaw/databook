@@ -5,12 +5,16 @@ import { RowRenderer } from './components/rows/RowRenderer';
 import {
   addPage,
   addTab,
+  deletePage,
+  deleteTab,
+  ensureDefaultPage,
+  normalizePageTabIds,
   renamePage,
   renameTab,
   reorderRowsBefore,
 } from './data/bookEdits';
 import { insertMarkdownRow, updateMarkdownBody } from './data/insertMarkdown';
-import { getCanonicalMeta, loadCanonical } from './data/loadCanonical';
+import { loadCanonical } from './data/loadCanonical';
 import type { BookDocument, BookPage } from './data/types';
 import { persistBookToSource } from './data/persistBook';
 import { loadBookWithUserRows } from './data/userBookStore';
@@ -49,10 +53,11 @@ function pageForTab(pages: BookPage[], tabId: string): BookPage | undefined {
 }
 
 export default function App() {
-  const [book, setBook] = useState<BookDocument>(() => loadBookWithUserRows(rowsJson as BookDocument));
+  const [book, setBook] = useState<BookDocument>(() =>
+    ensureDefaultPage(normalizePageTabIds(loadBookWithUserRows(rowsJson as BookDocument))),
+  );
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const table = useMemo(() => loadCanonical(), []);
-  const meta = useMemo(() => getCanonicalMeta(), []);
   const allTabs = useMemo(() => [...book.tabs].sort((a, b) => a.order - b.order), [book.tabs]);
   const pages = useMemo(() => [...(book.pages ?? [])].sort((a, b) => a.order - b.order), [book.pages]);
   const defaultId = book.defaultTabId ?? allTabs[0]?.id ?? '';
@@ -67,15 +72,18 @@ export default function App() {
   const themeKey = useThemeKey();
 
   const persist = (next: BookDocument) => {
-    setBook(next);
-    void persistBookToSource(next);
+    const normalized = ensureDefaultPage(normalizePageTabIds(next));
+    setBook(normalized);
+    void persistBookToSource(normalized);
   };
 
   const tabs = useMemo(() => {
     if (!pages.length) return allTabs;
     const page = pages.find((p) => p.id === activePageId) ?? pages[0];
-    const idSet = new Set(page?.tabIds ?? []);
-    return allTabs.filter((t) => idSet.has(t.id));
+  const byId = new Map(allTabs.map((t) => [t.id, t]));
+    return (page?.tabIds ?? [])
+      .map((id) => byId.get(id))
+      .filter((t): t is (typeof allTabs)[number] => Boolean(t));
   }, [allTabs, pages, activePageId]);
 
   useEffect(() => {
@@ -173,27 +181,43 @@ export default function App() {
     persist(reorderRowsBefore(book, activeTab.id, movedId, beforeId));
   };
 
+  const handleDeleteTab = (tabId: string) => {
+    const pageTabs = pages.length
+      ? (pages.find((p) => p.id === activePageId)?.tabIds ?? [])
+      : allTabs.map((t) => t.id);
+    const idx = pageTabs.indexOf(tabId);
+    const fallback = pageTabs[idx + 1] ?? pageTabs[idx - 1] ?? allTabs.find((t) => t.id !== tabId)?.id;
+    persist(deleteTab(book, tabId));
+    if (fallback) setActiveTabId(fallback);
+  };
+
+  const handleDeletePage = (pageId: string) => {
+    const next = deletePage(book, pageId);
+    persist(next);
+    const remaining = next.pages ?? [];
+    if (remaining.length) {
+      setActivePageId(remaining[0].id);
+      setActiveTabId(remaining[0].tabIds[0] ?? next.defaultTabId ?? '');
+    } else if (next.tabs[0]) {
+      setActiveTabId(next.tabs[0].id);
+    }
+  };
+
   return (
     <PageLayout
       title={book.title}
-      experimentId={book.experimentId}
       tabs={tabs}
       activeTabId={activeTab?.id ?? defaultId}
       onSelectTab={selectTab}
       onAddTab={handleAddTab}
       onRenameTab={handleRenameTab}
+      onDeleteTab={handleDeleteTab}
       pages={pages}
       activePageId={activePageId}
-      onSelectPage={pages.length ? selectPage : undefined}
+      onSelectPage={selectPage}
       onAddPage={handleAddPage}
       onRenamePage={handleRenamePage}
-      footer={
-        <>
-          canonical {meta.hash ?? '—'} · {meta.rowCount.toLocaleString('en-US')} rows
-          {meta.builtAt ? ` · built ${meta.builtAt.slice(0, 16).replace('T', ' ')} UTC` : ''}
-          {book.generatedAt ? ` · book ${book.generatedAt.slice(0, 10)}` : ''}
-        </>
-      }
+      onDeletePage={handleDeletePage}
     >
       {activeTab ? (
         <RowRenderer

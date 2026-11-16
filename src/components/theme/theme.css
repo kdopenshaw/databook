@@ -106,9 +106,6 @@ button {
   border-right: 1px solid var(--dbk-border);
   background: var(--dbk-bg);
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--dbk-space-3);
 }
 
 .dbk-sidebar-label {
@@ -124,8 +121,31 @@ button {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.dbk-sidebar-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dbk-sidebar-row .dbk-sidebar-item {
   flex: 1;
-  min-height: 0;
+  min-width: 0;
+}
+
+.dbk-sidebar-add-inline {
+  color: var(--dbk-muted);
+  justify-content: flex-start;
+  font-size: 16px;
+  line-height: 1;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.dbk-sidebar-add-inline:hover {
+  color: var(--dbk-fg);
 }
 
 .dbk-sidebar-item {
@@ -340,6 +360,7 @@ button {
 
 .dbk-tabs-list {
   display: flex;
+  align-items: stretch;
   gap: 0;
   border-bottom: 1px solid var(--dbk-border);
   min-width: max-content;
@@ -411,31 +432,51 @@ button {
   gap: 8px;
 }
 
-.dbk-sidebar-add-bottom {
-  appearance: none;
+.dbk-nav-delete {
   flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  margin-top: auto;
-  padding: 8px 10px;
-  border: 1px dashed var(--dbk-border);
-  border-radius: var(--dbk-radius);
+  appearance: none;
+  border: 0;
   background: transparent;
-  cursor: pointer;
   color: var(--dbk-muted);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--dbk-radius);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
 }
 
-.dbk-sidebar-add-bottom:hover {
-  color: var(--dbk-fg);
-  border-color: var(--dbk-fg);
+.dbk-sidebar-row:hover .dbk-nav-delete,
+.dbk-sidebar-row:focus-within .dbk-nav-delete,
+.dbk-tabs-trigger-wrap:hover .dbk-nav-delete,
+.dbk-tabs-trigger-wrap:focus-within .dbk-nav-delete {
+  opacity: 0.85;
+  pointer-events: auto;
+}
+
+.dbk-nav-delete:hover {
+  color: var(--dbk-error, #e5484d);
   background: var(--dbk-hover);
 }
 
-.dbk-sidebar-add-bottom .dbk-insert-gap-plus {
-  width: 22px;
-  height: 22px;
+.dbk-tabs-trigger-wrap {
+  display: inline-flex;
+  align-items: stretch;
+  max-width: 100%;
+}
+
+.dbk-tabs-trigger-wrap .dbk-tabs-trigger {
+  flex: 1;
+  min-width: 0;
+}
+
+.dbk-tabs-delete {
+  align-self: center;
+  margin-right: 2px;
+  font-size: 16px;
 }
 
 .dbk-inline-rename-input {

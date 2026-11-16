@@ -1,14 +1,14 @@
 import type { BookPage, TabSection } from '../../data/types';
 import { InlineRename } from './InlineRename';
+import { confirmAction } from './confirmAction';
 
 type Props = {
-  /** When pages exist, sidebar lists pages (primary IA). Otherwise hidden by parent. */
   pages: BookPage[];
   activePageId: string;
   onSelectPage: (pageId: string) => void;
   onAddPage?: () => void;
   onRenamePage?: (pageId: string, label: string) => void;
-  /** Fallback: section jump when no pages — kept for rare single-mode use. */
+  onDeletePage?: (pageId: string) => void;
   tabs?: TabSection[];
   activeTabId?: string;
   onSelectTab?: (tabId: string) => void;
@@ -20,6 +20,7 @@ export function Sidebar({
   onSelectPage,
   onAddPage,
   onRenamePage,
+  onDeletePage,
   tabs,
   activeTabId,
   onSelectTab,
@@ -29,44 +30,64 @@ export function Sidebar({
     return (
       <aside className="dbk-sidebar" aria-label="Book pages">
         <nav className="dbk-sidebar-nav">
-          {sorted.map((page) => (
+          {sorted.map((page) => {
+            const active = page.id === activePageId;
+            return (
+              <div key={page.id} className="dbk-sidebar-row">
+                <button
+                  type="button"
+                  className="dbk-sidebar-item"
+                  aria-current={active ? 'page' : undefined}
+                  onClick={() => onSelectPage(page.id)}
+                >
+                  {onRenamePage ? (
+                    <InlineRename
+                      value={page.label}
+                      onCommit={(label) => onRenamePage(page.id, label)}
+                      ariaLabel={`Rename page ${page.label}`}
+                    />
+                  ) : (
+                    page.label
+                  )}
+                </button>
+                {active && onDeletePage ? (
+                  <button
+                    type="button"
+                    className="dbk-nav-delete"
+                    aria-label={`Delete page ${page.label}`}
+                    title="Delete page"
+                    onClick={() => {
+                      if (
+                        confirmAction(
+                          `Delete page “${page.label}” and all tabs on it? This cannot be undone.`,
+                        )
+                      ) {
+                        onDeletePage(page.id);
+                      }
+                    }}
+                  >
+                    ×
+                  </button>
+                ) : null}
+              </div>
+            );
+          })}
+          {onAddPage ? (
             <button
-              key={page.id}
               type="button"
-              className="dbk-sidebar-item"
-              aria-current={page.id === activePageId ? 'page' : undefined}
-              onClick={() => onSelectPage(page.id)}
+              className="dbk-sidebar-item dbk-sidebar-add-inline"
+              onClick={onAddPage}
+              aria-label="Add page"
+              title="Add page"
             >
-              {onRenamePage ? (
-                <InlineRename
-                  value={page.label}
-                  onCommit={(label) => onRenamePage(page.id, label)}
-                  ariaLabel={`Rename page ${page.label}`}
-                />
-              ) : (
-                page.label
-              )}
-            </button>
-          ))}
-        </nav>
-        {onAddPage ? (
-          <button
-            type="button"
-            className="dbk-sidebar-add-bottom"
-            onClick={onAddPage}
-            aria-label="Add page"
-            title="Add page"
-          >
-            <span className="dbk-insert-gap-plus" aria-hidden="true">
               +
-            </span>
-          </button>
-        ) : null}
+            </button>
+          ) : null}
+        </nav>
       </aside>
     );
   }
 
-  // Tabs-only books: sidebar is not mounted (PageLayout). This branch is unused.
   if (!tabs?.length || !onSelectTab) return null;
   const sorted = [...tabs].sort((a, b) => a.order - b.order);
   return (

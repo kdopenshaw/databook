@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { TabSection } from '../../data/types';
 import { InlineRename } from './InlineRename';
+import { confirmAction } from './confirmAction';
 
 type Props = {
   tabs: TabSection[];
@@ -8,17 +9,19 @@ type Props = {
   onSelect: (tabId: string) => void;
   onAddTab?: () => void;
   onRenameTab?: (tabId: string, label: string) => void;
+  onDeleteTab?: (tabId: string) => void;
   children: ReactNode;
 };
 
-/**
- * Geist-styled tabs primitive.
- * Public npm `geist` is fonts only (@vercel/geistcn 404s), so this implements
- * Geist Tabs visual language (underline list + active border) on Geist tokens.
- * ArrowLeft/ArrowRight move focus with a roving tabindex.
- * Horizontal overflow shows edge fade + a subtle scroll cue when many tabs.
- */
-export function BookTabs({ tabs, activeTabId, onSelect, onAddTab, onRenameTab, children }: Props) {
+export function BookTabs({
+  tabs,
+  activeTabId,
+  onSelect,
+  onAddTab,
+  onRenameTab,
+  onDeleteTab,
+  children,
+}: Props) {
   const sorted = [...tabs].sort((a, b) => a.order - b.order);
   const listRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -93,28 +96,48 @@ export function BookTabs({ tabs, activeTabId, onSelect, onAddTab, onRenameTab, c
             {sorted.map((tab) => {
               const active = tab.id === activeTabId;
               return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  id={`tab-${tab.id}`}
-                  aria-selected={active}
-                  aria-controls={`panel-${tab.id}`}
-                  tabIndex={active ? 0 : -1}
-                  className="dbk-tabs-trigger"
-                  data-state={active ? 'active' : 'inactive'}
-                  onClick={() => onSelect(tab.id)}
-                >
-                  {onRenameTab ? (
-                    <InlineRename
-                      value={tab.label}
-                      onCommit={(label) => onRenameTab(tab.id, label)}
-                      ariaLabel={`Rename tab ${tab.label}`}
-                    />
-                  ) : (
-                    tab.label
-                  )}
-                </button>
+                <div key={tab.id} className="dbk-tabs-trigger-wrap">
+                  <button
+                    type="button"
+                    role="tab"
+                    id={`tab-${tab.id}`}
+                    aria-selected={active}
+                    aria-controls={`panel-${tab.id}`}
+                    tabIndex={active ? 0 : -1}
+                    className="dbk-tabs-trigger"
+                    data-state={active ? 'active' : 'inactive'}
+                    onClick={() => onSelect(tab.id)}
+                  >
+                    {onRenameTab ? (
+                      <InlineRename
+                        value={tab.label}
+                        onCommit={(label) => onRenameTab(tab.id, label)}
+                        ariaLabel={`Rename tab ${tab.label}`}
+                      />
+                    ) : (
+                      tab.label
+                    )}
+                  </button>
+                  {active && onDeleteTab ? (
+                    <button
+                      type="button"
+                      className="dbk-nav-delete dbk-tabs-delete"
+                      aria-label={`Delete tab ${tab.label}`}
+                      title="Delete tab"
+                      onClick={() => {
+                        if (
+                          confirmAction(
+                            `Delete tab “${tab.label}” and all blocks in it? This cannot be undone.`,
+                          )
+                        ) {
+                          onDeleteTab(tab.id);
+                        }
+                      }}
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </div>
               );
             })}
             {onAddTab ? (

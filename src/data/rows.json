@@ -4,6 +4,14 @@
   "description": "Trivial init sample — hello world + exponential curve.",
   "generatedAt": "2026-11-15T00:00:00.000Z",
   "defaultTabId": "overview",
+  "pages": [
+    {
+      "id": "page-home",
+      "label": "Home",
+      "order": 0,
+      "tabIds": ["overview"]
+    }
+  ],
   "conventions": {
     "zeroBaselineBars": true,
     "population": "Synthetic init sample (replace on real books).",
