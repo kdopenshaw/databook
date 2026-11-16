@@ -1,10 +1,9 @@
 /**
- * Headless chart query preview — same resolve + runQuery path as ChartSlot.
- * Invoked by `npm run print-block -- <chartId>` (see scripts/print-block.mjs).
+ * Headless chart query preview — reads `meta` from the chart module.
+ * Invoked by `npm run print-block -- <ChartName>` (see scripts/print-block.mjs).
  */
-import type { BookDocument, ChartBlock, ChartQuery, DataRow, Table, Value } from './types';
-import { collectBlocks } from './chartBlocks';
-import { resolveChartBlock } from './resolveChartBlock';
+import { resolveChartMeta } from '../charts/registry';
+import type { ChartQuery, DataRow, Table, Value } from './types';
 import { runQuery } from './runQuery';
 
 export type PrintBlockFormat = 'csv' | 'table';
@@ -22,9 +21,7 @@ export type PrintBlockResult = {
   rowCount: number;
   columns: string[];
   rows: DataRow[];
-  /** Compact table body for stdout (CSV or aligned text). */
   body: string;
-  /** One-line summary for stderr. */
   summary: string;
 };
 
@@ -35,16 +32,11 @@ export class PrintBlockError extends Error {
   }
 }
 
-export function findChartBlock(book: BookDocument, chartId: string): ChartBlock | undefined {
-  return collectBlocks(book).find((b) => b.id === chartId);
-}
-
 function cellString(v: Value): string {
   if (v === null) return '';
   if (typeof v === 'boolean') return v ? 'true' : 'false';
   if (typeof v === 'number') {
     if (!Number.isFinite(v)) return String(v);
-    // Compact but stable for agents: trim float noise without scientific for typical values.
     if (Number.isInteger(v)) return String(v);
     const s = v.toPrecision(12).replace(/\.?0+$/, '');
     return s;
@@ -57,7 +49,6 @@ function csvEscape(s: string): string {
   return s;
 }
 
-/** Compact CSV (RFC-ish): header + rows, no trailing blank line. */
 export function formatRowsCsv(rows: DataRow[], columns?: string[]): string {
   const cols =
     columns ??
@@ -76,7 +67,6 @@ export function formatRowsCsv(rows: DataRow[], columns?: string[]): string {
   return lines.join('\n');
 }
 
-/** Compact aligned text table (spaces, no box drawing). */
 export function formatRowsTable(rows: DataRow[], columns?: string[]): string {
   const cols =
     columns ??
@@ -100,38 +90,27 @@ export function formatRowsTable(rows: DataRow[], columns?: string[]): string {
 }
 
 export function printChartBlock(
-  book: BookDocument,
   table: Table,
-  chartId: string,
+  chartName: string,
   options: PrintBlockOptions = {},
 ): PrintBlockResult {
-  const raw = findChartBlock(book, chartId);
-  if (!raw) {
-    const known = collectBlocks(book)
-      .map((b) => b.id)
-      .sort();
+  const meta = resolveChartMeta(chartName);
+  if (!meta) {
     throw new PrintBlockError(
-      `chart "${chartId}" not found. Known ids: ${known.length ? known.join(', ') : '(none)'}`,
+      `chart "${chartName}" not found (export meta from src/charts/${chartName}.tsx)`,
     );
   }
 
-  let block: ChartBlock;
-  try {
-    block = resolveChartBlock(book, raw);
-  } catch (err) {
-    throw new PrintBlockError(err instanceof Error ? err.message : String(err));
-  }
-
-  if (!block.query) {
-    throw new PrintBlockError(`chart "${chartId}" has no query after resolve`);
+  if (!meta.query) {
+    throw new PrintBlockError(`chart "${chartName}" has no meta.query`);
   }
 
   let rows: DataRow[];
   try {
-    rows = runQuery(table, block.query as ChartQuery);
+    rows = runQuery(table, meta.query as ChartQuery);
   } catch (err) {
     throw new PrintBlockError(
-      `chart "${chartId}" query failed: ${err instanceof Error ? err.message : err}`,
+      `chart "${chartName}" query failed: ${err instanceof Error ? err.message : err}`,
     );
   }
 
@@ -154,13 +133,13 @@ export function printChartBlock(
     truncated.length === rows.length
       ? `${rows.length} rows`
       : `${truncated.length}/${rows.length} rows`;
-  const label = block.query.label ? ` · ${block.query.label}` : '';
-  const summary = `${block.id}  ${block.title}${label}  ${shown}`;
+  const label = meta.query.label ? ` · ${meta.query.label}` : '';
+  const summary = `${chartName}  ${meta.title}${label}  ${shown}`;
 
   return {
-    chartId: block.id,
-    title: block.title,
-    queryLabel: block.query.label,
+    chartId: chartName,
+    title: meta.title,
+    queryLabel: meta.query.label,
     rowCount: rows.length,
     columns,
     rows: truncated,

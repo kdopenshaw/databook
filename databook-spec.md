@@ -12,14 +12,14 @@ Related research context: Cursor canvases cannot host Recharts (sandbox = `curso
 
 ### 1.1 What it is
 
-A **DataBook** is a fixed-shape React application that presents one experiment’s analysis as **tabbed sections of rows**: full-width markdown rows and **component rows** that can hold one or more charts side by side, with a **sidebar** for jumping between sections when the book grows large. An **AI skill** (agent skill / prompt pack) drives creation:
+A **DataBook** is a fixed-shape React application that presents one experiment’s analysis as **tabbed markdown** with **chart components** referenced by name (one or more side by side), plus a **sidebar** for page groups when the book grows large. An **AI skill** (agent skill / prompt pack) drives creation:
 
 1. **Init** the scaffold automatically (built into skill invocation — see §7.5).
 2. **Profile** unknown data (from a repo path, uploaded files, or a user description of sources).
 3. **Write** a durable understanding of the data and the experiment (schema notes, grain, caveats, intended questions).
 4. **Transform / aggregate** as needed for analysis.
 5. **Persist** those transforms and a **single canonical JSON** of normalized rows.
-6. **Emit** (or update) row definitions with **self-describing chart blocks** (query objects inlined).
+6. **Write** chart components (`meta` + React) and **tab markdown** under `src/book/` that references them.
 
 The skill is **experiment-agnostic**: it does not hard-code domain workflows (finance, growth, labs). The same pipeline works for any tabular experiment the user points at.
 
@@ -28,9 +28,9 @@ The skill is **experiment-agnostic**: it does not hard-code domain workflows (fi
 | Goal | Meaning |
 |------|---------|
 | Correct by construction | Charts declare *queries* against sitting data; they do not own private CSV forks that drift. |
-| One scaffold | Every book is the same React app shell; only content (tabs, rows, which Recharts pieces are used) changes. |
-| Narrative + viz | Markdown rows explain aggregations and decisions; component rows show one or more charts. |
-| Flexible composition | The agent chooses per row: a full-width markdown row, or a flex component row with N charts side by side. |
+| One scaffold | Every book is the same React app shell; only content (tabs, markdown, which Recharts pieces are used) changes. |
+| Narrative + viz | Tab markdown explains aggregations and decisions; ` ```chart ` fences show one or more charts. |
+| Flexible composition | Agents interleave GFM with chart fences; multiple names in one fence sit side by side. |
 | Sectioned navigation | **Tabs** (Geist) are the primary section nav. Optional **pages** group tabs; the sidebar lists pages only (never a 1:1 duplicate of tabs). |
 | Minimal UI | Quiet dark-first chrome on **Geist** typography/spacing tokens + CSS variables + root class toggle; consistent across all books. |
 | Skill-first authoring | Humans rarely hand-edit chart wiring; invoking the skill runs init and owns profiling → emission. |
@@ -61,16 +61,16 @@ Sources (repo files | user description)
    Canonical dataset: one JSON file of normalized rows
         │
         ▼
-   Write chart components (src/charts/*.tsx) + markdown
+   Write chart components (src/charts/*.tsx with meta) + tab markdown
         │
         ▼
-   Emit / update rows (component + query inlined per chart block)
+   Emit / update book files
         │  ├── src/data/canonical.json
         │  ├── src/data/understanding.md
-        │  ├── src/data/rows.json   # tabs → sections → rows
+        │  ├── src/book/book.yaml + src/book/NN-*.md
         │  └── src/components/… (fixed shell: sidebar, tabs, rows)
         ▼
-   User opens DataBook (sidebar + Geist tabs + rows; dark via .dark on root)
+   User opens DataBook (sidebar + Geist tabs + markdown/charts; dark via .dark on root)
 ```
 
 ---
@@ -88,11 +88,11 @@ After profiling, the book has **one canonical dataset**: **normalized rows in a 
 
 Transforms that produced the canonical set (joins, filters, derived columns) are saved as **reusable artifacts** (scripts + params + checksum of inputs) under the data tree, not discarded chat side effects.
 
-### 2.2 Chart slices as inlined query objects (self-describing blocks)
+### 2.2 Chart slices as `meta.query` on each chart file
 
-Each chart **block** embeds its **query object** inside the chart definition in `rows.json`. Charts are **self-describing**: everything needed to render a chart lives on that block (title, chart wiring, encoding, query).
+Each chart file under `src/charts/<Name>.tsx` exports `meta: ChartMeta` with `title` / optional `subtitle` / `notes` and the **query object**. The default export is the React view. The chart **id is the component name**. Tab markdown only references names (no duplicated query/title in the book files).
 
-**Do not** use a separate recipe / query catalog file (no `queries.json`, no external query id indirection).
+**Do not** use a separate recipe / query catalog file (no `queries.json`, no external query id indirection). **Do not** add a catalog of built-in or config-driven chart types.
 
 Suggested shape (TypeScript):
 
@@ -114,8 +114,8 @@ type ChartQuery = {
 The renderer:
 
 1. Loads `canonical.json`.
-2. Runs the chart block’s inlined `query` against those rows.
-3. Passes the resulting rows into the Recharts composition the skill emitted for that block.
+2. Resolves `meta` for each chart name in a ` ```chart ` fence.
+3. Runs `meta.query` against those rows and passes `{ data }` into the chart component.
 
 ### 2.3 Correction propagation
 
@@ -154,7 +154,9 @@ This is inputs for later markdown rows and for human review—not only chat ephe
   references/               # Anthropic bundles (product repo; skill routes here)
   src/
     components/             # React UI: sidebar, Geist tabs, layout, rows, charts, theme toggle
-    data/                   # canonical.json, rows.json (tabs→rows), understanding.md, transforms/
+    book/                   # book.yaml + NN-*.md tabs (GFM + chart fences)
+    data/                   # canonical.json, understanding.md, transforms/
+    charts/                 # agent-authored <Name>.tsx (meta + default export)
 ```
 
 Emitted books in other projects get `src/` (and whatever the scaffold needs to run) **without** a generated README. Document how to use DataBook in **this** repo’s root README only (§10).
@@ -163,103 +165,66 @@ Emitted books in other projects get `src/` (and whatever the scaffold needs to r
 
 ## 3. Document model
 
-### 3.1 Tabbed sections of rows (not strict markdown↔chart alternation)
+### 3.1 Tabbed markdown + chart fences
 
-The DataBook is a **document of tabbed sections**, each section a **linear stack of rows**, conceptually like Jupyter, but **not** limited to alternating markdown and a single chart:
+The DataBook is a **document of tabbed sections**. Each tab is one markdown file under `src/book/`:
 
-- Top level: **tabs** (sections); each tab owns an ordered list of rows  
-- Typed **rows** with an explicit **order index** within a tab  
-- Rows render **top to bottom** inside the active tab  
-- **Two row types** in v1: `markdown` and `component`  
-- **Sidebar** lists tabs / sections for jump navigation (scaffold primitive)  
-- No free-form floating canvas layout in v1  
+- Filename prefix (`01-`, `02-`, …) sets tab order  
+- Front matter holds `id`, `label`, optional `page`  
+- Body is normal GFM (react-markdown) plus fenced ` ```chart ` blocks  
+- Two or more chart names in one fence render **side by side** (optional flex weight per line: `MonthlyRevenue 1.4`)  
+- Book-level metadata lives in **`src/book/book.yaml`** (`title`, `description`, `conventions`, optional `pages`, `defaultTabId`)  
+- **Sidebar** lists pages when `pages` are defined; tabs remain primary section nav  
+- No free-form floating canvas layout in v1; no `rows.json`, no row `order` / `createdBy` / separate chart block ids  
 
-**There is no requirement** that markdown and charts alternate one-for-one. Outside any component row, markdown is its own full-width row. Inside a component row, multiple charts can sit **side by side** in a flex container (e.g. three charts touching horizontally).
+To show the same chart twice, reference the name twice. For a variant, write a new component (may import shared pieces).
 
-The agent **decides** which tab a set of rows belongs to, and **per row** which type to emit—based on narrative needs and whether comparisons read better as small multiples in one flex row vs stacked full-width charts.
+### 3.2 Content units (parsed from markdown)
 
-### 3.2 Row types (v1)
-
-| Type | Role |
+| Unit | Role |
 |------|------|
-| `markdown` | Full-width narrative row: experiment framing, how aggregations work, caveats, findings. Rendered with **react-markdown**. Do **not** title blocks “Analyst ask/take/note” unless the human asks. |
-| `component` | Flex container row that holds **one or more** self-describing chart blocks side by side. |
+| Markdown | Full-width narrative: framing, aggregations, caveats, findings. Do **not** title blocks “Analyst ask/take/note” unless the human asks. |
+| Chart fence | One or more component names → flex row of chart slots. |
 
-Future (out of scope for v1 wiring, reserved ids): `callout`, `table`, `stat_row` as additional row types or as children of `component`.
+### 3.3 Book / tab / chart schema
 
-### 3.3 Book / tab / row schema
-
-Tabs are the **primary** nav primitive. The sidebar mounts **only when `pages` are defined** (page groups). The skill supplies metadata—not custom tab/sidebar implementations. Prefer `src/data/types.ts` as the live contract.
+Prefer `src/data/types.ts` as the live contract.
 
 ```ts
-type BookDocument = {
+type ChartMeta = {
   title: string;
-  tabs: TabSection[];
-  /** Optional default tab id; else first tab */
-  defaultTabId?: string;
-  /** Optional page groups; when set, Sidebar lists pages and tabs filter to the active page */
-  pages?: BookPage[];
-  /** House rules for editors + chart lint (palette, population, zero-baseline, …) */
-  conventions?: BookConventions;
+  subtitle?: string;
+  notes?: string;
+  query: ChartQuery;
+  allowEmpty?: boolean;
 };
 
-type BookPage = {
-  id: string;
-  label: string;
-  order: number;
-  tabIds: string[];
-};
+type ChartRef = { name: string; flex?: number };
 
-type BookConventions = {
-  notes?: string[];
-  palette?: Record<string, string>;
-  population?: string;
-};
+type ContentBlock =
+  | { type: 'markdown'; id: string; body: string }   // id is synthetic (not on disk)
+  | { type: 'charts'; id: string; charts: ChartRef[] };
 
 type TabSection = {
   id: string;
-  label: string;           // shown in Geist Tabs
-  order: number;
-  rows: Row[];
+  label: string;
+  order: number;          // from NN- filename prefix
+  page?: string;
+  sourceFile: string;     // e.g. 01-overview.md
+  blocks: ContentBlock[];
 };
 
-type RowBase = {
-  id: string;
-  order: number;           // sortable; fractional values (1.5) allowed
-  createdBy: 'skill' | 'user';
-};
-
-type MarkdownRow = RowBase & {
-  type: 'markdown';
-  body: string;            // GFM markdown → react-markdown
-};
-
-/** Self-describing chart block, or a ref to another block (Summary without copied queries). */
-type ChartBlock = {
-  id: string;
+type BookDocument = {
   title: string;
-  subtitle?: string;       // units, period, filters in plain language
-  ref?: string;            // reuse another chart id
-  component?: string;      // src/charts/<Name>.tsx (required unless ref)
-  query?: ChartQuery;
-  notes?: string;
-  flex?: number;
+  tabs: TabSection[];
+  defaultTabId?: string;
+  pages?: BookPage[];
+  conventions?: BookConventions;
+  // … experimentId, description, generatedAt
 };
-
-type ComponentRow = RowBase & {
-  type: 'component';
-  components: ChartBlock[];
-  layout?: {
-    gap?: number;          // px; scaffold default 16
-    align?: 'stretch' | 'start' | 'center';
-    wrap?: boolean;        // default true
-  };
-};
-
-type Row = MarkdownRow | ComponentRow;
 ```
 
-Each chart block points at `src/charts/<Name>.tsx` via `component`. Generators must preserve `createdBy: "user"` rows via `mergeUserRows`.
+Each `src/charts/<Name>.tsx` exports `meta` and a default component. The chart id **is** `Name`.
 
 ### 3.4 How the agent chooses row type
 
@@ -290,7 +255,7 @@ Markdown rows are rendered with **[react-markdown](https://github.com/remarkjs/r
 
 **Do not** invent meta sections titled “Analyst ask”, “Analyst take”, “Analyst takeaways”, “Analyst note”, or similar role labels unless the human explicitly requests that framing.
 
-Humans may insert and edit markdown in the running book via the scaffold **(+)** control between rows (`createdBy: "user"`). The skill may regenerate skill-authored sections; generators must preserve user rows via `mergeUserRows`.
+Humans may insert markdown in the running book via the scaffold **(+)** control. In dev, inserts write straight into the active tab’s `.md` file through a Vite endpoint — **the file on disk is the only source of truth**. There is no localStorage overlay / `mergeUserRows` / `createdBy` layer.
 
 ### 3.6 Renderer
 
@@ -298,15 +263,13 @@ Scaffold shell:
 
 1. **`BookTabs`** — primary section nav (sticky strip, arrow-key roving tabindex, `?tab=` via `pushState`).  
 2. **`Sidebar`** — only when `pages[]` is set; lists pages (not a duplicate of tabs). Hidden on narrow viewports.  
-3. **`RowRenderer`** — maps the active tab’s `rows` sorted by `order` → React nodes, with a quiet **(+)** insert gap before/between/after rows:
-   - `markdown` → `MarkdownRow` via **react-markdown**, full content width (user rows are editable; no “Analyst …” chrome)  
-   - `component` → `ComponentRow` → horizontal flex of chart slots → each runs its **inlined** query → renders the block’s Recharts composition  
+3. **`RowRenderer`** — maps the active tab’s parsed `blocks` → React nodes, with a quiet **(+)** insert gap before/between/after blocks:
+   - `markdown` → `MarkdownRow` via **react-markdown**  
+   - `charts` → `ComponentRow` → flex of `ChartSlot`s → each loads `meta`, runs `meta.query`, renders the component  
 
-Empty query results: omit that chart slot (reflow remaining flex children) and show a short inline note *or* omit the whole component row if every slot is empty (prefer skill-side omission of empty charts).
+Empty query results show an inline empty note on that slot.
 
-On narrow viewports, `ComponentRow` wraps/stacks; the page sidebar is hidden and a sticky horizontal page switcher appears when `pages` exist; sticky tabs remain section nav (with overflow fade + scroll cue)—responsive behavior is scaffold-owned, not per-book CSS. Chart headers share a min-height so sibling plot baselines stay aligned.
-
-Init sample may use a **single** tab (still mounting Tabs + Sidebar so every book exercises the primitives).
+On narrow viewports, `ComponentRow` wraps/stacks; the page sidebar is hidden and a sticky horizontal page switcher appears when `pages` exist; sticky tabs remain section nav — responsive behavior is scaffold-owned. Chart headers share a min-height so sibling plot baselines stay aligned.
 
 ---
 
@@ -314,7 +277,7 @@ Init sample may use a **single** tab (still mounting Tabs + Sidebar so every boo
 
 ### 4.1 Charts = agent React components
 
-**Default path:** agents add files under `src/charts/<Name>.tsx` (default export) and set `component: "<Name>"` on the chart block in `rows.json`. The slot runs the block’s inlined `query` against `canonical.json` and passes `{ data }` into that component.
+**Default path:** agents add files under `src/charts/<Name>.tsx` (`export const meta` + default export) and put `Name` in a ` ```chart ` fence in a tab `.md`. The slot runs `meta.query` against `canonical.json` and passes `{ data }` into that component.
 
 - Use **Recharts** inside those files (dependency already in the scaffold), or plain SVG/HTML if simpler.  
 - Theme helpers: `ResponsiveFrame`, `chartColors()` from `src/components/charts/ResponsiveFrame.tsx`.  
@@ -449,47 +412,47 @@ src/
       ChartSlot.tsx            # title/subtitle/notes + run inlined query + Recharts
     charts/
       # ResponsiveFrame + chartColors helpers; agent charts live in src/charts/
+  book/
+    book.yaml                  # title, conventions, pages, …
+    01-overview.md             # front matter + GFM + ```chart fences
+  charts/
+    MonthlyRevenue.tsx         # meta + default export
   data/
     canonical.json             # normalized rows (one file)
-    rows.json                  # BookDocument: tabs → rows; queries inlined in chart blocks
     understanding.md
     loadCanonical.ts
     runQuery.ts
 ```
 
-Dependencies include at least: `react`, `recharts`, `react-markdown`. Geist typography is **vendored** (`public/fonts/*.woff2`); Tabs are the scaffold `BookTabs` primitive (do not add the `geist` npm package — it peers Next unused).
+Dependencies include at least: `react`, `recharts`, `react-markdown`, `yaml`. Geist typography is **vendored** (`public/fonts/*.woff2`); Tabs are the scaffold `BookTabs` primitive (do not add the `geist` npm package — it peers Next unused).
 
 ### 6.2 Standard components (required)
 
 | Component | Responsibility |
 |-----------|----------------|
 | `ThemeToggle` | Dark default, light via root class + CSS variables; no theme-provider library |
-| `PageLayout` | Header (title, toggle), **sidebar**, main column with tabs + rows |
-| `Sidebar` | **Fixed** nav among tab groups / sections; not generated per book |
+| `PageLayout` | Header (title, toggle), **sidebar**, main column with tabs + content |
+| `Sidebar` | **Fixed** nav among page groups; not generated per book |
 | `BookTabs` | **Fixed** wrapper around **Geist Tabs**; every book includes it |
-| `RowRenderer` | Sort by `order`, dispatch by row `type` (inside active tab) |
+| `RowRenderer` | Dispatch parsed markdown / chart blocks (inside active tab) |
 | `MarkdownRow` | **react-markdown**, full width |
-| `ComponentRow` | Flex layout for one or more chart blocks |
-| `ChartSlot` | Title/subtitle/notes + run **inlined** query + render Recharts spec |
+| `ComponentRow` | Flex layout for one or more chart refs |
+| `ChartSlot` | Title/subtitle/notes from `meta` + run `meta.query` + render component |
 | Chart helpers | Presentational wrappers only — not a closed catalog |
 
 ### 6.3 What the skill may change per book
 
-- `src/data/rows.json` (tab labels/membership + self-describing chart blocks with inlined queries)  
+- `src/book/book.yaml` and `src/book/NN-*.md`  
+- `src/charts/*.tsx` (`meta` + component)  
 - `src/data/canonical.json` and `src/data/understanding.md`  
-- Book metadata: title, description, generated_at  
-- Recharts compositions referenced by those blocks  
-- **Not** a fork of `PageLayout` / `Sidebar` / `BookTabs` / token architecture / init sample pattern  
+- **Not** a fork of `PageLayout` / `Sidebar` / `BookTabs` / token architecture  
 
 ### 6.4 Emission modes and init sample
 
-1. **Init (automatic on skill invoke)** — see §7.5: copy scaffold → write **minimal sample book**:
-   - One tab (e.g. label “Overview”) so **Geist Tabs** + **Sidebar** still mount.  
-   - One **markdown** row whose body is effectively **“hello world”** (deliberately trivial).  
-   - One **component** row with a single chart: an **exponential curve** over trivial synthetic points in `canonical.json`.  
-   - Purpose: prove the pipeline boots. **Do not** make the sample rich enough to bias later experiment books.  
-2. **Greenfield analysis**: after init, replace sample data/rows with profiled experiment content.  
-3. **Update**: re-run transforms and rewrite `canonical.json` / `rows.json`; leave scaffold components untouched unless scaffold version bumps.
+1. **Init (automatic on skill invoke)** — see §7.5: copy scaffold → write sample book under `src/book/` + charts.  
+2. **Greenfield analysis**: after init, replace sample data/charts/tabs with profiled experiment content.  
+3. **Update**: re-run transforms and rewrite `canonical.json` / tab markdown / chart `meta`; leave scaffold components untouched unless scaffold version bumps.  
+4. **Legacy**: `scripts/rows-to-markdown.mjs` converts an old `rows.json` book into `src/book/`.
 
 Scaffold version may be pinned (e.g. `scaffold.version`) so skills know when to refresh the app shell.
 
@@ -509,11 +472,11 @@ The **DataBook skill** (`SKILL.md` at repo root) teaches an agent to:
 4. Infer experiment intent from user text + data shape.  
 5. Write `understanding.md`.  
 6. Design and run transforms → write **one** `canonical.json` of normalized rows.  
-7. Write chart components under `src/charts/` and wire them in `rows.json`.  
-8. Decide **tabs/sections** and **row types**: markdown vs flex component rows.  
-9. Inlined **query** objects on each chart block.  
+7. Write chart components under `src/charts/` with `meta`, reference them from `src/book/*.md`.  
+8. Decide **tabs/sections** and narrative vs chart fences.  
+9. **Query** objects live on each chart’s `meta`.  
 10. Markdown findings (no default “Analyst ask/take” framing).  
-11. Replace the init sample; `npm run ok` for nonempty query smoke.
+11. Replace the init sample; `npm run ok` + `npm run snap -- --all`.
 
 ### 7.2 Skill structure (standard)
 
@@ -585,18 +548,18 @@ If a book scaffold already exists, init is a no-op or a version-aware refresh �
 - [ ] **Geist Tabs** (`BookTabs`) and **Sidebar** mount on every book (including single-tab init).  
 - [ ] Tabs group rows into sections (primary nav); optional pages drive Sidebar (no 1:1 tab duplicate).  
 - [ ] Geist provides typography/spacing tokens + Tabs; page shell, sidebar, row container, markdown block, chart slot are custom on those tokens.  
-- [ ] `rows.json` (`BookDocument`) renders markdown rows (**react-markdown**) and component rows in order inside the active tab.  
-- [ ] Running book offers a quiet **(+)** between rows to insert editable user markdown; inserts persist (browser overlay + `mergeUserRows` shape).  
+- [ ] `src/book/*.md` renders GFM + ` ```chart ` fences inside the active tab.  
+- [ ] Running book offers a quiet **(+)** between blocks; inserts write the tab `.md` via Vite (disk only).  
 - [ ] Skill markdown is findings prose — no default “Analyst ask/take” framing.  
-- [ ] A component row can hold multiple charts side by side; `ref` reuses charts; `npm run ok` gates query smoke.   
-- [ ] Chart blocks carry **inlined** query objects; no separate queries/recipe file.  
+- [ ] A chart fence can hold multiple names side by side; `npm run ok` gates parse/resolve/query/unused.  
+- [ ] Chart `meta.query` owns the slice; no separate queries/recipe file; no config-driven chart catalog.  
 - [ ] Canonical data is **one JSON file** of normalized rows; queries shape data at read time.  
-- [ ] Skill invoke runs **databook init** automatically and installs the trivial hello-world + exponential sample.  
+- [ ] Skill invoke runs **databook init** automatically.  
 - [ ] Init into another project does **not** create a book-local README.  
 - [ ] DataBook product repo has a **root README**.  
 - [ ] `SKILL.md` routes agents to Anthropic references at the correct pipeline steps (not ambient dump).  
-- [ ] Chart blocks use `component` → `src/charts/*.tsx`; `npm run ok` is query smoke.  
-- [ ] Nested layout standard: `src/components`, `src/data`, `references`, top-level `SKILL.md`.  
+- [ ] Charts are `src/charts/*.tsx` with `meta`; `npm run snap` captures PNGs.  
+- [ ] Nested layout standard: `src/components`, `src/book`, `src/charts`, `src/data`, `references`, top-level `SKILL.md`.  
 - [ ] No dependency on Cursor canvas for rendering.
 
 ---

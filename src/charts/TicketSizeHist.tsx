@@ -1,6 +1,17 @@
 import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
 import { ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
+import type { ChartMeta } from '../data/types';
 import type { BookChartProps } from './registry';
+
+export const meta: ChartMeta = {
+  title: 'Line-item amount distribution',
+  subtitle: '$2 bins · count of line items',
+  query: {
+    bin: [{ column: 'amount', step: 2, as: 'amount_bin' }],
+    aggregate: [{ fn: 'count', as: 'n' }],
+    orderBy: [{ column: 'amount_bin', direction: 'asc' }],
+  },
+};
 
 export default function TicketSizeHist({ data }: BookChartProps) {
   const c = chartColors();

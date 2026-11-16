@@ -2,13 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   addPage,
   addTab,
-  applyStructureOverlay,
   deletePage,
   deleteTab,
   ensureDefaultPage,
-  extractStructureOverlay,
   normalizePageTabIds,
-  reorderRowsBefore,
+  reorderBlocksBefore,
   renameTab,
 } from './bookEdits';
 import type { BookDocument } from './types';
@@ -19,10 +17,11 @@ const base = (): BookDocument => ({
     {
       id: 'overview',
       label: 'Overview',
-      order: 0,
-      rows: [
-        { id: 'a', order: 0, createdBy: 'skill', type: 'markdown', body: 'A' },
-        { id: 'b', order: 1, createdBy: 'skill', type: 'markdown', body: 'B' },
+      order: 1,
+      sourceFile: '01-overview.md',
+      blocks: [
+        { id: 'a', type: 'markdown', body: 'A' },
+        { id: 'b', type: 'markdown', body: 'B' },
       ],
     },
   ],
@@ -33,6 +32,7 @@ describe('bookEdits', () => {
     const { book, tab } = addTab(base());
     expect(tab.id).toMatch(/^tab-user-/);
     expect(book.tabs).toHaveLength(2);
+    expect(tab.sourceFile).toMatch(/\.md$/);
   });
 
   it('ensureDefaultPage creates a home page when missing', () => {
@@ -48,61 +48,44 @@ describe('bookEdits', () => {
   });
 
   it('renameTab updates label', () => {
-    expect(renameTab(base(), 'overview', 'Intro').tabs[0].label).toBe('Intro');
+    const next = renameTab(base(), 'overview', 'Intro');
+    expect(next.tabs[0].label).toBe('Intro');
   });
 
-  it('reorderRowsBefore moves a row', () => {
-    const next = reorderRowsBefore(base(), 'overview', 'b', 'a');
-    const ids = next.tabs[0].rows
-      .slice()
-      .sort((x, y) => x.order - y.order)
-      .map((r) => r.id);
-    expect(ids).toEqual(['b', 'a']);
+  it('reorderBlocksBefore moves a block', () => {
+    const next = reorderBlocksBefore(base(), 'overview', 'b', 'a');
+    expect(next.tabs[0].blocks.map((b) => b.id)).toEqual(['b', 'a']);
   });
 
-  it('normalizePageTabIds keeps each tab on one page', () => {
+  it('deleteTab removes tab from pages', () => {
+    const withPage = ensureDefaultPage(base());
+    const { book: two } = addTab(withPage, { pageId: withPage.pages![0].id });
+    const next = deleteTab(two, 'overview');
+    expect(next.tabs.some((t) => t.id === 'overview')).toBe(false);
+    expect(next.pages![0].tabIds.includes('overview')).toBe(false);
+  });
+
+  it('deletePage removes its tabs', () => {
+    const withPage = ensureDefaultPage(base());
+    const next = deletePage(withPage, withPage.pages![0].id);
+    expect(next.tabs).toHaveLength(1); // ensureDefaultPage recreates
+    expect(next.pages?.length).toBeGreaterThan(0);
+  });
+
+  it('normalizePageTabIds dedupes ownership', () => {
     const book: BookDocument = {
       title: 'T',
       tabs: [
-        { id: 't1', label: 'A', order: 0, rows: [] },
-        { id: 't2', label: 'B', order: 1, rows: [] },
+        { id: 'a', label: 'A', order: 1, sourceFile: '01-a.md', blocks: [] },
+        { id: 'b', label: 'B', order: 2, sourceFile: '02-b.md', blocks: [] },
       ],
       pages: [
-        { id: 'p1', label: 'P1', order: 0, tabIds: ['t1', 't2'] },
-        { id: 'p2', label: 'P2', order: 1, tabIds: ['t2'] },
+        { id: 'p1', label: 'P1', order: 0, tabIds: ['a', 'b'] },
+        { id: 'p2', label: 'P2', order: 1, tabIds: ['b'] },
       ],
     };
     const next = normalizePageTabIds(book);
-    expect(next.pages![0].tabIds).toEqual(['t1']);
-    expect(next.pages![1].tabIds).toEqual(['t2']);
-  });
-
-  it('deleteTab removes tab and membership', () => {
-    const book = addPage(base()).book;
-    const tabId = book.tabs[0].id;
-    const next = deleteTab(book, tabId);
-    expect(next.tabs).toHaveLength(0);
-    expect(next.pages![0].tabIds).toEqual([]);
-  });
-
-  it('deletePage removes listed tabs and recovers a home page', () => {
-    const book = addPage(base()).book;
-    const pageId = book.pages![0].id;
-    const next = deletePage(book, pageId);
-    expect(next.pages).toHaveLength(1);
-    expect(next.tabs.length).toBeGreaterThan(0);
-  });
-
-  it('round-trips structure overlay', () => {
-    let book = renameTab(base(), 'overview', 'Home');
-    book = reorderRowsBefore(book, 'overview', 'b', 'a');
-    const overlay = extractStructureOverlay(book, base());
-    const restored = applyStructureOverlay(base(), overlay);
-    expect(restored.tabs[0].label).toBe('Home');
-    const ids = restored.tabs[0].rows
-      .slice()
-      .sort((x, y) => x.order - y.order)
-      .map((r) => r.id);
-    expect(ids).toEqual(['b', 'a']);
+    expect(next.pages![0].tabIds).toEqual(['a']);
+    expect(next.pages![1].tabIds).toEqual(['b']);
   });
 });

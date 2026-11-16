@@ -1,39 +1,31 @@
 import { useMemo } from 'react';
-import { resolveBookChart } from '../../charts/registry';
-import type { BookDocument, ChartBlock, Table } from '../../data/types';
-import { resolveChartBlock } from '../../data/resolveChartBlock';
+import { resolveBookChart, resolveChartMeta } from '../../charts/registry';
+import type { ChartRef, Table } from '../../data/types';
 import { QueryError, runQuery } from '../../data/runQuery';
 
 type Props = {
-  block: ChartBlock;
+  chart: ChartRef;
   table: Table;
-  book: BookDocument;
-  flex?: number;
 };
 
-export function ChartSlot({ block, table, book, flex = 1 }: Props) {
-  const resolved = useMemo(() => {
-    try {
-      return { block: resolveChartBlock(book, block), error: null as string | null };
-    } catch (err) {
-      return { block: null, error: err instanceof Error ? err.message : String(err) };
-    }
-  }, [book, block]);
+export function ChartSlot({ chart, table }: Props) {
+  const flex = chart.flex ?? 1;
+  const meta = resolveChartMeta(chart.name);
+  const Comp = resolveBookChart(chart.name);
 
   const result = useMemo(() => {
-    if (!resolved.block?.query) return { rows: [], error: resolved.error };
+    if (!meta?.query) return { rows: [], error: meta ? null : `Unknown chart "${chart.name}"` };
     try {
-      const rows = runQuery(table, resolved.block.query);
+      const rows = runQuery(table, meta.query);
       return { rows, error: null as string | null };
     } catch (err) {
       if (err instanceof QueryError) return { rows: [], error: err.message };
       return { rows: [], error: err instanceof Error ? err.message : String(err) };
     }
-  }, [table, resolved]);
+  }, [table, meta, chart.name]);
 
-  const live = resolved.block;
-  const title = live?.title ?? block.title;
-  const subtitle = live?.subtitle;
+  const title = meta?.title ?? chart.name;
+  const subtitle = meta?.subtitle;
   const header = (
     <div className="dbk-chart-header">
       <h3 className="dbk-chart-title">{title}</h3>
@@ -47,18 +39,20 @@ export function ChartSlot({ block, table, book, flex = 1 }: Props) {
 
   const style = { flex: `${flex} 1 240px` };
 
-  if (resolved.error || !live) {
+  if (!meta || !Comp) {
     return (
-      <div className="dbk-chart-slot" style={style} role="alert">
+      <div className="dbk-chart-slot" style={style} role="alert" data-chart={chart.name}>
         {header}
-        <div className="dbk-chart-error">{resolved.error ?? 'Invalid chart'}</div>
+        <div className="dbk-chart-error">
+          Unknown chart component "{chart.name}". Add src/charts/{chart.name}.tsx with meta + default export.
+        </div>
       </div>
     );
   }
 
   if (result.error) {
     return (
-      <div className="dbk-chart-slot" style={style} role="alert">
+      <div className="dbk-chart-slot" style={style} role="alert" data-chart={chart.name}>
         {header}
         <div className="dbk-chart-error">{result.error}</div>
       </div>
@@ -67,27 +61,18 @@ export function ChartSlot({ block, table, book, flex = 1 }: Props) {
 
   if (!result.rows.length) {
     return (
-      <div className="dbk-chart-slot" style={style} data-empty="true">
+      <div className="dbk-chart-slot" style={style} data-empty="true" data-chart={chart.name}>
         {header}
         <p className="dbk-chart-empty">No rows for this chart’s query.</p>
       </div>
     );
   }
 
-  const Comp = resolveBookChart(live.component!);
-  const body = Comp ? (
-    <Comp data={result.rows} />
-  ) : (
-    <div className="dbk-chart-error">
-      Unknown chart component "{live.component}". Add src/charts/{live.component}.tsx
-    </div>
-  );
-
   return (
-    <div className="dbk-chart-slot" style={style}>
+    <div className="dbk-chart-slot" style={style} data-chart={chart.name}>
       {header}
-      {body}
-      {live.notes ? <p className="dbk-chart-notes">{live.notes}</p> : null}
+      <Comp data={result.rows} />
+      {meta.notes ? <p className="dbk-chart-notes">{meta.notes}</p> : null}
     </div>
   );
 }

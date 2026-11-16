@@ -29,7 +29,7 @@ export type Table = {
   rows: DataRow[];
 };
 
-// ---- Query objects (inlined on chart blocks) ----
+// ---- Query objects (owned by each chart's `meta`) ----
 
 export type FilterOp = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'not_in' | 'is_null' | 'not_null';
 
@@ -86,47 +86,55 @@ export type ChartQuery = {
   sample?: { n: number; seed?: number };
 };
 
-export type ChartBlock = {
-  id: string;
+/**
+ * Exported from each `src/charts/<Name>.tsx` as `meta`.
+ * The chart id is the component / file name.
+ */
+export type ChartMeta = {
   title: string;
   subtitle?: string;
-  /** Reuse another chart by id (query + component). */
-  ref?: string;
-  /** `src/charts/<component>.tsx` default export. Required unless `ref` is set. */
-  component?: string;
-  query?: ChartQuery;
   notes?: string;
+  query: ChartQuery;
+  /** Opt-in: ok / smoke allow zero rows for this chart. */
+  allowEmpty?: boolean;
+};
+
+/** One chart reference inside a ```chart fenced block. */
+export type ChartRef = {
+  name: string;
   flex?: number;
 };
 
-export type RowBase = {
-  id: string;
-  order: number;
-  createdBy: 'skill' | 'user';
-};
-
-export type MarkdownRow = RowBase & {
+/**
+ * Parsed content unit inside a tab markdown file.
+ * Synthetic `id` is for React keys / insert positions only — not stored on disk.
+ */
+export type MarkdownBlock = {
   type: 'markdown';
+  id: string;
   body: string;
+  /** True while a freshly inserted empty note is open in the editor. */
+  editing?: boolean;
 };
 
-export type ComponentRow = RowBase & {
-  type: 'component';
-  components: ChartBlock[];
-  layout?: {
-    gap?: number;
-    align?: 'stretch' | 'start' | 'center';
-    wrap?: boolean;
-  };
+export type ChartsBlock = {
+  type: 'charts';
+  id: string;
+  charts: ChartRef[];
 };
 
-export type BookRow = MarkdownRow | ComponentRow;
+export type ContentBlock = MarkdownBlock | ChartsBlock;
 
 export type TabSection = {
   id: string;
   label: string;
+  /** Tab order from the numeric filename prefix (01-, 02-, …). */
   order: number;
-  rows: BookRow[];
+  /** Optional page id from front matter; book.yaml pages may also list tabIds. */
+  page?: string;
+  /** Filename under `src/book/` (e.g. `01-overview.md`). */
+  sourceFile: string;
+  blocks: ContentBlock[];
 };
 
 export type BookPage = {
@@ -142,6 +150,10 @@ export type BookConventions = {
   palette?: Record<string, string>;
 };
 
+/**
+ * In-memory book. On disk: `src/book/book.yaml` + one `NN-*.md` per tab.
+ * See `parseBook.ts` / `loadBook.ts`.
+ */
 export type BookDocument = {
   title: string;
   experimentId?: string;

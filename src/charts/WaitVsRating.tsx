@@ -1,6 +1,16 @@
 import { CartesianGrid, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
 import { ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
+import type { ChartMeta } from '../data/types';
 import type { BookChartProps } from './registry';
+
+export const meta: ChartMeta = {
+  title: 'Wait vs rating',
+  subtitle: 'Sample of tickets · color = cafe',
+  query: {
+    sample: { n: 400, seed: 7 },
+    orderBy: [{ column: 'wait_min', direction: 'asc' }],
+  },
+};
 
 const CAFES = ['Harbor', 'Market', 'Campus'] as const;
 

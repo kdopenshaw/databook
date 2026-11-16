@@ -1,27 +1,25 @@
 #!/usr/bin/env node
 /**
- * Headless print of one chart block's query result (CSV / text table).
- * Same resolve + runQuery engine as the app — no Vite app server, no Playwright.
+ * Headless print of one chart's query result (CSV / text table).
+ * Reads query from the chart file's `meta` export.
  *
- *   npm run print-block -- <chartId>
- *   npm run print-block -- <chartId> --format table
- *   npm run print-block -- <chartId> --limit 20
- *
- * Loads TypeScript modules via Vite SSR (library mode), not `npm run dev`.
+ *   npm run print-block -- <ChartName>
+ *   npm run print-block -- <ChartName> --format table
+ *   npm run print-block -- <ChartName> --limit 20
  */
 import { createServer } from 'vite';
-import { readFileSync, existsSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 function usage(exitCode = 1) {
-  console.error(`Usage: npm run print-block -- <chartId> [--format csv|table] [--limit N]
+  console.error(`Usage: npm run print-block -- <ChartName> [--format csv|table] [--limit N]
 
-Print a chart's inlined query result against src/data/canonical.json.
+Print a chart's meta.query result against src/data/canonical.json.
 Stdout: compact CSV (default) or aligned text table.
-Stderr: one-line chart summary (id, title, row count).`);
+Stderr: one-line chart summary (name, title, row count).`);
   process.exit(exitCode);
 }
 
@@ -55,24 +53,22 @@ function parseArgs(argv) {
     }
     positional.push(a);
   }
-  return { chartId: positional[0], format, limit };
+  return { chartName: positional[0], format, limit };
 }
 
-const { chartId, format, limit } = parseArgs(process.argv.slice(2));
-if (!chartId) usage(1);
+const { chartName, format, limit } = parseArgs(process.argv.slice(2));
+if (!chartName) usage(1);
 
-const rowsPath = path.join(root, 'src/data/rows.json');
 const canonicalPath = path.join(root, 'src/data/canonical.json');
-if (!existsSync(rowsPath)) {
-  console.error('print-block: missing src/data/rows.json');
-  process.exit(1);
-}
+const chartPath = path.join(root, 'src/charts', `${chartName}.tsx`);
 if (!existsSync(canonicalPath)) {
   console.error('print-block: missing src/data/canonical.json');
   process.exit(1);
 }
-
-const book = JSON.parse(readFileSync(rowsPath, 'utf8'));
+if (!existsSync(chartPath)) {
+  console.error(`print-block: missing src/charts/${chartName}.tsx`);
+  process.exit(1);
+}
 
 const server = await createServer({
   root,
@@ -89,13 +85,14 @@ try {
   const table = loadCanonical();
   let result;
   try {
-    result = printChartBlock(book, table, chartId, { format, limit });
+    result = printChartBlock(table, chartName, { format, limit });
   } catch (err) {
-    const msg = err instanceof PrintBlockError || err?.name === 'PrintBlockError'
-      ? err.message
-      : err instanceof Error
+    const msg =
+      err instanceof PrintBlockError || err?.name === 'PrintBlockError'
         ? err.message
-        : String(err);
+        : err instanceof Error
+          ? err.message
+          : String(err);
     console.error(`print-block: ${msg}`);
     process.exit(1);
   }

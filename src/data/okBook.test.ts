@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { BookDocument, ComponentRow, Table } from './types';
-import { allowsEmptyQuery, checkLiveBook, smokeQueries } from './okBook';
+import type { BookDocument, ChartMeta, Table } from './types';
+import { allowsEmptyQuery, checkLiveBook, smokeChartQueries } from './okBook';
 
 const table: Table = {
   schema: [
@@ -14,55 +14,49 @@ const table: Table = {
   ],
 };
 
-function bookOf(row: ComponentRow): BookDocument {
-  return {
-    title: 't',
-    conventions: { notes: ['test'] },
-    tabs: [{ id: 'overview', label: 'Overview', order: 0, rows: [row] }],
-  };
-}
+const emptyMeta: ChartMeta = {
+  title: 'Empty',
+  notes: 'empty ok for this cut',
+  query: { filter: [{ column: 'x', op: 'eq', value: 999 }] },
+};
 
 describe('okBook', () => {
   it('allowsEmptyQuery recognizes notes opt-in', () => {
-    expect(allowsEmptyQuery({ id: 'a', title: 'A', notes: 'empty ok for this cut' })).toBe(true);
-    expect(allowsEmptyQuery({ id: 'b', title: 'B' })).toBe(false);
+    expect(allowsEmptyQuery(emptyMeta)).toBe(true);
+    expect(allowsEmptyQuery({ title: 'B', query: {} })).toBe(false);
   });
 
-  it('smokeQueries fails on empty results', () => {
-    const book = bookOf({
-      id: 'r1',
-      order: 1,
-      createdBy: 'skill',
-      type: 'component',
-      components: [
+  it('checkLiveBook reports unused charts when book references none of disk', () => {
+    const book: BookDocument = {
+      title: 't',
+      conventions: { notes: ['test'] },
+      tabs: [
         {
-          id: 'empty',
-          title: 'Empty',
-          component: 'MonthlyRevenue',
-          query: { filter: [{ column: 'x', op: 'eq', value: 999 }] },
+          id: 'overview',
+          label: 'Overview',
+          order: 1,
+          sourceFile: '01-overview.md',
+          blocks: [{ type: 'markdown', id: 'm0', body: 'hi' }],
         },
       ],
-    });
-    const issues = smokeQueries(book, table);
-    expect(issues.some((i) => i.code === 'query-empty')).toBe(true);
-  });
-
-  it('checkLiveBook passes a healthy sample chart', () => {
-    const book = bookOf({
-      id: 'r1',
-      order: 1,
-      createdBy: 'skill',
-      type: 'component',
-      components: [
-        {
-          id: 'curve',
-          title: 'Curve',
-          component: 'MonthlyRevenue',
-          query: {},
-        },
-      ],
-    });
+    };
     const result = checkLiveBook(book, table);
-    expect(result.ok).toBe(true);
+    expect(result.issues.some((i) => i.code === 'unused-chart')).toBe(true);
+  });
+
+  it('smokeChartQueries is empty when no charts referenced', () => {
+    const book: BookDocument = {
+      title: 't',
+      tabs: [
+        {
+          id: 'overview',
+          label: 'Overview',
+          order: 1,
+          sourceFile: '01-overview.md',
+          blocks: [],
+        },
+      ],
+    };
+    expect(smokeChartQueries(book, table)).toEqual([]);
   });
 });
