@@ -1,20 +1,14 @@
 # DataBook
 
-A fixed React scaffold plus an AI skill that profiles experiment data, writes one canonical JSON of normalized rows, and emits a row-based DataBook (markdown + agent-authored chart components).
+A fixed React scaffold plus an AI skill: one canonical JSON table, markdown tabs, and agent-authored charts in `src/charts/`.
 
-**Skill entrypoint:** [`SKILL.md`](./SKILL.md) — invoke `/databook` after linking this clone with `./scripts/install-skill.sh`. Spec: [`databook-spec.md`](./databook-spec.md).
-
-**Prerequisite:** Node.js **20+**.
-
-## Quick start
-
-In a databook directory (after `/databook` init):
+**Skill:** [`SKILL.md`](./SKILL.md) · **Spec:** [`databook-spec.md`](./databook-spec.md) · Node **20+**.
 
 ```bash
 npm install
-npm run dev                         # preview at http://127.0.0.1:5173/
+npm run dev                         # http://127.0.0.1:5173/
 npm run ok                          # artifacts + query smoke
-npm run print-block -- <chartId>    # headless query preview (CSV to stdout)
+npm run print-block -- <chartId>
 ```
 
-Charts live in `src/charts/*.tsx` and are referenced from `rows.json` via `"component": "Name"`.
+This repo’s sample is a **cafe-network demo** (Overview / Sales / Experience) you can click through after `npm run dev`.

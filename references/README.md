@@ -1,10 +1,9 @@
-# Bundled reference materials
+# Bundled references
 
-**Not ambient.** Open only when `SKILL.md` routes you here (usually for profiling / validation — not for every chart).
+Optional. Open only when profiling or validating — not for every chart.
 
 | Path | Role |
 |------|------|
-| `anthropic-data-plugin/skills/` | Explore, validate, stats, SQL, optional analyze / create-viz |
-| `anthropic-dataviz/METHOD.md` | Optional short form-first note |
+| `anthropic-data-plugin/skills/` | explore-data, validate-data, statistical-analysis, sql-queries, write-query, analyze |
 
-Charts themselves: write `src/charts/*.tsx`. See repo `SKILL.md`.
+Charts: write `src/charts/*.tsx`. See `SKILL.md`.

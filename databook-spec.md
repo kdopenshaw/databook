@@ -240,10 +240,8 @@ type ChartBlock = {
   title: string;
   subtitle?: string;       // units, period, filters in plain language
   ref?: string;            // reuse another chart id
-  component?: string;      // src/charts/<Name>.tsx default export (preferred)
-  recharts?: RechartsSpec; // legacy JSON fallback
-  query?: ChartQuery;      // inlined when not using ref
-  encoding?: ChartEncoding;
+  component?: string;      // src/charts/<Name>.tsx (required unless ref)
+  query?: ChartQuery;
   notes?: string;
   flex?: number;
 };
@@ -261,7 +259,7 @@ type ComponentRow = RowBase & {
 type Row = MarkdownRow | ComponentRow;
 ```
 
-Prefer `component` pointing at `src/charts/<Name>.tsx`. Legacy `recharts` JSON still works. Generators must preserve `createdBy: "user"` rows via `mergeUserRows`.
+Each chart block points at `src/charts/<Name>.tsx` via `component`. Generators must preserve `createdBy: "user"` rows via `mergeUserRows`.
 
 ### 3.4 How the agent chooses row type
 
@@ -322,7 +320,7 @@ Init sample may use a **single** tab (still mounting Tabs + Sidebar so every boo
 - Theme helpers: `ResponsiveFrame`, `chartColors()` from `src/components/charts/ResponsiveFrame.tsx`.  
 - Registry: `src/charts/registry.ts` eagerly loads `src/charts/*.tsx`.
 
-**Legacy fallback:** a declarative `recharts` JSON spec still renders via `RechartsRenderer` for older books. New work should use `component` files — there is **no** chart-type catalog lint.
+There is **no** JSON chart-type catalog — only React components.
 
 ### 4.2 Queries still shape data
 
@@ -597,7 +595,7 @@ If a book scaffold already exists, init is a no-op or a version-aware refresh �
 - [ ] Init into another project does **not** create a book-local README.  
 - [ ] DataBook product repo has a **root README**.  
 - [ ] `SKILL.md` routes agents to Anthropic references at the correct pipeline steps (not ambient dump).  
-- [ ] Chart blocks use `component` → `src/charts/*.tsx` (legacy `recharts` optional); `npm run ok` is query smoke.  
+- [ ] Chart blocks use `component` → `src/charts/*.tsx`; `npm run ok` is query smoke.  
 - [ ] Nested layout standard: `src/components`, `src/data`, `references`, top-level `SKILL.md`.  
 - [ ] No dependency on Cursor canvas for rendering.
 
@@ -619,53 +617,26 @@ Materials under `references/` ship with DataBook. They are **not** ambient backg
 
 ```text
 references/
-  README.md                      # short index; SKILL.md is the canonical router
-  anthropic-data-plugin/         # Anthropic data plugin (vendored, trimmed for DataBook)
-    UPSTREAM.md
-    LICENSE
-    CONNECTORS.md
-    skills/                      # explore-data, create-viz, data-visualization, analyze, …
-  anthropic-dataviz/             # form-first digest only (no duplicated create-viz copies)
-    METHOD.md
-    UPSTREAM.md
+  README.md
+  anthropic-data-plugin/     # trimmed: explore, validate, stats, SQL, analyze
 ```
 
-### 11.2 Anthropic data plugin (`references/anthropic-data-plugin/`)
+### 11.2 Plugin role
 
-Vendored copy of the [`data/`](https://github.com/anthropics/knowledge-work-plugins/tree/main/data) plugin from [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) (Apache-2.0), trimmed for DataBook:
+Profiling / validation / SQL habits when routed. Charts are **not** produced by plugin viz skills — agents write `src/charts/*.tsx`.
 
-- **Shipped** under `skills/`: profiling, explore, validate, stats, SQL, `create-viz`, `data-visualization`, optional `analyze`.  
-- **Omitted** (not in this tree): upstream `build-dashboard`, `data-context-extractor` — they conflict with the DataBook row model / pipeline.  
-- Single copies of `create-viz` and `data-visualization` live here (not also under `anthropic-dataviz/`), so `CONNECTORS.md` relative links resolve.
+### 11.3 Router
 
-**Role:** profiling, exploration, SQL/stats/validation habits, and chart-type tables. Used when the skill routes the agent there — not as a blanket read at session start. `analyze` is optional for Q&A-shaped asks, not required for book emission.
+Canonical router is **`SKILL.md`**. Do not dump all of `references/` at start.
 
-### 11.3 Anthropic data viz (`references/anthropic-dataviz/`)
+### 11.4 Maintenance
 
-Optional. **`METHOD.md`** is a short form-first digest if an agent wants chart-choice advice. Prefer writing `src/charts/*.tsx` over reading long viz skills. Plugin `create-viz` / `data-visualization` remain available but are **not** required for book emission.
-
-### 11.4 Router (canonical copy is `SKILL.md`)
-
-| Pipeline step | Open |
-|---------------|------|
-| Profiling / exploring unfamiliar sources | `references/anthropic-data-plugin/skills/explore-data/` (optional related: validate / stats / SQL) |
-| Broader data Q&A (optional) | `references/anthropic-data-plugin/skills/analyze/` |
-| Validation / statistical checks | `validate-data/`, `statistical-analysis/` as needed |
-| Charts | Write `src/charts/*.tsx` + wire `component` in `rows.json` (optional METHOD.md) |
-| Building the book shell / rows | `SKILL.md` + this spec |
-
-Do **not** dump all of `references/` at start. Do **not** replace the book with Anthropic HTML dashboards.
-
-### 11.5 Maintenance
-
-When bumping vendored content, update each folder’s `UPSTREAM.md` and note intentional diffs. Keep `SKILL.md` router paths in sync with folder names.
+Update `UPSTREAM.md` when bumping the vendor pin; note intentional omissions.
 
 ---
 
 ## 12. External references
 
-- Cursor canvas constraint: import only from `cursor/canvas`; no npm/Recharts in canvases.  
-- Recharts: [recharts.org](https://recharts.org/) (locked charting library; DataBook stock renderer — see §4.1).  
-- react-markdown: [github.com/remarkjs/react-markdown](https://github.com/remarkjs/react-markdown).  
-- Geist design system (typography/spacing tokens + Tabs): [vercel.com/geist](https://vercel.com/geist) / Tabs docs (e.g. [geist/tabs](https://vercel.com/geist/tabs)).  
-- Anthropic knowledge-work-plugins `data/`: [github.com/anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) (vendored under `references/anthropic-data-plugin/`).
+- Recharts (used inside agent chart components): [recharts.org](https://recharts.org/)  
+- react-markdown: [github.com/remarkjs/react-markdown](https://github.com/remarkjs/react-markdown)  
+- Anthropic knowledge-work-plugins `data/`: [github.com/anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) (trimmed under `references/anthropic-data-plugin/`)
