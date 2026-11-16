@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { insertMarkdownRow, orderBetween, updateMarkdownBody } from './insertMarkdown';
+import { insertMarkdownRow, orderBetween, removeMarkdownRow, updateMarkdownBody } from './insertMarkdown';
 import type { BookDocument } from './types';
 
 const book = (): BookDocument => ({
@@ -54,5 +54,10 @@ describe('insertMarkdownRow', () => {
   it('updateMarkdownBody replaces body', () => {
     const next = updateMarkdownBody(book(), 'overview', 'md-1', 'updated');
     expect(next.tabs[0].rows[0]).toMatchObject({ id: 'md-1', body: 'updated' });
+  });
+
+  it('removeMarkdownRow drops a row', () => {
+    const next = removeMarkdownRow(book(), 'overview', 'md-1');
+    expect(next.tabs[0].rows.some((r) => r.id === 'md-1')).toBe(false);
   });
 });

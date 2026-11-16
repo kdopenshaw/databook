@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { TabSection } from '../../data/types';
-import { InlineRename } from './InlineRename';
-import { confirmAction } from './confirmAction';
+import { RenamableNavItem } from './RenamableNavItem';
 
 type Props = {
   tabs: TabSection[];
@@ -91,53 +90,29 @@ export function BookTabs({
             role="tablist"
             aria-label="Book tabs"
             ref={listRef}
+            tabIndex={0}
             onKeyDown={onKeyDown}
           >
             {sorted.map((tab) => {
               const active = tab.id === activeTabId;
               return (
-                <div key={tab.id} className="dbk-tabs-trigger-wrap">
-                  <button
-                    type="button"
-                    role="tab"
-                    id={`tab-${tab.id}`}
-                    aria-selected={active}
-                    aria-controls={`panel-${tab.id}`}
-                    tabIndex={active ? 0 : -1}
-                    className="dbk-tabs-trigger"
-                    data-state={active ? 'active' : 'inactive'}
-                    onClick={() => onSelect(tab.id)}
-                  >
-                    {onRenameTab ? (
-                      <InlineRename
-                        value={tab.label}
-                        onCommit={(label) => onRenameTab(tab.id, label)}
-                        ariaLabel={`Rename tab ${tab.label}`}
-                      />
-                    ) : (
-                      tab.label
-                    )}
-                  </button>
-                  {active && onDeleteTab ? (
-                    <button
-                      type="button"
-                      className="dbk-nav-delete dbk-tabs-delete"
-                      aria-label={`Delete tab ${tab.label}`}
-                      title="Delete tab"
-                      onClick={() => {
-                        if (
-                          confirmAction(
-                            `Delete tab “${tab.label}” and all blocks in it? This cannot be undone.`,
-                          )
-                        ) {
-                          onDeleteTab(tab.id);
-                        }
-                      }}
-                    >
-                      ×
-                    </button>
-                  ) : null}
-                </div>
+                <RenamableNavItem
+                  key={tab.id}
+                  label={tab.label}
+                  active={active}
+                  className="dbk-tabs-trigger"
+                  selectButtonProps={{
+                    role: 'tab',
+                    id: `tab-${tab.id}`,
+                    'aria-selected': active,
+                    'aria-controls': `panel-${tab.id}`,
+                    tabIndex: active ? 0 : -1,
+                  }}
+                  onSelect={() => onSelect(tab.id)}
+                  onCommit={onRenameTab ? (label) => onRenameTab(tab.id, label) : undefined}
+                  onDelete={onDeleteTab ? () => onDeleteTab(tab.id) : undefined}
+                  deleteLabel={`Delete tab ${tab.label}`}
+                />
               );
             })}
             {onAddTab ? (
@@ -168,6 +143,7 @@ export function BookTabs({
         role="tabpanel"
         id={`panel-${activeTabId}`}
         aria-labelledby={`tab-${activeTabId}`}
+        hidden={!activeTabId}
       >
         {children}
       </div>

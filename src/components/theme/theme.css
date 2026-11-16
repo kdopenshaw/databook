@@ -462,6 +462,180 @@ button {
   background: var(--dbk-hover);
 }
 
+@media (hover: none), (pointer: coarse) {
+  .dbk-nav-delete,
+  .dbk-insert-gap-btn,
+  .dbk-row-drag,
+  .dbk-tabs-list .dbk-tabs-add {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.dbk-nav-label-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dbk-nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dbk-nav-rename-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--dbk-muted);
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.dbk-nav-label-row:hover .dbk-nav-rename-btn,
+.dbk-nav-label-row:focus-within .dbk-nav-rename-btn,
+.dbk-nav-rename-btn:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .dbk-nav-rename-btn {
+    opacity: 1;
+  }
+}
+
+.dbk-nav-rename-input {
+  width: min(12em, 100%);
+}
+
+.dbk-persist-banner {
+  padding: 8px var(--dbk-space-5);
+  font-size: 12px;
+  color: var(--dbk-muted);
+  background: color-mix(in srgb, var(--dbk-hover) 60%, transparent);
+  border-bottom: 1px solid var(--dbk-border);
+}
+
+.dbk-persist-banner-error {
+  color: var(--dbk-error, #e5484d);
+}
+
+.dbk-persist-banner code {
+  font-family: var(--dbk-font-mono);
+  font-size: 11px;
+}
+
+.dbk-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: color-mix(in srgb, #000 45%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.dbk-modal {
+  width: min(420px, 100%);
+  padding: var(--dbk-space-5);
+  border-radius: var(--dbk-radius);
+  border: 1px solid var(--dbk-border);
+  background: var(--dbk-bg);
+  box-shadow: 0 16px 48px color-mix(in srgb, #000 20%, transparent);
+}
+
+.dbk-modal-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.dbk-modal-message {
+  margin: 0 0 var(--dbk-space-4);
+  font-size: 13px;
+  color: var(--dbk-muted);
+  line-height: 1.45;
+}
+
+.dbk-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dbk-btn-danger {
+  color: #fff;
+  background: var(--dbk-error, #e5484d);
+  border-color: transparent;
+}
+
+.dbk-sidebar-backdrop {
+  display: none;
+}
+
+.dbk-empty-tab {
+  color: var(--dbk-muted);
+  font-size: 14px;
+  margin: var(--dbk-space-4) 0;
+}
+
+.dbk-link-btn {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--dbk-fg);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.dbk-row-move-col {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.dbk-row-keyboard-move {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dbk-row-move-btn {
+  appearance: none;
+  width: 22px;
+  height: 18px;
+  border: 1px solid var(--dbk-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dbk-muted);
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.dbk-row-stack:hover .dbk-row-move-btn,
+.dbk-row-stack:focus-within .dbk-row-move-btn {
+  opacity: 1;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .dbk-row-move-btn {
+    opacity: 1;
+  }
+}
+
 .dbk-tabs-trigger-wrap {
   display: inline-flex;
   align-items: stretch;
@@ -868,8 +1042,19 @@ button {
     box-shadow: 8px 0 24px color-mix(in srgb, #000 12%, transparent);
   }
 
-  .dbk-page-switcher {
+  .dbk-shell-multi-page .dbk-page-switcher {
     display: block;
+  }
+
+  .dbk-shell-sidebar-open .dbk-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    border: 0;
+    padding: 0;
+    background: color-mix(in srgb, #000 40%, transparent);
+    cursor: pointer;
   }
 
   .dbk-header {

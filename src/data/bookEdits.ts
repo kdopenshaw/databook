@@ -23,6 +23,8 @@ export function newUserPageId(): string {
   return `page-user-${newSuffix()}`;
 }
 
+export const DEFAULT_HOME_PAGE_ID = 'page-home';
+
 export function sortedRowIds(rows: BookRow[]): string[] {
   return [...rows].sort((a, b) => a.order - b.order).map((r) => r.id);
 }
@@ -131,7 +133,7 @@ export function normalizePageTabIds(book: BookDocument): BookDocument {
 
 export function addTab(
   book: BookDocument,
-  opts?: { label?: string; pageId?: string; activate?: boolean },
+  opts?: { label?: string; pageId?: string; attachToPage?: boolean },
 ): { book: BookDocument; tab: TabSection } {
   const id = newUserTabId();
   const order = book.tabs.reduce((m, t) => Math.max(m, t.order), -1) + 1;
@@ -142,7 +144,8 @@ export function addTab(
     rows: [],
   };
   let pages = book.pages;
-  if (pages?.length) {
+  const attach = opts?.attachToPage !== false;
+  if (pages?.length && attach) {
     const pageId = opts?.pageId ?? pages[0]?.id;
     pages = pages.map((p) => ({
       ...p,
@@ -159,9 +162,18 @@ export function addTab(
 /** Tabs-only books get a single home page so the page sidebar is never empty. */
 export function ensureDefaultPage(book: BookDocument, label = 'Home'): BookDocument {
   if (book.pages?.length) return normalizePageTabIds(book);
-  if (!book.tabs.length) return book;
+  if (!book.tabs.length) {
+    const { book: withTab, tab } = addTab(book, { label: 'Overview', attachToPage: false });
+    const page: BookPage = {
+      id: DEFAULT_HOME_PAGE_ID,
+      label,
+      order: 0,
+      tabIds: [tab.id],
+    };
+    return normalizePageTabIds({ ...withTab, pages: [page], defaultTabId: tab.id });
+  }
   const page: BookPage = {
-    id: newUserPageId(),
+    id: DEFAULT_HOME_PAGE_ID,
     label,
     order: 0,
     tabIds: book.tabs.map((t) => t.id),
@@ -176,7 +188,7 @@ export function addPage(book: BookDocument, label = 'New page'): { book: BookDoc
 
   if (!existingPages.length && book.tabs.length) {
     const page: BookPage = {
-      id,
+      id: DEFAULT_HOME_PAGE_ID,
       label,
       order: 0,
       tabIds: book.tabs.map((t) => t.id),
@@ -184,7 +196,7 @@ export function addPage(book: BookDocument, label = 'New page'): { book: BookDoc
     return { book: normalizePageTabIds({ ...book, pages: [page] }), page };
   }
 
-  const { book: withTab, tab } = addTab(book, { label: 'Overview' });
+  const { book: withTab, tab } = addTab(book, { label: 'New tab', attachToPage: false });
   const page: BookPage = { id, label, order, tabIds: [tab.id] };
   const pages = [...(withTab.pages ?? []), page];
   return {
@@ -234,6 +246,52 @@ export function reorderRowsBefore(
   return { ...book, tabs };
 }
 
+/** Move `movedId` after `afterRowId` within a tab. */
+export function reorderRowsAfter(
+  book: BookDocument,
+  tabId: string,
+  movedId: string,
+  afterRowId: string,
+): BookDocument {
+  if (movedId === afterRowId) return book;
+  const tabIndex = book.tabs.findIndex((t) => t.id === tabId);
+  if (tabIndex < 0) return book;
+
+  const tab = book.tabs[tabIndex];
+  const sorted = [...tab.rows].sort((a, b) => a.order - b.order);
+  const from = sorted.findIndex((r) => r.id === movedId);
+  const afterIdx = sorted.findIndex((r) => r.id === afterRowId);
+  if (from < 0 || afterIdx < 0) return book;
+
+  const next = sorted.filter((r) => r.id !== movedId);
+  const insertAt = next.findIndex((r) => r.id === afterRowId) + 1;
+  const before = insertAt > 0 ? next[insertAt - 1].order : undefined;
+  const after = insertAt < next.length ? next[insertAt].order : undefined;
+  const moved = { ...sorted[from], order: orderBetween(before, after) };
+  next.splice(insertAt, 0, moved);
+
+  const tabs = book.tabs.map((t, i) => (i === tabIndex ? { ...t, rows: next } : t));
+  return { ...book, tabs };
+}
+
+export function moveRowInTab(
+  book: BookDocument,
+  tabId: string,
+  rowId: string,
+  direction: 'up' | 'down',
+): BookDocument {
+  const tab = book.tabs.find((t) => t.id === tabId);
+  if (!tab) return book;
+  const sorted = [...tab.rows].sort((a, b) => a.order - b.order);
+  const i = sorted.findIndex((r) => r.id === rowId);
+  if (i < 0) return book;
+  if (direction === 'up' && i > 0) return reorderRowsBefore(book, tabId, rowId, sorted[i - 1].id);
+  if (direction === 'down' && i < sorted.length - 1) {
+    return reorderRowsAfter(book, tabId, rowId, sorted[i + 1].id);
+  }
+  return book;
+}
+
 export function deleteTab(book: BookDocument, tabId: string): BookDocument {
   const tabs = book.tabs.filter((t) => t.id !== tabId);
   const pages = book.pages?.map((p) => ({
@@ -258,7 +316,6 @@ export function deletePage(book: BookDocument, pageId: string): BookDocument {
   if (defaultTabId && removeIds.has(defaultTabId)) defaultTabId = tabs[0]?.id;
 
   const partial = { ...book, tabs, pages: nextPages.length ? nextPages : undefined, defaultTabId };
-  if (!nextPages.length && tabs.length) return ensureDefaultPage(partial);
-  if (!nextPages.length) return partial;
+  if (!nextPages.length) return ensureDefaultPage(partial);
   return normalizePageTabIds(partial);
 }

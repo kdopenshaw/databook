@@ -1,10 +1,10 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ThemeToggle } from '../theme/ThemeToggle';
 import { Sidebar } from './Sidebar';
 import { BookTabs } from './BookTabs';
 import { PanelToggle } from './PanelToggle';
 import type { BookPage, TabSection } from '../../data/types';
-import { InlineRename } from './InlineRename';
+import { RenamableNavItem } from './RenamableNavItem';
 
 type Props = {
   title: string;
@@ -20,16 +20,11 @@ type Props = {
   onAddPage?: () => void;
   onRenamePage?: (pageId: string, label: string) => void;
   onDeletePage?: (pageId: string) => void;
+  banner?: ReactNode;
   footer?: ReactNode;
   children: ReactNode;
 };
 
-/**
- * Tabs are the primary section nav. Sidebar appears only when `pages` are defined
- * (page groups), so it never duplicates the tab strip 1:1. On narrow viewports the
- * sidebar is hidden and a sticky horizontal page switcher takes its place.
- * With a single page, the sidebar stays hidden until toggled open.
- */
 export function PageLayout({
   title,
   tabs,
@@ -44,6 +39,7 @@ export function PageLayout({
   onAddPage,
   onRenamePage,
   onDeletePage,
+  banner,
   footer,
   children,
 }: Props) {
@@ -52,24 +48,46 @@ export function PageLayout({
   const [sidebarOpen, setSidebarOpen] = useState(pages.length > 1);
   const showSidebar = pageNav && sidebarOpen;
   const sortedPages = [...pages].sort((a, b) => a.order - b.order);
+  const showMobileSwitcher = hasPages && pages.length > 1;
+
+  useEffect(() => {
+    if (!showSidebar) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSidebarOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showSidebar]);
 
   return (
     <div
       className={`dbk-shell${
         showSidebar ? ' dbk-shell-with-sidebar dbk-shell-sidebar-open' : ' dbk-shell-tabs-only'
-      }`}
+      }${pages.length > 1 ? ' dbk-shell-multi-page' : ''}`}
     >
       {showSidebar ? (
-        <Sidebar
-          pages={pages}
-          activePageId={activePageId}
-          onSelectPage={onSelectPage ?? (() => {})}
-          onAddPage={onAddPage}
-          onRenamePage={onRenamePage}
-          onDeletePage={onDeletePage}
-        />
+        <>
+          <button
+            type="button"
+            className="dbk-sidebar-backdrop"
+            aria-label="Close pages sidebar"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <Sidebar
+            pages={pages}
+            activePageId={activePageId}
+            onSelectPage={(id) => {
+              onSelectPage?.(id);
+              setSidebarOpen(false);
+            }}
+            onAddPage={onAddPage}
+            onRenamePage={onRenamePage}
+            onDeletePage={onDeletePage}
+          />
+        </>
       ) : null}
       <div className="dbk-main-column">
+        {banner}
         <header className="dbk-header">
           {pageNav ? (
             <PanelToggle expanded={showSidebar} onClick={() => setSidebarOpen((v) => !v)} />
@@ -79,27 +97,18 @@ export function PageLayout({
             <ThemeToggle />
           </div>
         </header>
-        {hasPages ? (
+        {showMobileSwitcher ? (
           <div className="dbk-page-switcher" role="navigation" aria-label="Book pages">
             <div className="dbk-page-switcher-scroll">
               {sortedPages.map((page) => (
-                <button
+                <RenamableNavItem
                   key={page.id}
-                  type="button"
+                  label={page.label}
+                  active={page.id === activePageId}
                   className="dbk-page-chip"
-                  aria-current={page.id === activePageId ? 'page' : undefined}
-                  onClick={() => onSelectPage?.(page.id)}
-                >
-                  {onRenamePage ? (
-                    <InlineRename
-                      value={page.label}
-                      onCommit={(label) => onRenamePage(page.id, label)}
-                      ariaLabel={`Rename page ${page.label}`}
-                    />
-                  ) : (
-                    page.label
-                  )}
-                </button>
+                  onSelect={() => onSelectPage?.(page.id)}
+                  onCommit={onRenamePage ? (label) => onRenamePage(page.id, label) : undefined}
+                />
               ))}
             </div>
           </div>

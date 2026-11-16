@@ -5,13 +5,12 @@ import type { MarkdownRow as MarkdownRowModel } from '../../data/types';
 
 type Props = {
   row: MarkdownRowModel;
-  /** When set, this row can be edited and saved in place. */
   onSave?: (body: string) => void;
-  /** Open the editor immediately (e.g. freshly inserted empty row). */
+  onCancel?: () => void;
   startEditing?: boolean;
 };
 
-export function MarkdownRow({ row, onSave, startEditing = false }: Props) {
+export function MarkdownRow({ row, onSave, onCancel, startEditing = false }: Props) {
   const editable = Boolean(onSave) && row.createdBy === 'user';
   const [editing, setEditing] = useState(editable && (startEditing || row.body === ''));
   const [draft, setDraft] = useState(row.body);
@@ -32,7 +31,10 @@ export function MarkdownRow({ row, onSave, startEditing = false }: Props) {
   const cancel = () => {
     setDraft(row.body);
     setEditing(false);
+    onCancel?.();
   };
+
+  const showBody = row.body.trim().length > 0;
 
   return (
     <article className={`dbk-row dbk-markdown${editable ? ' dbk-markdown-user' : ''}`}>
@@ -64,10 +66,10 @@ export function MarkdownRow({ row, onSave, startEditing = false }: Props) {
             </button>
           </div>
         </div>
-      ) : (
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-          {row.body || '*Empty markdown block*'}
-        </ReactMarkdown>
+      ) : showBody ? (
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{row.body}</ReactMarkdown>
+      ) : editable ? null : (
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{row.body}</ReactMarkdown>
       )}
     </article>
   );

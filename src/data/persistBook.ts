@@ -1,20 +1,17 @@
 import type { BookDocument } from './types';
+import { clearFullBookOverlay, saveFullBookOverlay } from './bookOverlay';
 import { clearUserRowsOverlay } from './userBookStore';
 
 const PERSIST_PATH = '/api/book';
 
-/**
- * Write the full BookDocument to `src/data/rows.json` (dev server only).
- * This is the canonical, committable book — not localStorage.
- */
-export async function persistBookToSource(book: BookDocument): Promise<boolean> {
-  if (!import.meta.env.DEV) {
-    if (import.meta.env.MODE !== 'test') {
-      console.warn('persistBookToSource: only available under `npm run dev`');
-    }
-    return false;
-  }
+export type PersistResult = {
+  ok: boolean;
+  via: 'disk' | 'local' | 'none';
+  error?: string;
+};
 
+async function persistToDisk(book: BookDocument): Promise<PersistResult> {
+  if (!import.meta.env.DEV) return { ok: false, via: 'none' };
   try {
     const res = await fetch(PERSIST_PATH, {
       method: 'PUT',
@@ -23,13 +20,57 @@ export async function persistBookToSource(book: BookDocument): Promise<boolean> 
     });
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      console.error('persistBookToSource failed:', body?.error ?? res.statusText);
-      return false;
+      return { ok: false, via: 'none', error: body?.error ?? res.statusText };
     }
     clearUserRowsOverlay(book);
-    return true;
+    clearFullBookOverlay(book);
+    return { ok: true, via: 'disk' };
   } catch (err) {
-    console.error('persistBookToSource failed:', err);
-    return false;
+    return { ok: false, via: 'none', error: err instanceof Error ? err.message : String(err) };
   }
+}
+
+/** Write book to disk (dev) or localStorage full-book overlay (preview). */
+export async function flushPersistBook(book: BookDocument): Promise<PersistResult> {
+  const disk = await persistToDisk(book);
+  if (disk.ok) return disk;
+  if (typeof window !== 'undefined') {
+    saveFullBookOverlay(book);
+    return { ok: true, via: 'local' };
+  }
+  return disk;
+}
+
+let pending: BookDocument | null = null;
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let chain: Promise<PersistResult> = Promise.resolve({ ok: true, via: 'none' });
+
+/** Debounced, serialized persist queue. */
+export function schedulePersistBook(book: BookDocument): Promise<PersistResult> {
+  pending = book;
+  if (debounceTimer) clearTimeout(debounceTimer);
+  const scheduled = new Promise<PersistResult>((resolve) => {
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      const toWrite = pending;
+      pending = null;
+      if (!toWrite) {
+        resolve({ ok: true, via: 'none' });
+        return;
+      }
+      chain = chain
+        .then(() => flushPersistBook(toWrite))
+        .then((r) => {
+          resolve(r);
+          return r;
+        });
+    }, 350);
+  });
+  return scheduled;
+}
+
+/** @deprecated use schedulePersistBook */
+export async function persistBookToSource(book: BookDocument): Promise<boolean> {
+  const r = await flushPersistBook(book);
+  return r.ok;
 }

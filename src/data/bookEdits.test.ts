@@ -85,12 +85,12 @@ describe('bookEdits', () => {
     expect(next.pages![0].tabIds).toEqual([]);
   });
 
-  it('deletePage removes listed tabs', () => {
+  it('deletePage removes listed tabs and recovers a home page', () => {
     const book = addPage(base()).book;
     const pageId = book.pages![0].id;
     const next = deletePage(book, pageId);
-    expect(next.pages).toBeUndefined();
-    expect(next.tabs).toHaveLength(0);
+    expect(next.pages).toHaveLength(1);
+    expect(next.tabs.length).toBeGreaterThan(0);
   });
 
   it('round-trips structure overlay', () => {

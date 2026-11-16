@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useThemeKey } from './components/charts/ResponsiveFrame';
+import { ConfirmDialog } from './components/layout/ConfirmDialog';
 import { PageLayout } from './components/layout/PageLayout';
+import { PersistBanner } from './components/layout/PersistBanner';
 import { RowRenderer } from './components/rows/RowRenderer';
 import {
   addPage,
@@ -8,23 +10,38 @@ import {
   deletePage,
   deleteTab,
   ensureDefaultPage,
+  moveRowInTab,
   normalizePageTabIds,
   renamePage,
   renameTab,
   reorderRowsBefore,
 } from './data/bookEdits';
-import { insertMarkdownRow, updateMarkdownBody } from './data/insertMarkdown';
+import { loadBookForApp } from './data/loadBookForApp';
+import {
+  insertMarkdownRow,
+  removeMarkdownRow,
+  updateMarkdownBody,
+} from './data/insertMarkdown';
 import { loadCanonical } from './data/loadCanonical';
-import type { BookDocument, BookPage } from './data/types';
-import { persistBookToSource } from './data/persistBook';
-import { loadBookWithUserRows } from './data/userBookStore';
+import {
+  adjacentPageAfterDelete,
+  pageForTab,
+  pickTabForPage,
+  pickTabOnPageAfterDelete,
+  syncTabToPage,
+  tabsForPage,
+  validatePageId,
+  validateTabId,
+} from './data/navBook';
+import type { PersistResult } from './data/persistBook';
+import { flushPersistBook, schedulePersistBook } from './data/persistBook';
+import type { BookDocument } from './data/types';
 import rowsJson from './data/rows.json';
 
 function readTabFromUrl(fallback: string): string {
   if (typeof window === 'undefined') return fallback;
   const q = new URLSearchParams(window.location.search).get('tab');
   if (q) return q;
-  // Legacy hash support (one-time read); new writes use ?tab= only.
   const fromHash = window.location.hash.replace(/^#/, '');
   return fromHash || fallback;
 }
@@ -34,7 +51,7 @@ function readPageFromUrl(fallback: string): string {
   return new URLSearchParams(window.location.search).get('page') || fallback;
 }
 
-function writeNavToUrl(tabId: string, pageId?: string) {
+function writeNavToUrl(tabId: string, pageId?: string, replace = true) {
   if (typeof window === 'undefined') return;
   const url = new URL(window.location.href);
   url.searchParams.set('tab', tabId);
@@ -43,48 +60,69 @@ function writeNavToUrl(tabId: string, pageId?: string) {
   url.hash = '';
   const next = url.pathname + url.search;
   const cur = window.location.pathname + window.location.search;
-  if (next !== cur) {
-    window.history.pushState(null, '', next);
-  }
+  if (next === cur) return;
+  const method = replace ? 'replaceState' : 'pushState';
+  window.history[method](null, '', next);
 }
 
-function pageForTab(pages: BookPage[], tabId: string): BookPage | undefined {
-  return pages.find((p) => p.tabIds.includes(tabId));
-}
+type ConfirmState = {
+  title: string;
+  message: string;
+  onResolve: (ok: boolean) => void;
+};
 
 export default function App() {
-  const [book, setBook] = useState<BookDocument>(() =>
-    ensureDefaultPage(normalizePageTabIds(loadBookWithUserRows(rowsJson as BookDocument))),
-  );
+  const baseBook = rowsJson as BookDocument;
+  const [book, setBook] = useState<BookDocument>(() => loadBookForApp(baseBook));
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [persistError, setPersistError] = useState<string | null>(null);
+  const [lastPersist, setLastPersist] = useState<PersistResult | null>(null);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+  const userNavRef = useRef(false);
   const table = useMemo(() => loadCanonical(), []);
   const allTabs = useMemo(() => [...book.tabs].sort((a, b) => a.order - b.order), [book.tabs]);
   const pages = useMemo(() => [...(book.pages ?? [])].sort((a, b) => a.order - b.order), [book.pages]);
   const defaultId = book.defaultTabId ?? allTabs[0]?.id ?? '';
-  const [activeTabId, setActiveTabId] = useState(() => readTabFromUrl(defaultId));
-  const defaultPageId = pages[0]?.id ?? '';
-  const [activePageId, setActivePageId] = useState(() => {
-    const fromUrl = readPageFromUrl('');
-    if (fromUrl && pages.some((p) => p.id === fromUrl)) return fromUrl;
-    const tab = readTabFromUrl(defaultId);
-    return pageForTab(pages, tab)?.id ?? defaultPageId;
-  });
-  const themeKey = useThemeKey();
 
-  const persist = (next: BookDocument) => {
+  const [activeTabId, setActiveTabId] = useState(() =>
+    validateTabId(loadBookForApp(baseBook), readTabFromUrl(defaultId)) ?? defaultId,
+  );
+  const [activePageId, setActivePageId] = useState(() => {
+    const loaded = loadBookForApp(baseBook);
+    const pgs = loaded.pages ?? [];
+    const fromUrl = validatePageId(loaded, readPageFromUrl('')) ?? '';
+    if (fromUrl) return fromUrl;
+    const tab = validateTabId(loaded, readTabFromUrl(defaultId)) ?? defaultId;
+    return pageForTab(pgs, tab)?.id ?? pgs[0]?.id ?? '';
+  });
+
+  const themeKey = useThemeKey();
+  const previewMode = !import.meta.env.DEV;
+
+  const applyBook = useCallback((next: BookDocument, opts?: { persist?: boolean }) => {
     const normalized = ensureDefaultPage(normalizePageTabIds(next));
     setBook(normalized);
-    void persistBookToSource(normalized);
-  };
+    if (opts?.persist !== false) {
+      void schedulePersistBook(normalized).then((r) => {
+        setLastPersist(r);
+        setPersistError(r.ok ? null : r.error ?? 'Save failed');
+      });
+    }
+    return normalized;
+  }, []);
 
-  const tabs = useMemo(() => {
-    if (!pages.length) return allTabs;
-    const page = pages.find((p) => p.id === activePageId) ?? pages[0];
-  const byId = new Map(allTabs.map((t) => [t.id, t]));
-    return (page?.tabIds ?? [])
-      .map((id) => byId.get(id))
-      .filter((t): t is (typeof allTabs)[number] => Boolean(t));
-  }, [allTabs, pages, activePageId]);
+  const tabs = useMemo(
+    () => (pages.length ? tabsForPage(book, activePageId) : allTabs),
+    [allTabs, book, pages.length, activePageId],
+  );
+
+  const activeTab = tabs.find((t) => t.id === activeTabId);
+
+  const requestConfirm = useCallback((title: string, message: string) => {
+    return new Promise<boolean>((resolve) => {
+      setConfirmState({ title, message, onResolve: resolve });
+    });
+  }, []);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -92,145 +130,204 @@ export default function App() {
   }, [book.title]);
 
   useEffect(() => {
-    if (!allTabs.some((t) => t.id === activeTabId) && defaultId) {
-      setActiveTabId(defaultId);
-    }
-  }, [allTabs, activeTabId, defaultId]);
-
-  useEffect(() => {
     if (!pages.length) return;
-    const page = pages.find((p) => p.id === activePageId);
-    if (!page) {
-      setActivePageId(pages[0].id);
-      return;
-    }
-    if (!page.tabIds.includes(activeTabId)) {
-      setActiveTabId(page.tabIds[0] ?? defaultId);
-    }
-  }, [pages, activePageId, activeTabId, defaultId]);
+    const synced = syncTabToPage(pages, activePageId, activeTabId);
+    if (synced.pageId !== activePageId) setActivePageId(synced.pageId);
+    if (synced.tabId !== activeTabId) setActiveTabId(synced.tabId);
+  }, [pages, activePageId, activeTabId]);
 
   useEffect(() => {
-    writeNavToUrl(activeTabId, pages.length ? activePageId : undefined);
+    writeNavToUrl(activeTabId, pages.length ? activePageId : undefined, !userNavRef.current);
+    userNavRef.current = false;
   }, [activeTabId, activePageId, pages.length]);
 
   useEffect(() => {
     const onPop = () => {
-      setActiveTabId(readTabFromUrl(defaultId));
-      if (pages.length) setActivePageId(readPageFromUrl(defaultPageId));
+      const tab = validateTabId(book, readTabFromUrl(defaultId)) ?? defaultId;
+      setActiveTabId(tab);
+      if (pages.length) {
+        const page = validatePageId(book, readPageFromUrl(pages[0]?.id ?? '')) ?? pages[0]?.id;
+        if (page) setActivePageId(page);
+      }
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [defaultId, defaultPageId, pages.length]);
+  }, [book, defaultId, pages]);
 
-  const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0] ?? allTabs[0];
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    if (baseBook.pages?.length) return;
+    const initial = loadBookForApp(baseBook);
+    if (initial.pages?.length) void flushPersistBook(initial);
+  }, [baseBook]);
 
   const selectTab = (tabId: string) => {
+    userNavRef.current = true;
     setActiveTabId(tabId);
     const page = pageForTab(pages, tabId);
     if (page) setActivePageId(page.id);
+    writeNavToUrl(tabId, page?.id ?? activePageId, false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const selectPage = (pageId: string) => {
     const page = pages.find((p) => p.id === pageId);
     if (!page) return;
+    userNavRef.current = true;
     setActivePageId(pageId);
-    const nextTab = page.tabIds.includes(activeTabId) ? activeTabId : page.tabIds[0];
+    const nextTab = pickTabForPage(page.tabIds, activeTabId);
     if (nextTab) setActiveTabId(nextTab);
+    writeNavToUrl(nextTab ?? activeTabId, pageId, false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const insertMarkdown = (afterRowId: string | null) => {
     if (!activeTab) return;
     const { book: next, row } = insertMarkdownRow(book, activeTab.id, afterRowId, '');
-    persist(next);
+    setBook(ensureDefaultPage(normalizePageTabIds(next)));
     setEditingRowId(row.id);
   };
 
   const saveMarkdown = (rowId: string, body: string) => {
     if (!activeTab) return;
-    const next = updateMarkdownBody(book, activeTab.id, rowId, body);
-    persist(next);
+    applyBook(updateMarkdownBody(book, activeTab.id, rowId, body));
+    setEditingRowId(null);
+  };
+
+  const cancelMarkdown = (rowId: string) => {
+    if (!activeTab) return;
+    const row = activeTab.rows.find((r) => r.id === rowId);
+    if (row?.type === 'markdown' && row.createdBy === 'user' && !row.body.trim()) {
+      applyBook(removeMarkdownRow(book, activeTab.id, rowId));
+    }
     setEditingRowId(null);
   };
 
   const handleAddTab = () => {
     const pageId = pages.length ? activePageId : undefined;
     const { book: next, tab } = addTab(book, { pageId });
-    persist(next);
+    applyBook(next);
+    userNavRef.current = true;
     setActiveTabId(tab.id);
   };
 
   const handleAddPage = () => {
     const { book: next, page } = addPage(book);
-    persist(next);
+    applyBook(next);
+    userNavRef.current = true;
     setActivePageId(page.id);
     setActiveTabId(page.tabIds[0] ?? next.defaultTabId ?? '');
   };
 
   const handleRenameTab = (tabId: string, label: string) => {
-    persist(renameTab(book, tabId, label));
+    applyBook(renameTab(book, tabId, label));
   };
 
   const handleRenamePage = (pageId: string, label: string) => {
-    persist(renamePage(book, pageId, label));
+    applyBook(renamePage(book, pageId, label));
   };
 
   const handleReorderRows = (movedId: string, beforeId: string) => {
     if (!activeTab) return;
-    persist(reorderRowsBefore(book, activeTab.id, movedId, beforeId));
+    applyBook(reorderRowsBefore(book, activeTab.id, movedId, beforeId));
   };
 
-  const handleDeleteTab = (tabId: string) => {
+  const handleMoveRow = (rowId: string, direction: 'up' | 'down') => {
+    if (!activeTab) return;
+    applyBook(moveRowInTab(book, activeTab.id, rowId, direction));
+  };
+
+  const handleDeleteTab = async (tabId: string) => {
+    const tab = book.tabs.find((t) => t.id === tabId);
+    if (!tab) return;
+    const ok = await requestConfirm(
+      'Delete tab',
+      `Delete tab “${tab.label}” and all blocks in it? This cannot be undone.`,
+    );
+    if (!ok) return;
     const pageTabs = pages.length
       ? (pages.find((p) => p.id === activePageId)?.tabIds ?? [])
       : allTabs.map((t) => t.id);
-    const idx = pageTabs.indexOf(tabId);
-    const fallback = pageTabs[idx + 1] ?? pageTabs[idx - 1] ?? allTabs.find((t) => t.id !== tabId)?.id;
-    persist(deleteTab(book, tabId));
+    const fallback = pickTabOnPageAfterDelete(pageTabs, tabId);
+    applyBook(deleteTab(book, tabId));
     if (fallback) setActiveTabId(fallback);
   };
 
-  const handleDeletePage = (pageId: string) => {
+  const handleDeletePage = async (pageId: string) => {
+    const page = pages.find((p) => p.id === pageId);
+    if (!page) return;
+    const tabCount = page.tabIds.length;
+    const ok = await requestConfirm(
+      'Delete page',
+      `Delete page “${page.label}” and ${tabCount} tab${tabCount === 1 ? '' : 's'} on it (all rows inside)? This cannot be undone.`,
+    );
+    if (!ok) return;
+    const neighbor = adjacentPageAfterDelete(pages, pageId);
     const next = deletePage(book, pageId);
-    persist(next);
-    const remaining = next.pages ?? [];
-    if (remaining.length) {
-      setActivePageId(remaining[0].id);
-      setActiveTabId(remaining[0].tabIds[0] ?? next.defaultTabId ?? '');
+    applyBook(next);
+    if (neighbor) {
+      setActivePageId(neighbor.id);
+      setActiveTabId(neighbor.tabIds[0] ?? next.defaultTabId ?? '');
     } else if (next.tabs[0]) {
       setActiveTabId(next.tabs[0].id);
     }
   };
 
   return (
-    <PageLayout
-      title={book.title}
-      tabs={tabs}
-      activeTabId={activeTab?.id ?? defaultId}
-      onSelectTab={selectTab}
-      onAddTab={handleAddTab}
-      onRenameTab={handleRenameTab}
-      onDeleteTab={handleDeleteTab}
-      pages={pages}
-      activePageId={activePageId}
-      onSelectPage={selectPage}
-      onAddPage={handleAddPage}
-      onRenamePage={handleRenamePage}
-      onDeletePage={handleDeletePage}
-    >
-      {activeTab ? (
-        <RowRenderer
-          key={themeKey}
-          rows={activeTab.rows}
-          table={table}
-          book={book}
-          onInsertMarkdown={insertMarkdown}
-          onSaveMarkdown={saveMarkdown}
-          editingRowId={editingRowId}
-          onReorderRows={handleReorderRows}
-        />
-      ) : null}
-    </PageLayout>
+    <>
+      <PageLayout
+        title={book.title}
+        tabs={tabs}
+        activeTabId={activeTab?.id ?? ''}
+        onSelectTab={selectTab}
+        onAddTab={handleAddTab}
+        onRenameTab={handleRenameTab}
+        onDeleteTab={handleDeleteTab}
+        pages={pages}
+        activePageId={activePageId}
+        onSelectPage={selectPage}
+        onAddPage={handleAddPage}
+        onRenamePage={handleRenamePage}
+        onDeletePage={handleDeletePage}
+        banner={
+          <PersistBanner last={lastPersist} error={persistError} previewMode={previewMode} />
+        }
+      >
+        {activeTab ? (
+          <RowRenderer
+            key={themeKey}
+            rows={activeTab.rows}
+            table={table}
+            book={book}
+            onInsertMarkdown={insertMarkdown}
+            onSaveMarkdown={saveMarkdown}
+            onCancelMarkdown={cancelMarkdown}
+            editingRowId={editingRowId}
+            onReorderRows={handleReorderRows}
+            onMoveRow={handleMoveRow}
+          />
+        ) : (
+          <p className="dbk-empty-tab">
+            No tabs on this page.{' '}
+            <button type="button" className="dbk-link-btn" onClick={handleAddTab}>
+              Add a tab
+            </button>
+          </p>
+        )}
+      </PageLayout>
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title ?? ''}
+        message={confirmState?.message ?? ''}
+        onCancel={() => {
+          confirmState?.onResolve(false);
+          setConfirmState(null);
+        }}
+        onConfirm={() => {
+          confirmState?.onResolve(true);
+          setConfirmState(null);
+        }}
+      />
+    </>
   );
 }

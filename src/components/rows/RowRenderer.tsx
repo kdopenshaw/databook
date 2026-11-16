@@ -8,13 +8,18 @@ type Props = {
   rows: BookRow[];
   table: Table;
   book: BookDocument;
-  /** Insert a markdown row after `afterRowId` (`null` = before first). */
   onInsertMarkdown?: (afterRowId: string | null) => void;
   onSaveMarkdown?: (rowId: string, body: string) => void;
-  /** Row id that should open in edit mode (fresh insert). */
+  onCancelMarkdown?: (rowId: string) => void;
   editingRowId?: string | null;
   onReorderRows?: (movedId: string, beforeId: string) => void;
+  onMoveRow?: (rowId: string, direction: 'up' | 'down') => void;
 };
+
+function rowLabel(row: BookRow, index: number): string {
+  if (row.type === 'markdown') return row.body.trim().slice(0, 40) || `Note ${index + 1}`;
+  return `Chart row ${index + 1}`;
+}
 
 export function RowRenderer({
   rows,
@@ -22,8 +27,10 @@ export function RowRenderer({
   book,
   onInsertMarkdown,
   onSaveMarkdown,
+  onCancelMarkdown,
   editingRowId = null,
   onReorderRows,
+  onMoveRow,
 }: Props) {
   const sorted = [...rows].sort((a, b) => a.order - b.order);
   const canInsert = Boolean(onInsertMarkdown);
@@ -51,31 +58,58 @@ export function RowRenderer({
     if (movedId && movedId !== targetId) onReorderRows!(movedId, targetId);
   };
 
-  const onDragEnd = () => setDragOverId(null);
-
   return (
     <>
       {canInsert ? <InsertGap onInsert={() => onInsertMarkdown!(null)} label="Insert markdown at start" /> : null}
-      {sorted.map((row) => (
+      {sorted.map((row, index) => (
         <div
           key={row.id}
           className={`dbk-row-stack${dragOverId === row.id ? ' dbk-row-stack-drag-over' : ''}`}
           onDragOver={(e) => onDragOverRow(e, row.id)}
           onDrop={(e) => onDropRow(e, row.id)}
-          onDragLeave={() => setDragOverId((id) => (id === row.id ? null : id))}
+          onDragLeave={(e) => {
+            if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+            setDragOverId((id) => (id === row.id ? null : id));
+          }}
         >
-          {canReorder ? (
-            <div
-              className="dbk-row-drag"
-              draggable
-              onDragStart={(e) => onDragStart(e, row.id)}
-              onDragEnd={onDragEnd}
-              aria-label={`Drag to reorder ${row.id}`}
-              title="Drag to reorder"
-            >
-              <span className="dbk-row-drag-grip" aria-hidden="true">
-                ⋮⋮
-              </span>
+          {canReorder || onMoveRow ? (
+            <div className="dbk-row-move-col">
+              {canReorder ? (
+                <div
+                  className="dbk-row-drag"
+                  draggable
+                  onDragStart={(e) => onDragStart(e, row.id)}
+                  onDragEnd={() => setDragOverId(null)}
+                  aria-label={`Drag to reorder ${rowLabel(row, index)}`}
+                  title="Drag to reorder"
+                >
+                  <span className="dbk-row-drag-grip" aria-hidden="true">
+                    ⋮⋮
+                  </span>
+                </div>
+              ) : null}
+              {onMoveRow ? (
+                <div className="dbk-row-keyboard-move">
+                  <button
+                    type="button"
+                    className="dbk-row-move-btn"
+                    disabled={index === 0}
+                    aria-label="Move block up"
+                    onClick={() => onMoveRow(row.id, 'up')}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    className="dbk-row-move-btn"
+                    disabled={index === sorted.length - 1}
+                    aria-label="Move block down"
+                    onClick={() => onMoveRow(row.id, 'down')}
+                  >
+                    ↓
+                  </button>
+                </div>
+              ) : null}
             </div>
           ) : null}
           <div className="dbk-row-stack-body">
@@ -83,13 +117,14 @@ export function RowRenderer({
               <MarkdownRow
                 row={row}
                 onSave={onSaveMarkdown ? (body) => onSaveMarkdown(row.id, body) : undefined}
+                onCancel={onCancelMarkdown ? () => onCancelMarkdown(row.id) : undefined}
                 startEditing={editingRowId === row.id}
               />
             ) : (
               <ComponentRow row={row} table={table} book={book} />
             )}
             {canInsert ? (
-              <InsertGap onInsert={() => onInsertMarkdown!(row.id)} label={`Insert markdown after ${row.id}`} />
+              <InsertGap onInsert={() => onInsertMarkdown!(row.id)} label={`Insert markdown after block ${index + 1}`} />
             ) : null}
           </div>
         </div>

@@ -89,3 +89,11 @@ export function updateMarkdownBody(
   });
   return { ...book, tabs };
 }
+
+export function removeMarkdownRow(book: BookDocument, tabId: string, rowId: string): BookDocument {
+  const tabs = book.tabs.map((tab) => {
+    if (tab.id !== tabId) return tab;
+    return { ...tab, rows: tab.rows.filter((r) => r.id !== rowId) };
+  });
+  return { ...book, tabs };
+}
