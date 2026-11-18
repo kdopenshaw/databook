@@ -41,7 +41,9 @@ export function Sidebar({
             aria-label="Add page"
             title="Add page"
           >
-            +
+            <span className="dbk-insert-gap-plus" aria-hidden="true">
+              +
+            </span>
           </button>
         ) : null}
       </nav>

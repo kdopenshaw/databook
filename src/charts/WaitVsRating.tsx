@@ -1,5 +1,5 @@
-import { CartesianGrid, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
-import { ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
+import { CartesianGrid, Scatter, ScatterChart, XAxis, YAxis, ZAxis } from 'recharts';
+import { BookTooltip, ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
 import type { BookChartProps } from './registry';
 
 const CAFES = ['Harbor', 'Market', 'Campus'] as const;
@@ -28,7 +28,7 @@ export default function WaitVsRating({ data }: BookChartProps) {
           width={36}
         />
         <ZAxis range={[40, 40]} />
-        <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+        <BookTooltip cursor={{ strokeDasharray: '3 3' }} />
         {CAFES.map((cafe, i) => (
           <Scatter
             key={cafe}

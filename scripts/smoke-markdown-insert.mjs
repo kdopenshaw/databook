@@ -36,10 +36,13 @@ try {
   });
   await gap.click();
 
-  const textarea = page.locator('.dbk-markdown-textarea');
-  await textarea.waitFor({ state: 'visible', timeout: 5000 });
-  await textarea.fill(`## ${marker}\n\nPersisted via (+).`);
-  await page.getByRole('button', { name: 'Save' }).click();
+  const editor = page.locator('.dbk-markdown[contenteditable="true"]').last();
+  await editor.waitFor({ state: 'visible', timeout: 5000 });
+  await editor.click();
+  await page.keyboard.type(`## ${marker}`);
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Persisted via (+).');
+  await page.locator('body').click({ position: { x: 8, y: 8 } });
 
   await page.getByText(marker).waitFor({ state: 'visible', timeout: 5000 });
 

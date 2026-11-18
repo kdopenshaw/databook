@@ -1,5 +1,5 @@
-import { Area, AreaChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
-import { ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { BookTooltip, ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
 import type { BookChartProps } from './registry';
 
 export default function MonthlyRevenue({ data }: BookChartProps) {
@@ -18,7 +18,7 @@ export default function MonthlyRevenue({ data }: BookChartProps) {
           width={48}
           domain={[0, 'auto']}
         />
-        <Tooltip formatter={(v) => [fmt(Number(v)), 'Revenue']} />
+        <BookTooltip formatter={(v) => [fmt(Number(v)), 'Revenue']} />
         <Area
           type="monotone"
           dataKey="revenue"

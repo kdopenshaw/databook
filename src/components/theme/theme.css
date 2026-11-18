@@ -12,7 +12,8 @@
   --dbk-font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --dbk-content-md: 760px;
   --dbk-content-wide: 960px;
-  --dbk-sidebar-width: 200px;
+  --dbk-sidebar-width: 160px;
+  --dbk-header-height: 48px;
 
   /* Light tokens (default when .dark is absent) */
   color-scheme: light;
@@ -82,27 +83,29 @@ button {
   font-family: inherit;
 }
 
+::selection {
+  background: color-mix(in srgb, var(--dbk-accent) 28%, transparent);
+  color: var(--dbk-fg);
+}
+
 /* ---- Shell ---- */
 
 .dbk-shell {
   display: grid;
+  grid-template-columns: 1fr;
   min-height: 100vh;
 }
 
-.dbk-shell-with-sidebar {
-  grid-template-columns: var(--dbk-sidebar-width) 1fr;
-}
-
-.dbk-shell-tabs-only {
-  grid-template-columns: 1fr;
-}
-
 .dbk-sidebar {
-  position: sticky;
-  top: 0;
-  align-self: start;
-  height: 100vh;
-  padding: var(--dbk-space-5) var(--dbk-space-4);
+  position: fixed;
+  top: var(--dbk-header-height);
+  left: 0;
+  z-index: 16;
+  display: flex;
+  flex-direction: column;
+  width: var(--dbk-sidebar-width);
+  height: calc(100vh - var(--dbk-header-height));
+  padding: var(--dbk-space-5) var(--dbk-space-3) var(--dbk-space-5);
   border-right: 1px solid var(--dbk-border);
   background: var(--dbk-bg);
   overflow-y: auto;
@@ -120,13 +123,13 @@ button {
 .dbk-sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--dbk-space-1);
 }
 
 .dbk-sidebar-row {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 2px;
+  align-items: stretch;
   min-width: 0;
 }
 
@@ -136,12 +139,18 @@ button {
 }
 
 .dbk-sidebar-add-inline {
+  display: inline-flex;
+  align-items: center;
   color: var(--dbk-muted);
   justify-content: flex-start;
-  font-size: 16px;
-  line-height: 1;
-  padding-top: 6px;
-  padding-bottom: 6px;
+  padding-top: var(--dbk-space-2);
+  padding-bottom: var(--dbk-space-2);
+}
+
+.dbk-sidebar-add-inline .dbk-insert-gap-plus {
+  width: var(--dbk-space-5);
+  height: var(--dbk-space-5);
+  font-size: 14px;
 }
 
 .dbk-sidebar-add-inline:hover {
@@ -155,11 +164,26 @@ button {
   border: 0;
   background: transparent;
   color: var(--dbk-muted);
-  padding: 8px 10px;
+  padding: var(--dbk-space-2) var(--dbk-space-3);
   border-radius: var(--dbk-radius);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+}
+
+.dbk-sidebar-item.dbk-nav-has-close {
+  padding-right: var(--dbk-space-6);
+}
+
+.dbk-sidebar-item:focus-visible,
+.dbk-panel-toggle:focus-visible,
+.dbk-theme-toggle:focus-visible,
+.dbk-tabs-trigger:focus-visible,
+.dbk-tabs-add-btn:focus-visible,
+.dbk-nav-delete:focus-visible,
+.dbk-page-chip:focus-visible {
+  outline: 2px solid var(--dbk-accent);
+  outline-offset: 2px;
 }
 
 .dbk-sidebar-item:hover {
@@ -181,11 +205,11 @@ button {
 .dbk-header {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 32;
   display: flex;
   align-items: center;
   gap: var(--dbk-space-3);
-  height: 56px;
+  height: var(--dbk-header-height);
   padding: 0 var(--dbk-space-5);
   border-bottom: 1px solid var(--dbk-border);
   background: color-mix(in srgb, var(--dbk-bg) 85%, transparent);
@@ -208,9 +232,8 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  margin-left: calc(-1 * var(--dbk-space-2));
+  width: var(--dbk-space-6);
+  height: var(--dbk-space-6);
   border-radius: var(--dbk-radius);
   border: 0;
   background: transparent;
@@ -243,8 +266,8 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: var(--dbk-space-6);
+  height: var(--dbk-space-6);
   border-radius: var(--dbk-radius);
   border: 1px solid var(--dbk-border);
   background: transparent;
@@ -259,12 +282,8 @@ button {
 
 .dbk-content {
   padding: var(--dbk-space-5) var(--dbk-space-5) var(--dbk-space-7);
-  max-width: var(--dbk-content-wide);
-  width: 100%;
-}
-
-.dbk-shell-tabs-only .dbk-content {
   max-width: min(var(--dbk-content-wide), 100%);
+  width: 100%;
   margin-inline: auto;
 }
 
@@ -288,12 +307,17 @@ button {
 
 .dbk-page-switcher-scroll {
   display: flex;
-  gap: 6px;
+  gap: var(--dbk-space-2);
   overflow-x: auto;
   scrollbar-width: thin;
-  padding: 8px var(--dbk-space-5);
+  padding: var(--dbk-space-2) var(--dbk-space-5);
   border-bottom: 1px solid var(--dbk-border);
   background: color-mix(in srgb, var(--dbk-bg) 94%, transparent);
+}
+
+.dbk-page-chip-wrap {
+  position: relative;
+  flex: 0 0 auto;
 }
 
 .dbk-page-chip {
@@ -303,11 +327,10 @@ button {
   color: var(--dbk-muted);
   font-size: 12px;
   font-weight: 500;
-  padding: 6px 12px;
+  padding: var(--dbk-space-2) var(--dbk-space-3);
   border-radius: var(--dbk-radius);
   cursor: pointer;
   white-space: nowrap;
-  flex: 0 0 auto;
 }
 
 .dbk-page-chip:hover {
@@ -337,15 +360,21 @@ button {
 }
 
 .dbk-tabs-scroll-fade-left .dbk-tabs-scroll-inner {
-  mask-image: linear-gradient(to right, transparent 0, #000 20px, #000 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--dbk-space-5), #000 100%);
 }
 
 .dbk-tabs-scroll-fade-right .dbk-tabs-scroll-inner {
-  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--dbk-space-6)), transparent 100%);
 }
 
 .dbk-tabs-scroll-fade-left.dbk-tabs-scroll-fade-right .dbk-tabs-scroll-inner {
-  mask-image: linear-gradient(to right, transparent 0, #000 20px, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--dbk-space-5),
+    #000 calc(100% - var(--dbk-space-6)),
+    transparent 100%
+  );
 }
 
 .dbk-tabs-scroll-cue {
@@ -354,7 +383,7 @@ button {
   color: var(--dbk-muted);
   font-size: 16px;
   line-height: 1;
-  padding-left: 4px;
+  padding-left: var(--dbk-space-1);
   pointer-events: none;
 }
 
@@ -373,11 +402,13 @@ button {
   color: var(--dbk-muted);
   font-size: 13px;
   font-weight: 500;
-  padding: 10px 14px;
-  margin-bottom: -1px;
-  border-bottom: 2px solid transparent;
+  padding: var(--dbk-space-3) var(--dbk-space-4);
   cursor: pointer;
   white-space: nowrap;
+}
+
+.dbk-tabs-trigger.dbk-nav-has-close {
+  padding-right: var(--dbk-space-6);
 }
 
 .dbk-tabs-trigger:hover {
@@ -386,7 +417,6 @@ button {
 
 .dbk-tabs-trigger[data-state='active'] {
   color: var(--dbk-fg);
-  border-bottom-color: var(--dbk-fg);
 }
 
 .dbk-tabs-panel {
@@ -397,7 +427,7 @@ button {
 .dbk-tabs-add {
   display: flex;
   align-items: center;
-  padding: 0 6px;
+  padding: 0 var(--dbk-space-2);
   margin-bottom: -1px;
   opacity: 0;
   transition: opacity 0.12s ease;
@@ -417,32 +447,37 @@ button {
   border: 0;
   background: transparent;
   cursor: pointer;
-  padding: 4px;
+  padding: var(--dbk-space-1);
 }
 
 .dbk-tabs-add-btn .dbk-insert-gap-plus {
-  width: 20px;
-  height: 20px;
+  width: var(--dbk-space-5);
+  height: var(--dbk-space-5);
   font-size: 14px;
 }
 
 .dbk-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--dbk-space-2);
 }
 
 .dbk-nav-delete {
-  flex: none;
+  position: absolute;
+  top: 50%;
+  right: var(--dbk-space-1);
+  transform: translateY(-50%);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   appearance: none;
   border: 0;
   background: transparent;
   color: var(--dbk-muted);
-  width: 24px;
-  height: 24px;
+  width: var(--dbk-space-5);
+  height: var(--dbk-space-5);
   border-radius: var(--dbk-radius);
-  font-size: 18px;
-  line-height: 1;
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
@@ -453,12 +488,13 @@ button {
 .dbk-sidebar-row:focus-within .dbk-nav-delete,
 .dbk-tabs-trigger-wrap:hover .dbk-nav-delete,
 .dbk-tabs-trigger-wrap:focus-within .dbk-nav-delete {
-  opacity: 0.85;
+  opacity: 1;
   pointer-events: auto;
 }
 
-.dbk-nav-delete:hover {
-  color: var(--dbk-error, #e5484d);
+.dbk-nav-delete:hover,
+.dbk-nav-delete:focus-visible {
+  color: var(--dbk-error);
   background: var(--dbk-hover);
 }
 
@@ -472,42 +508,9 @@ button {
   }
 }
 
-.dbk-nav-label-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  max-width: 100%;
-}
-
 .dbk-nav-label {
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.dbk-nav-rename-btn {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: var(--dbk-muted);
-  font-size: 12px;
-  line-height: 1;
-  padding: 2px 4px;
-  border-radius: 4px;
-  cursor: pointer;
-  opacity: 0;
-}
-
-.dbk-nav-label-row:hover .dbk-nav-rename-btn,
-.dbk-nav-label-row:focus-within .dbk-nav-rename-btn,
-.dbk-nav-rename-btn:focus-visible {
-  opacity: 1;
-}
-
-@media (hover: none), (pointer: coarse) {
-  .dbk-nav-rename-btn {
-    opacity: 1;
-  }
 }
 
 .dbk-nav-rename-input {
@@ -515,7 +518,7 @@ button {
 }
 
 .dbk-persist-banner {
-  padding: 8px var(--dbk-space-5);
+  padding: var(--dbk-space-2) var(--dbk-space-5);
   font-size: 12px;
   color: var(--dbk-muted);
   background: color-mix(in srgb, var(--dbk-hover) 60%, transparent);
@@ -539,7 +542,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: var(--dbk-space-4);
 }
 
 .dbk-modal {
@@ -552,7 +555,7 @@ button {
 }
 
 .dbk-modal-title {
-  margin: 0 0 8px;
+  margin: 0 0 var(--dbk-space-2);
   font-size: 15px;
   font-weight: 600;
 }
@@ -567,7 +570,7 @@ button {
 .dbk-modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--dbk-space-2);
 }
 
 .dbk-btn-danger {
@@ -606,51 +609,22 @@ button {
   margin-top: 8px;
 }
 
-.dbk-row-keyboard-move {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.dbk-row-move-btn {
-  appearance: none;
-  width: 22px;
-  height: 18px;
-  border: 1px solid var(--dbk-border);
-  border-radius: 4px;
-  background: transparent;
-  color: var(--dbk-muted);
-  font-size: 11px;
-  cursor: pointer;
-  opacity: 0;
-}
-
-.dbk-row-stack:hover .dbk-row-move-btn,
-.dbk-row-stack:focus-within .dbk-row-move-btn {
-  opacity: 1;
-}
-
-@media (hover: none), (pointer: coarse) {
-  .dbk-row-move-btn {
-    opacity: 1;
-  }
-}
-
 .dbk-tabs-trigger-wrap {
+  position: relative;
   display: inline-flex;
   align-items: stretch;
   max-width: 100%;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+}
+
+.dbk-tabs-trigger-wrap.dbk-nav-item-active {
+  border-bottom-color: var(--dbk-fg);
 }
 
 .dbk-tabs-trigger-wrap .dbk-tabs-trigger {
   flex: 1;
   min-width: 0;
-}
-
-.dbk-tabs-delete {
-  align-self: center;
-  margin-right: 2px;
-  font-size: 16px;
 }
 
 .dbk-inline-rename-input {
@@ -681,17 +655,28 @@ button {
   position: relative;
 }
 
-.dbk-row-stack-body {
+.dbk-row-stack-main {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
-.dbk-row-stack-drag-over .dbk-row-stack-body {
-  outline: 2px dashed var(--dbk-border);
-  outline-offset: 4px;
+.dbk-row-stack-body {
+  min-width: 0;
   border-radius: var(--dbk-radius);
+}
+
+.dbk-row-stack-drag-over .dbk-row-stack-body {
+  box-shadow: 0 0 0 1px var(--dbk-border);
+}
+
+.dbk-row-stack-selected .dbk-row-stack-body {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--dbk-fg) 8%, transparent);
+}
+
+.dbk-row-stack:focus-visible {
+  outline: none;
 }
 
 .dbk-row-drag {
@@ -722,22 +707,63 @@ button {
   text-align: center;
 }
 
-.dbk-row-stack + .dbk-row-stack {
-  margin-top: var(--dbk-space-2);
+.dbk-row {
+  margin: 0;
 }
 
-.dbk-row {
-  margin-top: var(--dbk-space-2);
+.dbk-mdx {
+  max-width: var(--dbk-content-md);
+}
+
+.dbk-mdx-editor {
+  background: transparent;
+  font-family: var(--dbk-font-sans);
+  color: var(--dbk-fg);
+}
+
+.dbk-mdx-popover {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border: 1px solid var(--dbk-border);
+  border-radius: var(--dbk-radius);
+  background: var(--dbk-surface);
+  color: var(--dbk-muted);
+}
+
+.dbk-mdx-popover button,
+.dbk-mdx-popover [role='combobox'] {
+  color: var(--dbk-muted);
+  background: transparent;
+  border-color: var(--dbk-border);
+}
+
+.dbk-mdx-popover [role='combobox'] {
+  color: var(--dbk-fg);
+  background: var(--dbk-bg);
+  border: 1px solid var(--dbk-border);
+  border-radius: 4px;
+}
+
+.dbk-mdx-popover button:hover,
+.dbk-mdx-popover [role='combobox']:hover {
+  color: var(--dbk-fg);
+  background: var(--dbk-hover);
 }
 
 .dbk-markdown {
-  max-width: var(--dbk-content-md);
+  caret-color: var(--dbk-fg);
+  outline: none;
+  font-family: var(--dbk-font-sans);
+  color: var(--dbk-fg);
+  cursor: text;
 }
 
 /* Jupyter-style (+) insert between rows */
 .dbk-insert-gap {
   max-width: var(--dbk-content-md);
-  margin: 2px 0;
+  margin: 0;
 }
 
 .dbk-insert-gap-btn {
@@ -747,7 +773,7 @@ button {
   gap: 8px;
   width: 100%;
   margin: 0;
-  padding: 4px 0;
+  padding: 1px 0;
   border: 0;
   background: transparent;
   cursor: pointer;
@@ -775,27 +801,16 @@ button {
   justify-content: center;
   width: 22px;
   height: 22px;
-  border-radius: 50%;
-  border: 1px solid var(--dbk-border);
   font-size: 16px;
   font-weight: 400;
   line-height: 1;
   color: var(--dbk-muted);
-  background: var(--dbk-bg);
 }
 
 .dbk-insert-gap-btn:hover .dbk-insert-gap-plus {
   color: var(--dbk-fg);
-  border-color: var(--dbk-fg);
 }
 
-.dbk-markdown-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: var(--dbk-space-2);
-}
-
-.dbk-markdown-edit-btn,
 .dbk-btn {
   appearance: none;
   border: 1px solid var(--dbk-border);
@@ -808,7 +823,6 @@ button {
   cursor: pointer;
 }
 
-.dbk-markdown-edit-btn:hover,
 .dbk-btn:hover {
   color: var(--dbk-fg);
   background: var(--dbk-hover);
@@ -817,36 +831,6 @@ button {
 .dbk-btn-primary {
   color: var(--dbk-fg);
   border-color: var(--dbk-fg);
-}
-
-.dbk-markdown-editor {
-  display: flex;
-  flex-direction: column;
-  gap: var(--dbk-space-3);
-}
-
-.dbk-markdown-textarea {
-  width: 100%;
-  min-height: 6rem;
-  resize: vertical;
-  font-family: var(--dbk-font-mono);
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--dbk-fg);
-  background: var(--dbk-surface);
-  border: 1px solid var(--dbk-border);
-  border-radius: var(--dbk-radius);
-  padding: var(--dbk-space-3);
-}
-
-.dbk-markdown-textarea:focus {
-  outline: 2px solid color-mix(in srgb, var(--dbk-accent) 40%, transparent);
-  outline-offset: 1px;
-}
-
-.dbk-markdown-editor-actions {
-  display: flex;
-  gap: var(--dbk-space-2);
 }
 
 .dbk-markdown h1,
@@ -877,9 +861,8 @@ button {
   margin-top: 0;
 }
 
-.dbk-markdown-user {
-  border-left: 2px solid color-mix(in srgb, var(--dbk-accent) 55%, var(--dbk-border));
-  padding-left: var(--dbk-space-4);
+.dbk-markdown > :last-child {
+  margin-bottom: 0;
 }
 
 .dbk-markdown blockquote {
@@ -1013,6 +996,31 @@ button {
 .dbk-responsive-frame {
   width: 100%;
   height: 320px;
+  overflow: visible;
+}
+
+.dbk-responsive-frame .recharts-wrapper,
+.dbk-responsive-frame .recharts-surface {
+  overflow: visible;
+}
+
+.recharts-default-tooltip {
+  background: var(--dbk-surface) !important;
+  border: 1px solid var(--dbk-border) !important;
+  border-radius: var(--dbk-radius) !important;
+  color: var(--dbk-fg) !important;
+  box-shadow: 0 10px 28px color-mix(in srgb, #000 28%, transparent);
+  font-size: 12px !important;
+  line-height: 1.4;
+}
+
+.recharts-tooltip-label {
+  color: var(--dbk-muted) !important;
+  font-weight: 500;
+}
+
+.recharts-tooltip-item {
+  color: var(--dbk-fg) !important;
 }
 
 .recharts-wrapper:focus,
@@ -1020,30 +1028,19 @@ button {
   outline: none;
 }
 
-@media (max-width: 800px) {
-  .dbk-shell,
-  .dbk-shell-with-sidebar {
-    grid-template-columns: 1fr;
-  }
-
-  /* Page switcher replaces sidebar list; drawer when panel toggle is on */
+@media (max-width: 1279px) {
   .dbk-sidebar {
     display: none;
   }
 
   .dbk-shell-sidebar-open .dbk-sidebar {
     display: flex;
-    position: fixed;
     top: 0;
-    left: 0;
-    bottom: 0;
     z-index: 30;
+    height: 100vh;
+    padding-top: calc(var(--dbk-header-height) + var(--dbk-space-5));
     width: min(var(--dbk-sidebar-width), 88vw);
     box-shadow: 8px 0 24px color-mix(in srgb, #000 12%, transparent);
-  }
-
-  .dbk-shell-multi-page .dbk-page-switcher {
-    display: block;
   }
 
   .dbk-shell-sidebar-open .dbk-sidebar-backdrop {
@@ -1055,6 +1052,13 @@ button {
     padding: 0;
     background: color-mix(in srgb, #000 40%, transparent);
     cursor: pointer;
+  }
+}
+
+@media (max-width: 800px) {
+
+  .dbk-shell-multi-page .dbk-page-switcher {
+    display: block;
   }
 
   .dbk-header {

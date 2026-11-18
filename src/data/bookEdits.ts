@@ -274,24 +274,6 @@ export function reorderRowsAfter(
   return { ...book, tabs };
 }
 
-export function moveRowInTab(
-  book: BookDocument,
-  tabId: string,
-  rowId: string,
-  direction: 'up' | 'down',
-): BookDocument {
-  const tab = book.tabs.find((t) => t.id === tabId);
-  if (!tab) return book;
-  const sorted = [...tab.rows].sort((a, b) => a.order - b.order);
-  const i = sorted.findIndex((r) => r.id === rowId);
-  if (i < 0) return book;
-  if (direction === 'up' && i > 0) return reorderRowsBefore(book, tabId, rowId, sorted[i - 1].id);
-  if (direction === 'down' && i < sorted.length - 1) {
-    return reorderRowsAfter(book, tabId, rowId, sorted[i + 1].id);
-  }
-  return book;
-}
-
 export function deleteTab(book: BookDocument, tabId: string): BookDocument {
   const tabs = book.tabs.filter((t) => t.id !== tabId);
   const pages = book.pages?.map((p) => ({

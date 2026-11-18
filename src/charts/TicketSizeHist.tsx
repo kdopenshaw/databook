@@ -1,5 +1,5 @@
-import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
-import { ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { BookTooltip, ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
 import type { BookChartProps } from './registry';
 
 export default function TicketSizeHist({ data }: BookChartProps) {
@@ -23,7 +23,7 @@ export default function TicketSizeHist({ data }: BookChartProps) {
           tickFormatter={(v) => `$${v}`}
         />
         <YAxis tick={{ fill: c.muted, fontSize: 12 }} stroke={c.border} width={40} allowDecimals={false} />
-        <Tooltip
+        <BookTooltip
           labelFormatter={(_, payload) => {
             const p = payload?.[0]?.payload as { label?: string } | undefined;
             return p?.label ? `$${p.label}` : '';

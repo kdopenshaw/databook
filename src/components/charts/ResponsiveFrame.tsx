@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactElement } from 'react';
-import { ResponsiveContainer } from 'recharts';
+import { useEffect, useState, type ComponentProps, type CSSProperties, type ReactElement } from 'react';
+import { ResponsiveContainer, Tooltip } from 'recharts';
 
 type Props = {
   children: ReactElement;
@@ -57,4 +57,45 @@ export function chartColors() {
       readCssVar('--dbk-series-8', '#9a9a9a'),
     ],
   };
+}
+
+/** Themed Recharts tooltip — default white box + inherited fg fails in dark mode. */
+export function BookTooltip(props: ComponentProps<typeof Tooltip>) {
+  const c = chartColors();
+  const contentStyle: CSSProperties = {
+    backgroundColor: c.surface,
+    border: `1px solid ${c.border}`,
+    borderRadius: 6,
+    padding: '8px 10px',
+    boxShadow: '0 10px 28px rgba(0, 0, 0, 0.28)',
+    fontSize: 12,
+    lineHeight: 1.4,
+    color: c.fg,
+    ...(props.contentStyle as CSSProperties | undefined),
+  };
+  const labelStyle: CSSProperties = {
+    color: c.muted,
+    fontSize: 12,
+    fontWeight: 500,
+    marginBottom: 4,
+    ...(props.labelStyle as CSSProperties | undefined),
+  };
+  const itemStyle: CSSProperties = {
+    color: c.fg,
+    fontSize: 12,
+    padding: '1px 0',
+    ...(props.itemStyle as CSSProperties | undefined),
+  };
+  return (
+    <Tooltip
+      isAnimationActive={false}
+      separator=": "
+      cursor={{ fill: 'color-mix(in srgb, var(--dbk-fg) 6%, transparent)' }}
+      wrapperStyle={{ outline: 'none', zIndex: 20 }}
+      {...props}
+      contentStyle={contentStyle}
+      labelStyle={labelStyle}
+      itemStyle={itemStyle}
+    />
+  );
 }

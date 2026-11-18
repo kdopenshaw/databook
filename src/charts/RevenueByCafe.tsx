@@ -1,5 +1,5 @@
-import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
-import { ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { BookTooltip, ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
 import type { BookChartProps } from './registry';
 
 export default function RevenueByCafe({ data }: BookChartProps) {
@@ -18,7 +18,7 @@ export default function RevenueByCafe({ data }: BookChartProps) {
           tick={{ fill: c.muted, fontSize: 12 }}
           stroke={c.border}
         />
-        <Tooltip formatter={(v) => [fmt(Number(v)), 'Revenue']} />
+        <BookTooltip formatter={(v) => [fmt(Number(v)), 'Revenue']} />
         <Bar dataKey="revenue" name="Revenue" fill={c.series[1]} radius={[0, 4, 4, 0]} isAnimationActive={false} />
       </BarChart>
     </ResponsiveFrame>

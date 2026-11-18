@@ -54,6 +54,12 @@ function bookPersistPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [react(), bookPersistPlugin()],
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: ['@mdxeditor/editor', '@mdxeditor/floating-selection-ui-plugin', 'react', 'react-dom'],
+  },
   test: {
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}'],

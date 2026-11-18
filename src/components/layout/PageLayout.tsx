@@ -61,9 +61,9 @@ export function PageLayout({
 
   return (
     <div
-      className={`dbk-shell${
-        showSidebar ? ' dbk-shell-with-sidebar dbk-shell-sidebar-open' : ' dbk-shell-tabs-only'
-      }${pages.length > 1 ? ' dbk-shell-multi-page' : ''}`}
+      className={`dbk-shell${showSidebar ? ' dbk-shell-sidebar-open' : ''}${
+        pages.length > 1 ? ' dbk-shell-multi-page' : ''
+      }`}
     >
       {showSidebar ? (
         <>
@@ -76,10 +76,7 @@ export function PageLayout({
           <Sidebar
             pages={pages}
             activePageId={activePageId}
-            onSelectPage={(id) => {
-              onSelectPage?.(id);
-              setSidebarOpen(false);
-            }}
+            onSelectPage={(id) => onSelectPage?.(id)}
             onAddPage={onAddPage}
             onRenamePage={onRenamePage}
             onDeletePage={onDeletePage}
@@ -106,6 +103,7 @@ export function PageLayout({
                   label={page.label}
                   active={page.id === activePageId}
                   className="dbk-page-chip"
+                  wrapClassName="dbk-page-chip-wrap"
                   onSelect={() => onSelectPage?.(page.id)}
                   onCommit={onRenamePage ? (label) => onRenamePage(page.id, label) : undefined}
                 />

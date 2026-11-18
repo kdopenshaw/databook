@@ -1,5 +1,5 @@
-import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
-import { ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+import { BookTooltip, ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
 import type { BookChartProps } from './registry';
 
 export default function MemberShare({ data }: BookChartProps) {
@@ -16,7 +16,7 @@ export default function MemberShare({ data }: BookChartProps) {
           stroke={c.border}
           width={44}
         />
-        <Tooltip formatter={(v) => [`${(Number(v) * 100).toFixed(1)}%`, 'Member share']} />
+        <BookTooltip formatter={(v) => [`${(Number(v) * 100).toFixed(1)}%`, 'Member share']} />
         <Line
           type="monotone"
           dataKey="member_share"

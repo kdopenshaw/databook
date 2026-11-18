@@ -9,7 +9,11 @@
       "id": "page-main",
       "label": "Cafes",
       "order": 0,
-      "tabIds": ["overview", "sales", "experience"]
+      "tabIds": [
+        "overview",
+        "sales",
+        "experience"
+      ]
     }
   ],
   "conventions": {
@@ -31,18 +35,35 @@
       "order": 0,
       "rows": [
         {
-          "id": "md-overview",
+          "id": "md-user-87dd8a05",
           "type": "markdown",
-          "order": 0,
-          "createdBy": "skill",
-          "body": "## Half-year snapshot\n\nThree cafes, one POS grain (line item). **Revenue climbed through spring**, with Campus catching up as the semester filled in and Harbor owning weekends.\n\nMember tickets are a growing share of the mix — see Experience."
+          "order": 0.25,
+          "createdBy": "user",
+          "body": "Why isn't it redering\n\n\\* something\n\n\\- something\n\n\\- dlsakjfkld"
+        },
+        {
+          "id": "md-user-19d081a8",
+          "type": "markdown",
+          "order": 0.625,
+          "createdBy": "user",
+          "body": "Another thing"
+        },
+        {
+          "id": "md-user-811aa3a0",
+          "type": "markdown",
+          "order": 0.8125,
+          "createdBy": "user",
+          "body": "Another"
         },
         {
           "id": "comp-overview-rev",
           "type": "component",
           "order": 1,
           "createdBy": "skill",
-          "layout": { "gap": 16, "wrap": true },
+          "layout": {
+            "gap": 16,
+            "wrap": true
+          },
           "components": [
             {
               "id": "monthly-revenue",
@@ -50,9 +71,22 @@
               "subtitle": "Sum of line-item amount · all cafes",
               "component": "MonthlyRevenue",
               "query": {
-                "groupBy": ["month"],
-                "aggregate": [{ "fn": "sum", "column": "amount", "as": "revenue" }],
-                "orderBy": [{ "column": "month", "direction": "asc" }]
+                "groupBy": [
+                  "month"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "sum",
+                    "column": "amount",
+                    "as": "revenue"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "month",
+                    "direction": "asc"
+                  }
+                ]
               },
               "flex": 1.4
             },
@@ -62,9 +96,22 @@
               "subtitle": "H1 total · ranked",
               "component": "RevenueByCafe",
               "query": {
-                "groupBy": ["cafe"],
-                "aggregate": [{ "fn": "sum", "column": "amount", "as": "revenue" }],
-                "orderBy": [{ "column": "revenue", "direction": "desc" }]
+                "groupBy": [
+                  "cafe"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "sum",
+                    "column": "amount",
+                    "as": "revenue"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "revenue",
+                    "direction": "desc"
+                  }
+                ]
               },
               "flex": 1
             }
@@ -82,7 +129,7 @@
           "type": "markdown",
           "order": 0,
           "createdBy": "skill",
-          "body": "## Mix and ticket shape\n\nDrinks dominate, but food carries weekends. Merch is thin and spiky. Ticket sizes cluster under $10 with a long right tail from beans and mugs."
+          "body": "## Mix and ticket shape\n\nDrinks dominate, but food carries weekends. Merch is thin and spiky. Ticket sizes cluster under $10 with a long right tail from beans and mugs.\n"
         },
         {
           "id": "comp-mix",
@@ -96,11 +143,26 @@
               "subtitle": "Stacked revenue · Drink / Food / Merch",
               "component": "CategoryMix",
               "query": {
-                "groupBy": ["month", "category"],
-                "aggregate": [{ "fn": "sum", "column": "amount", "as": "revenue" }],
+                "groupBy": [
+                  "month",
+                  "category"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "sum",
+                    "column": "amount",
+                    "as": "revenue"
+                  }
+                ],
                 "orderBy": [
-                  { "column": "month", "direction": "asc" },
-                  { "column": "category", "direction": "asc" }
+                  {
+                    "column": "month",
+                    "direction": "asc"
+                  },
+                  {
+                    "column": "category",
+                    "direction": "asc"
+                  }
                 ]
               }
             }
@@ -118,9 +180,25 @@
               "subtitle": "$2 bins · count of line items",
               "component": "TicketSizeHist",
               "query": {
-                "bin": [{ "column": "amount", "step": 2, "as": "amount_bin" }],
-                "aggregate": [{ "fn": "count", "as": "n" }],
-                "orderBy": [{ "column": "amount_bin", "direction": "asc" }]
+                "bin": [
+                  {
+                    "column": "amount",
+                    "step": 2,
+                    "as": "amount_bin"
+                  }
+                ],
+                "aggregate": [
+                  {
+                    "fn": "count",
+                    "as": "n"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "amount_bin",
+                    "direction": "asc"
+                  }
+                ]
               }
             }
           ]
@@ -137,7 +215,7 @@
           "type": "markdown",
           "order": 0,
           "createdBy": "skill",
-          "body": "## Wait, rating, membership\n\nScatter is a 400-row sample of tickets. Longer waits sit with lower ratings — especially Food. Member share rose ~several points across H1."
+          "body": "## Wait, rating, membership\n\nScatter is a 400-row sample of tickets. Longer waits sit with lower ratings — especially Food. Member share rose \\~several points across H1.\n"
         },
         {
           "id": "comp-scatter",
@@ -151,8 +229,16 @@
               "subtitle": "Sample of tickets · color = cafe",
               "component": "WaitVsRating",
               "query": {
-                "sample": { "n": 400, "seed": 7 },
-                "orderBy": [{ "column": "wait_min", "direction": "asc" }]
+                "sample": {
+                  "n": 400,
+                  "seed": 7
+                },
+                "orderBy": [
+                  {
+                    "column": "wait_min",
+                    "direction": "asc"
+                  }
+                ]
               }
             }
           ]
@@ -169,9 +255,22 @@
               "subtitle": "Share of line items with is_member",
               "component": "MemberShare",
               "query": {
-                "groupBy": ["month"],
-                "aggregate": [{ "fn": "share", "column": "is_member", "as": "member_share" }],
-                "orderBy": [{ "column": "month", "direction": "asc" }]
+                "groupBy": [
+                  "month"
+                ],
+                "aggregate": [
+                  {
+                    "fn": "share",
+                    "column": "is_member",
+                    "as": "member_share"
+                  }
+                ],
+                "orderBy": [
+                  {
+                    "column": "month",
+                    "direction": "asc"
+                  }
+                ]
               }
             }
           ]

@@ -1,5 +1,5 @@
-import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from 'recharts';
-import { ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
+import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
+import { BookTooltip, ResponsiveFrame, chartColors } from '../components/charts/ResponsiveFrame';
 import type { BookChartProps } from './registry';
 
 /** Expects rows with month + category + revenue; pivots for stacked bars. */
@@ -21,7 +21,7 @@ export default function CategoryMix({ data }: BookChartProps) {
         <CartesianGrid stroke={c.border} strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="month" tick={{ fill: c.muted, fontSize: 12 }} stroke={c.border} />
         <YAxis tickFormatter={fmt} tick={{ fill: c.muted, fontSize: 12 }} stroke={c.border} width={48} />
-        <Tooltip formatter={(v, name) => [fmt(Number(v)), String(name)]} />
+        <BookTooltip formatter={(v, name) => [fmt(Number(v)), String(name)]} />
         <Legend />
         <Bar dataKey="Drink" stackId="a" fill={c.series[0]} isAnimationActive={false} />
         <Bar dataKey="Food" stackId="a" fill={c.series[1]} isAnimationActive={false} />

@@ -10,7 +10,6 @@ import {
   deletePage,
   deleteTab,
   ensureDefaultPage,
-  moveRowInTab,
   normalizePageTabIds,
   renamePage,
   renameTab,
@@ -33,6 +32,14 @@ import {
   validatePageId,
   validateTabId,
 } from './data/navBook';
+import {
+  emptyBookHistory,
+  isRedoKey,
+  isUndoKey,
+  recordBookChange,
+  redoBook,
+  undoBook,
+} from './data/bookHistory';
 import type { PersistResult } from './data/persistBook';
 import { flushPersistBook, schedulePersistBook } from './data/persistBook';
 import type { BookDocument } from './data/types';
@@ -79,6 +86,9 @@ export default function App() {
   const [lastPersist, setLastPersist] = useState<PersistResult | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const userNavRef = useRef(false);
+  const bookRef = useRef(book);
+  const historyRef = useRef(emptyBookHistory());
+  bookRef.current = book;
   const table = useMemo(() => loadCanonical(), []);
   const allTabs = useMemo(() => [...book.tabs].sort((a, b) => a.order - b.order), [book.tabs]);
   const pages = useMemo(() => [...(book.pages ?? [])].sort((a, b) => a.order - b.order), [book.pages]);
@@ -99,8 +109,13 @@ export default function App() {
   const themeKey = useThemeKey();
   const previewMode = !import.meta.env.DEV;
 
-  const applyBook = useCallback((next: BookDocument, opts?: { persist?: boolean }) => {
+  const applyBook = useCallback((next: BookDocument, opts?: { persist?: boolean; record?: boolean }) => {
+    const current = bookRef.current;
     const normalized = ensureDefaultPage(normalizePageTabIds(next));
+    if (opts?.record !== false) {
+      historyRef.current = recordBookChange(historyRef.current, current, normalized);
+    }
+    bookRef.current = normalized;
     setBook(normalized);
     if (opts?.persist !== false) {
       void schedulePersistBook(normalized).then((r) => {
@@ -110,6 +125,38 @@ export default function App() {
     }
     return normalized;
   }, []);
+
+  const undoEdit = useCallback(() => {
+    const result = undoBook(historyRef.current, bookRef.current);
+    if (!result) return;
+    historyRef.current = result.history;
+    applyBook(result.book, { record: false });
+  }, [applyBook]);
+
+  const redoEdit = useCallback(() => {
+    const result = redoBook(historyRef.current, bookRef.current);
+    if (!result) return;
+    historyRef.current = result.history;
+    applyBook(result.book, { record: false });
+  }, [applyBook]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest('input, textarea')) return;
+      if (isUndoKey(e)) {
+        e.preventDefault();
+        undoEdit();
+        return;
+      }
+      if (isRedoKey(e)) {
+        e.preventDefault();
+        redoEdit();
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [redoEdit, undoEdit]);
 
   const tabs = useMemo(
     () => (pages.length ? tabsForPage(book, activePageId) : allTabs),
@@ -184,21 +231,25 @@ export default function App() {
   const insertMarkdown = (afterRowId: string | null) => {
     if (!activeTab) return;
     const { book: next, row } = insertMarkdownRow(book, activeTab.id, afterRowId, '');
-    setBook(ensureDefaultPage(normalizePageTabIds(next)));
+    applyBook(next, { persist: false });
     setEditingRowId(row.id);
   };
 
   const saveMarkdown = (rowId: string, body: string) => {
     if (!activeTab) return;
     applyBook(updateMarkdownBody(book, activeTab.id, rowId, body));
+  };
+
+  const finishMarkdown = () => {
     setEditingRowId(null);
   };
 
-  const cancelMarkdown = (rowId: string) => {
+  const cancelMarkdown = (rowId: string, originalBody: string) => {
     if (!activeTab) return;
-    const row = activeTab.rows.find((r) => r.id === rowId);
-    if (row?.type === 'markdown' && row.createdBy === 'user' && !row.body.trim()) {
+    if (!originalBody.trim()) {
       applyBook(removeMarkdownRow(book, activeTab.id, rowId));
+    } else {
+      applyBook(updateMarkdownBody(book, activeTab.id, rowId, originalBody));
     }
     setEditingRowId(null);
   };
@@ -232,9 +283,9 @@ export default function App() {
     applyBook(reorderRowsBefore(book, activeTab.id, movedId, beforeId));
   };
 
-  const handleMoveRow = (rowId: string, direction: 'up' | 'down') => {
+  const handleDeleteRow = (rowId: string) => {
     if (!activeTab) return;
-    applyBook(moveRowInTab(book, activeTab.id, rowId, direction));
+    applyBook(removeMarkdownRow(book, activeTab.id, rowId));
   };
 
   const handleDeleteTab = async (tabId: string) => {
@@ -242,7 +293,7 @@ export default function App() {
     if (!tab) return;
     const ok = await requestConfirm(
       'Delete tab',
-      `Delete tab “${tab.label}” and all blocks in it? This cannot be undone.`,
+      `Delete tab “${tab.label}” and all blocks in it?`,
     );
     if (!ok) return;
     const pageTabs = pages.length
@@ -259,7 +310,7 @@ export default function App() {
     const tabCount = page.tabIds.length;
     const ok = await requestConfirm(
       'Delete page',
-      `Delete page “${page.label}” and ${tabCount} tab${tabCount === 1 ? '' : 's'} on it (all rows inside)? This cannot be undone.`,
+      `Delete page “${page.label}” and ${tabCount} tab${tabCount === 1 ? '' : 's'} on it (all rows inside)?`,
     );
     if (!ok) return;
     const neighbor = adjacentPageAfterDelete(pages, pageId);
@@ -301,10 +352,11 @@ export default function App() {
             book={book}
             onInsertMarkdown={insertMarkdown}
             onSaveMarkdown={saveMarkdown}
+            onFinishMarkdown={finishMarkdown}
             onCancelMarkdown={cancelMarkdown}
             editingRowId={editingRowId}
             onReorderRows={handleReorderRows}
-            onMoveRow={handleMoveRow}
+            onDeleteRow={handleDeleteRow}
           />
         ) : (
           <p className="dbk-empty-tab">

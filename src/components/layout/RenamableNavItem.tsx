@@ -15,9 +15,31 @@ type Props = {
   onDelete?: () => void;
   deleteLabel?: string;
   className?: string;
+  wrapClassName?: string;
   selectButtonProps?: ButtonHTMLAttributes<HTMLButtonElement>;
   children?: ReactNode;
 };
+
+function wrapClassFor(className: string, wrapClassName: string | undefined, active: boolean) {
+  const activeClass = active ? ' dbk-nav-item-active' : '';
+  if (wrapClassName) return `${wrapClassName}${activeClass}`;
+  if (className.includes('dbk-tabs-trigger')) return `dbk-tabs-trigger-wrap${activeClass}`;
+  if (className.includes('dbk-page-chip')) return `dbk-page-chip-wrap${activeClass}`;
+  return `dbk-sidebar-row${activeClass}`;
+}
+
+function CloseGlyph() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+      <path
+        d="M2.5 2.5l7 7M9.5 2.5l-7 7"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 export function RenamableNavItem({
   label,
@@ -27,6 +49,7 @@ export function RenamableNavItem({
   onDelete,
   deleteLabel = 'Delete',
   className = 'dbk-sidebar-item',
+  wrapClassName,
   selectButtonProps,
   children,
 }: Props) {
@@ -60,13 +83,7 @@ export function RenamableNavItem({
   };
 
   return (
-    <div
-      className={
-        className.includes('dbk-tabs-trigger')
-          ? `dbk-tabs-trigger-wrap${active ? ' dbk-nav-item-active' : ''}`
-          : `dbk-sidebar-row${active ? ' dbk-nav-item-active' : ''}`
-      }
-    >
+    <div className={wrapClassFor(className, wrapClassName, Boolean(active))}>
       {editing ? (
         <input
           ref={inputRef}
@@ -82,25 +99,23 @@ export function RenamableNavItem({
         <>
           <button
             type="button"
-            className={className}
+            {...selectButtonProps}
+            className={`${className}${onDelete ? ' dbk-nav-has-close' : ''}`}
             aria-current={active ? 'page' : undefined}
             onClick={onSelect}
+            onDoubleClick={
+              onCommit
+                ? (e) => {
+                    e.preventDefault();
+                    setEditing(true);
+                  }
+                : undefined
+            }
             data-state={className.includes('dbk-tabs-trigger') ? (active ? 'active' : 'inactive') : undefined}
-            {...selectButtonProps}
+            title={onCommit ? 'Double-click to rename' : undefined}
           >
             <span className="dbk-nav-label">{children ?? label}</span>
           </button>
-          {onCommit ? (
-            <button
-              type="button"
-              className="dbk-nav-rename-btn"
-              aria-label={`Rename ${label}`}
-              title="Rename"
-              onClick={() => setEditing(true)}
-            >
-              ✎
-            </button>
-          ) : null}
           {active && onDelete ? (
             <button
               type="button"
@@ -109,7 +124,7 @@ export function RenamableNavItem({
               title={deleteLabel}
               onClick={onDelete}
             >
-              ×
+              <CloseGlyph />
             </button>
           ) : null}
         </>
