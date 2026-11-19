@@ -198,6 +198,8 @@ button.dbk-title:focus-visible,
   min-width: 0;
   display: flex;
   flex-direction: column;
+  container-type: inline-size;
+  container-name: dbk-main;
 }
 
 .dbk-header {
@@ -789,12 +791,16 @@ input.dbk-title {
   --accentBg: color-mix(in srgb, var(--dbk-accent) 16%, var(--dbk-surface));
 }
 
+.dbk-mdx-editor [data-radix-popper-content-wrapper]:has(.dbk-mdx-popover) {
+  z-index: 24;
+}
+
 .dbk-mdx-popover {
   display: flex;
   align-items: center;
   gap: var(--dbk-space-1);
   padding: var(--dbk-space-1) var(--dbk-space-2);
-  max-width: min(100vw - 16px, 100%);
+  max-width: min(100cqi - 16px, calc(100vw - 24px));
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: thin;
@@ -1350,20 +1356,42 @@ input.dbk-title {
   outline: none;
 }
 
+.dbk-sidebar-backdrop {
+  display: none;
+}
+
 @media (max-width: 800px) {
 
   .dbk-shell-sidebar-open {
     grid-template-columns: 1fr;
   }
 
+  .dbk-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: color-mix(in srgb, #000 48%, transparent);
+    cursor: pointer;
+  }
+
   .dbk-sidebar {
     position: fixed;
     left: 0;
     top: 0;
-    z-index: 40;
+    z-index: 50;
     width: min(var(--dbk-sidebar-width), 86vw);
     border-right: 1px solid var(--dbk-border);
     box-shadow: 16px 0 40px color-mix(in srgb, #000 28%, transparent);
+  }
+
+  /* Hover-only insert chrome should not show through the drawer. */
+  .dbk-shell-sidebar-open .dbk-insert-gap-inner {
+    opacity: 0 !important;
+    pointer-events: none;
   }
 
   .dbk-shell-multi-page .dbk-page-switcher {

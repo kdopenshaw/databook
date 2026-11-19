@@ -80,6 +80,21 @@ export function PageLayout({
     writeSidebarOpen(sidebarOpen);
   }, [pageNav, sidebarOpen]);
 
+  useEffect(() => {
+    if (!showSidebar) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSidebarOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showSidebar]);
+
+  const closeOverlayIfNarrow = () => {
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 800px)').matches) {
+      setSidebarOpen(false);
+    }
+  };
+
   return (
     <div
       className={`dbk-shell${showSidebar ? ' dbk-shell-sidebar-open' : ''}${
@@ -87,15 +102,26 @@ export function PageLayout({
       }`}
     >
       {showSidebar ? (
-        <Sidebar
-          pages={pages}
-          activePageId={activePageId}
-          onSelectPage={(id) => onSelectPage?.(id)}
-          onAddPage={onAddPage}
-          onRenamePage={onRenamePage}
-          onDeletePage={onDeletePage}
-          onHide={() => setSidebarOpen(false)}
-        />
+        <>
+          <button
+            type="button"
+            className="dbk-sidebar-backdrop"
+            aria-label="Hide pages sidebar"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <Sidebar
+            pages={pages}
+            activePageId={activePageId}
+            onSelectPage={(id) => {
+              onSelectPage?.(id);
+              closeOverlayIfNarrow();
+            }}
+            onAddPage={onAddPage}
+            onRenamePage={onRenamePage}
+            onDeletePage={onDeletePage}
+            onHide={() => setSidebarOpen(false)}
+          />
+        </>
       ) : null}
       <div className="dbk-main-column">
         {banner}
