@@ -44,7 +44,17 @@ function checkArtifacts() {
 
   const canonicalPath = path.join(root, 'src/data/canonical.json');
   if (!existsSync(canonicalPath)) {
-    errors.push('missing src/data/canonical.json');
+    errors.push(
+      'missing src/data/canonical.json — runtime table; rebuild from src/data/transforms/ if gitignored',
+    );
+  } else {
+    const maxBytes = 100 * 1024;
+    const size = readFileSync(canonicalPath).byteLength;
+    if (size > maxBytes) {
+      errors.push(
+        `canonical.json is ${Math.round(size / 1024)}KB (limit ${Math.round(maxBytes / 1024)}KB) — write a transform, gitignore the built table, do not commit a pretty fact dump`,
+      );
+    }
   }
 
   const okScript = path.join(root, 'scripts/ok-book.mjs');

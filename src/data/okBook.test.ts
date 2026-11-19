@@ -38,7 +38,7 @@ describe('okBook', () => {
         {
           id: 'empty',
           title: 'Empty',
-          component: 'MonthlyRevenue',
+          component: 'ExponentialCurve',
           query: { filter: [{ column: 'x', op: 'eq', value: 999 }] },
         },
       ],
@@ -57,7 +57,7 @@ describe('okBook', () => {
         {
           id: 'curve',
           title: 'Curve',
-          component: 'MonthlyRevenue',
+          component: 'ExponentialCurve',
           query: {},
         },
       ],

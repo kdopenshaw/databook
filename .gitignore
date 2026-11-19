@@ -1,5 +1,7 @@
 node_modules
 dist
+# Target books may ignore a *derived* src/data/canonical.json when a transform rebuilds it.
+# This clone commits the tiny init table — do not ignore canonical.json here.
 *.local
 .DS_Store
 coverage

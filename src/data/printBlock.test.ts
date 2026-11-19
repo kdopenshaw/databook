@@ -30,19 +30,19 @@ describe('printBlock', () => {
     expect(out).toContain('bb    10');
   });
 
-  it('prints monthly-revenue via runQuery', () => {
-    const result = printChartBlock(book, table, 'monthly-revenue');
-    expect(result.rowCount).toBe(6);
-    expect(result.columns).toEqual(expect.arrayContaining(['month', 'revenue']));
-    expect(result.body.split('\n')[0]).toBe('month,revenue');
-    expect(result.summary).toMatch(/^monthly-revenue\s+Monthly revenue/);
+  it('prints exponential-curve via runQuery', () => {
+    const result = printChartBlock(book, table, 'exponential-curve');
+    expect(result.rowCount).toBe(9);
+    expect(result.columns).toEqual(expect.arrayContaining(['x', 'y']));
+    expect(result.body.split('\n')[0]).toBe('x,y');
+    expect(result.summary).toMatch(/^exponential-curve\s+Exponential curve/);
   });
 
   it('supports table format and limit', () => {
-    const result = printChartBlock(book, table, 'monthly-revenue', { format: 'table', limit: 2 });
+    const result = printChartBlock(book, table, 'exponential-curve', { format: 'table', limit: 2 });
     expect(result.rows).toHaveLength(2);
-    expect(result.body).toMatch(/^month\s+revenue/);
-    expect(result.summary).toContain('2/6 rows');
+    expect(result.body).toMatch(/^x\s+y/);
+    expect(result.summary).toContain('2/9 rows');
   });
 
   it('throws for unknown chart id', () => {

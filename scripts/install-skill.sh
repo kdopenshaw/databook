@@ -1,7 +1,7 @@
 #!/bin/sh
 # Link this repo into Cursor / Codex skill directories (or into .cursor/skills for a project).
-# Hosts discover databook/SKILL.md. The skill folder links that file plus the
-# spec, references, and scaffold so router paths resolve beside the entrypoint.
+# Hosts discover databook/SKILL.md. The skill folder links that file plus
+# references and scaffold so router paths resolve beside the entrypoint.
 #
 # Prerequisite: Node.js 20+ (for Vite / vitest when running a book).
 # Never run `npm install` inside the skill install folder — copy the scaffold
@@ -135,7 +135,6 @@ write_scaffold_manifest() {
 # Files to copy from this skill package into the target book root (init).
 # Do not npm install inside the skill package — copy first, install in the target.
 SKILL.md                 # optional reference only; product entry stays in skill install
-databook-spec.md       # optional local copy for agents
 index.html
 package.json
 package-lock.json
@@ -164,7 +163,6 @@ link_skill() {
   # with git's ignore machinery. Agents copy it from the product root per scaffold-files.txt.
   for name in \
     SKILL.md \
-    databook-spec.md \
     references \
     src \
     scripts \

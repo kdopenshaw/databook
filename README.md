@@ -2,7 +2,7 @@
 
 A fixed React scaffold plus an AI skill: one canonical JSON table, markdown tabs, and agent-authored charts in `src/charts/`.
 
-**Skill:** [`SKILL.md`](./SKILL.md) · **Spec:** [`databook-spec.md`](./databook-spec.md) · Node **20+**.
+**Skill:** [`SKILL.md`](./SKILL.md) · Node **20+**.
 
 ```bash
 npm install
@@ -11,4 +11,4 @@ npm run ok                          # artifacts + query smoke
 npm run print-block -- <chartId>
 ```
 
-This repo’s sample is a **cafe-network demo** (Overview / Sales / Experience) you can click through after `npm run dev`.
+Init sample: hello-world markdown and an exponential curve (`y = 2^x`). Real books: commit a short transform and `understanding.md`, not a pretty-printed fact dump in `canonical.json`.

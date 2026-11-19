@@ -1,32 +1,24 @@
 {
-  "title": "Cafe network — H1 2025",
-  "experimentId": "demo-cafes-h1",
-  "description": "Demo DataBook: revenue, mix, ticket size, wait vs rating, member share.",
-  "generatedAt": "2026-11-16T00:00:00.000Z",
+  "title": "Hello world",
+  "experimentId": "init-sample",
+  "description": "Init sample: hello-world markdown and an exponential curve. Replace with experiment data.",
+  "generatedAt": "2026-11-18T00:00:00.000Z",
   "defaultTabId": "overview",
   "pages": [
     {
       "id": "page-main",
-      "label": "Cafes",
+      "label": "Book",
       "order": 0,
       "tabIds": [
-        "overview",
-        "sales",
-        "experience"
+        "overview"
       ]
     }
   ],
   "conventions": {
-    "population": "All line items Jan–Jun 2025 across Harbor, Market, Campus.",
+    "population": "Synthetic points x = 0..8, y = 2^x.",
     "notes": [
-      "Charts are src/charts/*.tsx components.",
-      "Amounts are USD line-item totals."
-    ],
-    "palette": {
-      "0": "Drink / primary series",
-      "1": "Food / Harbor emphasis",
-      "2": "Merch / member share"
-    }
+      "Init sample. Replace canonical.json, charts, and rows with the experiment."
+    ]
   },
   "tabs": [
     {
@@ -35,239 +27,27 @@
       "order": 0,
       "rows": [
         {
-          "id": "md-user-87dd8a05",
-          "type": "markdown",
-          "order": 0.25,
-          "createdBy": "user",
-          "body": "Why isn't it redering\n\n\\* something\n\n\\- something\n\n\\- dlsakjfkld"
-        },
-        {
-          "id": "md-user-19d081a8",
-          "type": "markdown",
-          "order": 0.625,
-          "createdBy": "user",
-          "body": "Another thing"
-        },
-        {
-          "id": "md-user-811aa3a0",
-          "type": "markdown",
-          "order": 0.8125,
-          "createdBy": "user",
-          "body": "Another"
-        },
-        {
-          "id": "comp-overview-rev",
-          "type": "component",
-          "order": 1,
-          "createdBy": "skill",
-          "layout": {
-            "gap": 16,
-            "wrap": true
-          },
-          "components": [
-            {
-              "id": "monthly-revenue",
-              "title": "Monthly revenue",
-              "subtitle": "Sum of line-item amount · all cafes",
-              "component": "MonthlyRevenue",
-              "query": {
-                "groupBy": [
-                  "month"
-                ],
-                "aggregate": [
-                  {
-                    "fn": "sum",
-                    "column": "amount",
-                    "as": "revenue"
-                  }
-                ],
-                "orderBy": [
-                  {
-                    "column": "month",
-                    "direction": "asc"
-                  }
-                ]
-              },
-              "flex": 1.4
-            },
-            {
-              "id": "revenue-by-cafe",
-              "title": "Revenue by cafe",
-              "subtitle": "H1 total · ranked",
-              "component": "RevenueByCafe",
-              "query": {
-                "groupBy": [
-                  "cafe"
-                ],
-                "aggregate": [
-                  {
-                    "fn": "sum",
-                    "column": "amount",
-                    "as": "revenue"
-                  }
-                ],
-                "orderBy": [
-                  {
-                    "column": "revenue",
-                    "direction": "desc"
-                  }
-                ]
-              },
-              "flex": 1
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "sales",
-      "label": "Sales",
-      "order": 1,
-      "rows": [
-        {
-          "id": "md-sales",
+          "id": "md-hello",
           "type": "markdown",
           "order": 0,
           "createdBy": "skill",
-          "body": "## Mix and ticket shape\n\nDrinks dominate, but food carries weekends. Merch is thin and spiky. Ticket sizes cluster under $10 with a long right tail from beans and mugs.\n"
+          "body": "Hello world."
         },
         {
-          "id": "comp-mix",
+          "id": "comp-curve",
           "type": "component",
           "order": 1,
           "createdBy": "skill",
           "components": [
             {
-              "id": "category-mix",
-              "title": "Category mix by month",
-              "subtitle": "Stacked revenue · Drink / Food / Merch",
-              "component": "CategoryMix",
+              "id": "exponential-curve",
+              "title": "Exponential curve",
+              "subtitle": "y = 2^x",
+              "component": "ExponentialCurve",
               "query": {
-                "groupBy": [
-                  "month",
-                  "category"
-                ],
-                "aggregate": [
-                  {
-                    "fn": "sum",
-                    "column": "amount",
-                    "as": "revenue"
-                  }
-                ],
                 "orderBy": [
                   {
-                    "column": "month",
-                    "direction": "asc"
-                  },
-                  {
-                    "column": "category",
-                    "direction": "asc"
-                  }
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "id": "comp-hist",
-          "type": "component",
-          "order": 2,
-          "createdBy": "skill",
-          "components": [
-            {
-              "id": "ticket-hist",
-              "title": "Line-item amount distribution",
-              "subtitle": "$2 bins · count of line items",
-              "component": "TicketSizeHist",
-              "query": {
-                "bin": [
-                  {
-                    "column": "amount",
-                    "step": 2,
-                    "as": "amount_bin"
-                  }
-                ],
-                "aggregate": [
-                  {
-                    "fn": "count",
-                    "as": "n"
-                  }
-                ],
-                "orderBy": [
-                  {
-                    "column": "amount_bin",
-                    "direction": "asc"
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "experience",
-      "label": "Experience",
-      "order": 2,
-      "rows": [
-        {
-          "id": "md-exp",
-          "type": "markdown",
-          "order": 0,
-          "createdBy": "skill",
-          "body": "## Wait, rating, membership\n\nScatter is a 400-row sample of tickets. Longer waits sit with lower ratings — especially Food. Member share rose \\~several points across H1.\n"
-        },
-        {
-          "id": "comp-scatter",
-          "type": "component",
-          "order": 1,
-          "createdBy": "skill",
-          "components": [
-            {
-              "id": "wait-rating",
-              "title": "Wait vs rating",
-              "subtitle": "Sample of tickets · color = cafe",
-              "component": "WaitVsRating",
-              "query": {
-                "sample": {
-                  "n": 400,
-                  "seed": 7
-                },
-                "orderBy": [
-                  {
-                    "column": "wait_min",
-                    "direction": "asc"
-                  }
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "id": "comp-member",
-          "type": "component",
-          "order": 2,
-          "createdBy": "skill",
-          "components": [
-            {
-              "id": "member-share",
-              "title": "Member share of tickets",
-              "subtitle": "Share of line items with is_member",
-              "component": "MemberShare",
-              "query": {
-                "groupBy": [
-                  "month"
-                ],
-                "aggregate": [
-                  {
-                    "fn": "share",
-                    "column": "is_member",
-                    "as": "member_share"
-                  }
-                ],
-                "orderBy": [
-                  {
-                    "column": "month",
+                    "column": "x",
                     "direction": "asc"
                   }
                 ]
