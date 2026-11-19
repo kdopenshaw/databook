@@ -45,7 +45,7 @@ Open `references/anthropic-data-plugin/skills/explore-data/` (and validate/stats
 
 ## Document bits
 
-- Rows: `markdown` | `component` (flex of chart blocks).
+- Rows: `markdown` | `component` (flex of chart blocks) | `prompt` (dev Codex viz job).
 - Chart block: `title`, `component`, `query`, optional `ref` / `subtitle` / `notes` / `flex`.
 - Query: `filter` / `groupBy` / `bin` / `aggregate` / `orderBy` / `limit` / `sample`. Helpers: `share`, `count_if`, `sum_if`, `mean_if`, `ratio`.
 - Preserve `createdBy: "user"` via `mergeUserRows`.

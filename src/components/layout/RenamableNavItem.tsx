@@ -1,11 +1,6 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ButtonHTMLAttributes,
-  type KeyboardEvent,
-  type ReactNode,
-} from 'react';
+import { useState, type ButtonHTMLAttributes, type KeyboardEvent, type ReactNode } from 'react';
+import { CloseIcon } from './icons';
+import { RenameInput } from './InlineRename';
 
 type Props = {
   label: string;
@@ -28,19 +23,6 @@ function wrapClassFor(className: string, wrapClassName: string | undefined, acti
   return `dbk-sidebar-row${activeClass}`;
 }
 
-function CloseGlyph() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-      <path
-        d="M2.5 2.5l7 7M9.5 2.5l-7 7"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 export function RenamableNavItem({
   label,
   active,
@@ -54,46 +36,32 @@ export function RenamableNavItem({
   children,
 }: Props) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(label);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => setDraft(label), [label]);
-
-  useEffect(() => {
-    if (editing) inputRef.current?.select();
-  }, [editing]);
-
-  const commit = () => {
-    const trimmed = draft.trim();
-    if (trimmed && trimmed !== label) onCommit?.(trimmed);
-    else setDraft(label);
-    setEditing(false);
+  const startRename = () => {
+    if (onCommit) setEditing(true);
   };
 
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+  const onButtonKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    selectButtonProps?.onKeyDown?.(e);
+    if (e.defaultPrevented) return;
+    if (onCommit && (e.key === 'F2' || (e.key === 'Enter' && active && className.includes('dbk-sidebar-item')))) {
       e.preventDefault();
-      commit();
-    }
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      setDraft(label);
-      setEditing(false);
+      startRename();
     }
   };
 
   return (
     <div className={wrapClassFor(className, wrapClassName, Boolean(active))}>
-      {editing ? (
-        <input
-          ref={inputRef}
-          type="text"
-          className="dbk-inline-rename-input dbk-nav-rename-input"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={onKeyDown}
-          aria-label={`Rename ${label}`}
+      {editing && onCommit ? (
+        <RenameInput
+          value={label}
+          className="dbk-nav-rename-input"
+          ariaLabel={`Rename ${label}`}
+          onCommit={(next) => {
+            onCommit(next);
+            setEditing(false);
+          }}
+          onCancel={() => setEditing(false)}
         />
       ) : (
         <>
@@ -102,21 +70,25 @@ export function RenamableNavItem({
             {...selectButtonProps}
             className={`${className}${onDelete ? ' dbk-nav-has-close' : ''}`}
             aria-current={active ? 'page' : undefined}
-            onClick={onSelect}
+            onClick={() => {
+              if (active && onCommit) startRename();
+              else onSelect();
+            }}
             onDoubleClick={
               onCommit
                 ? (e) => {
                     e.preventDefault();
-                    setEditing(true);
+                    startRename();
                   }
                 : undefined
             }
+            onKeyDown={onButtonKeyDown}
             data-state={className.includes('dbk-tabs-trigger') ? (active ? 'active' : 'inactive') : undefined}
-            title={onCommit ? 'Double-click to rename' : undefined}
+            title={onCommit ? 'Click to rename' : undefined}
           >
             <span className="dbk-nav-label">{children ?? label}</span>
           </button>
-          {active && onDelete ? (
+          {onDelete ? (
             <button
               type="button"
               className="dbk-nav-delete"
@@ -124,7 +96,7 @@ export function RenamableNavItem({
               title={deleteLabel}
               onClick={onDelete}
             >
-              <CloseGlyph />
+              <CloseIcon />
             </button>
           ) : null}
         </>

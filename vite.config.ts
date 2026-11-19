@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
+import { codexJobsPlugin } from './scripts/codexJobsPlugin';
 
 const projectRoot = fileURLToPath(new URL('.', import.meta.url));
 const rowsJsonPath = path.join(projectRoot, 'src/data/rows.json');
@@ -53,7 +54,7 @@ function bookPersistPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), bookPersistPlugin()],
+  plugins: [react(), bookPersistPlugin(), codexJobsPlugin(projectRoot)],
   resolve: {
     dedupe: ['react', 'react-dom'],
   },
@@ -62,6 +63,6 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
   },
 });

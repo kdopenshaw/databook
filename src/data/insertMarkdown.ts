@@ -91,6 +91,11 @@ export function updateMarkdownBody(
 }
 
 export function removeMarkdownRow(book: BookDocument, tabId: string, rowId: string): BookDocument {
+  return removeBookRow(book, tabId, rowId);
+}
+
+/** Drop any row by id (markdown, prompt, or chart). */
+export function removeBookRow(book: BookDocument, tabId: string, rowId: string): BookDocument {
   const tabs = book.tabs.map((tab) => {
     if (tab.id !== tabId) return tab;
     return { ...tab, rows: tab.rows.filter((r) => r.id !== rowId) };

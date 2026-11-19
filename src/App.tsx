@@ -11,6 +11,7 @@ import {
   deleteTab,
   ensureDefaultPage,
   normalizePageTabIds,
+  renameBookTitle,
   renamePage,
   renameTab,
   reorderRowsBefore,
@@ -18,9 +19,12 @@ import {
 import { loadBookForApp } from './data/loadBookForApp';
 import {
   insertMarkdownRow,
+  removeBookRow,
   removeMarkdownRow,
   updateMarkdownBody,
 } from './data/insertMarkdown';
+import { insertPromptRow, updatePromptRow } from './data/insertPrompt';
+import type { BookDocument, PromptRow as PromptRowModel } from './data/types';
 import { loadCanonical } from './data/loadCanonical';
 import {
   adjacentPageAfterDelete,
@@ -42,7 +46,6 @@ import {
 } from './data/bookHistory';
 import type { PersistResult } from './data/persistBook';
 import { flushPersistBook, schedulePersistBook } from './data/persistBook';
-import type { BookDocument } from './data/types';
 import rowsJson from './data/rows.json';
 
 function readTabFromUrl(fallback: string): string {
@@ -85,6 +88,7 @@ export default function App() {
   const [persistError, setPersistError] = useState<string | null>(null);
   const [lastPersist, setLastPersist] = useState<PersistResult | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+  const [promptModels, setPromptModels] = useState<Array<{ slug: string; displayName: string }>>([]);
   const userNavRef = useRef(false);
   const bookRef = useRef(book);
   const historyRef = useRef(emptyBookHistory());
@@ -228,6 +232,16 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    void fetch('/api/codex/models')
+      .then((r) => r.json())
+      .then((body: { models?: Array<{ slug: string; displayName: string }> }) => {
+        if (Array.isArray(body.models)) setPromptModels(body.models);
+      })
+      .catch(() => undefined);
+  }, []);
+
   const insertMarkdown = (afterRowId: string | null) => {
     if (!activeTab) return;
     const { book: next, row } = insertMarkdownRow(book, activeTab.id, afterRowId, '');
@@ -270,6 +284,10 @@ export default function App() {
     setActiveTabId(page.tabIds[0] ?? next.defaultTabId ?? '');
   };
 
+  const handleRenameTitle = (title: string) => {
+    applyBook(renameBookTitle(book, title));
+  };
+
   const handleRenameTab = (tabId: string, label: string) => {
     applyBook(renameTab(book, tabId, label));
   };
@@ -283,9 +301,148 @@ export default function App() {
     applyBook(reorderRowsBefore(book, activeTab.id, movedId, beforeId));
   };
 
+  const insertPrompt = (afterRowId: string | null) => {
+    if (!activeTab) return;
+    const { book: next } = insertPromptRow(book, activeTab.id, afterRowId, '');
+    applyBook(next, { persist: false });
+  };
+
+  const changePrompt = (rowId: string, patch: Partial<PromptRowModel>) => {
+    if (!activeTab) return;
+    applyBook(updatePromptRow(book, activeTab.id, rowId, patch), { persist: false, record: false });
+  };
+
+  const sendPrompt = async (rowId: string) => {
+    if (!activeTab) return;
+    const row = activeTab.rows.find((r) => r.id === rowId && r.type === 'prompt');
+    if (!row || row.type !== 'prompt') return;
+    const startedAt = new Date().toISOString();
+    applyBook(
+      updatePromptRow(book, activeTab.id, rowId, {
+        status: 'running',
+        startedAt,
+        finishedAt: undefined,
+        error: undefined,
+        lastMessage: undefined,
+      }),
+      { persist: false },
+    );
+    try {
+      const res = await fetch('/api/codex/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: row.prompt,
+          model: row.model,
+          effort: row.effort,
+          tabId: activeTab.id,
+          rowId,
+        }),
+      });
+      const body = (await res.json()) as {
+        id?: string;
+        error?: string;
+        sessionId?: string;
+        status?: PromptRowModel['status'];
+        lastMessage?: string;
+      };
+      if (!res.ok || !body.id) {
+        applyBook(
+          updatePromptRow(bookRef.current, activeTab.id, rowId, {
+            status: 'error',
+            error: body.error ?? 'Failed to start Codex',
+            finishedAt: new Date().toISOString(),
+          }),
+        );
+        return;
+      }
+      applyBook(
+        updatePromptRow(bookRef.current, activeTab.id, rowId, {
+          jobId: body.id,
+          sessionId: body.sessionId,
+          status: body.status ?? 'running',
+          lastMessage: body.lastMessage,
+        }),
+        { persist: false },
+      );
+    } catch (err) {
+      applyBook(
+        updatePromptRow(bookRef.current, activeTab.id, rowId, {
+          status: 'error',
+          error: err instanceof Error ? err.message : String(err),
+          finishedAt: new Date().toISOString(),
+        }),
+      );
+    }
+  };
+
+  const openPromptSession = async (rowId: string) => {
+    if (!activeTab) return;
+    const row = activeTab.rows.find((r) => r.id === rowId && r.type === 'prompt');
+    if (!row || row.type !== 'prompt' || !row.jobId) return;
+    await fetch(`/api/codex/jobs/${row.jobId}/open`, { method: 'POST' });
+  };
+
+  const promptJobKey = book.tabs
+    .flatMap((t) => t.rows)
+    .filter(
+      (r): r is PromptRowModel =>
+        r.type === 'prompt' && Boolean(r.jobId) && (r.status === 'running' || r.status === 'needs_input'),
+    )
+    .map((r) => r.jobId)
+    .join(',');
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || !promptJobKey) return;
+    const tick = async () => {
+      for (const jobId of promptJobKey.split(',')) {
+        try {
+          const res = await fetch(`/api/codex/jobs/${jobId}`);
+          if (!res.ok) continue;
+          const body = (await res.json()) as {
+            status?: PromptRowModel['status'];
+            sessionId?: string;
+            lastMessage?: string;
+            error?: string;
+            finishedAt?: string;
+          };
+          const tab = bookRef.current.tabs.find((t) =>
+            t.rows.some((r) => r.type === 'prompt' && r.jobId === jobId),
+          );
+          const row = tab?.rows.find((r) => r.type === 'prompt' && r.jobId === jobId);
+          if (!tab || !row || row.type !== 'prompt') continue;
+          if (
+            row.status === body.status &&
+            row.sessionId === body.sessionId &&
+            row.lastMessage === body.lastMessage &&
+            row.error === body.error
+          ) {
+            continue;
+          }
+          const terminal = body.status === 'done' || body.status === 'error';
+          applyBook(
+            updatePromptRow(bookRef.current, tab.id, row.id, {
+              status: body.status ?? row.status,
+              sessionId: body.sessionId ?? row.sessionId,
+              lastMessage: body.lastMessage,
+              error: body.error,
+              finishedAt: body.finishedAt,
+            }),
+            { persist: terminal, record: terminal },
+          );
+        } catch {
+          /* keep last known */
+        }
+      }
+    };
+    void tick();
+    const id = window.setInterval(() => void tick(), 1500);
+    return () => window.clearInterval(id);
+  }, [applyBook, promptJobKey]);
+
   const handleDeleteRow = (rowId: string) => {
     if (!activeTab) return;
-    applyBook(removeMarkdownRow(book, activeTab.id, rowId));
+    applyBook(removeBookRow(book, activeTab.id, rowId));
   };
 
   const handleDeleteTab = async (tabId: string) => {
@@ -328,6 +485,7 @@ export default function App() {
     <>
       <PageLayout
         title={book.title}
+        onRenameTitle={handleRenameTitle}
         tabs={tabs}
         activeTabId={activeTab?.id ?? ''}
         onSelectTab={selectTab}
@@ -351,6 +509,11 @@ export default function App() {
             table={table}
             book={book}
             onInsertMarkdown={insertMarkdown}
+            onInsertPrompt={import.meta.env.DEV ? insertPrompt : undefined}
+            onChangePrompt={import.meta.env.DEV ? changePrompt : undefined}
+            onSendPrompt={import.meta.env.DEV ? sendPrompt : undefined}
+            onOpenPromptSession={import.meta.env.DEV ? openPromptSession : undefined}
+            promptModels={promptModels}
             onSaveMarkdown={saveMarkdown}
             onFinishMarkdown={finishMarkdown}
             onCancelMarkdown={cancelMarkdown}

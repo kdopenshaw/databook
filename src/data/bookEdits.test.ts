@@ -9,6 +9,7 @@ import {
   extractStructureOverlay,
   normalizePageTabIds,
   reorderRowsBefore,
+  renameBookTitle,
   renameTab,
 } from './bookEdits';
 import type { BookDocument } from './types';
@@ -49,6 +50,11 @@ describe('bookEdits', () => {
 
   it('renameTab updates label', () => {
     expect(renameTab(base(), 'overview', 'Intro').tabs[0].label).toBe('Intro');
+  });
+
+  it('renameBookTitle updates title', () => {
+    expect(renameBookTitle(base(), ' Cafe Q2 ').title).toBe('Cafe Q2');
+    expect(renameBookTitle(base(), '   ').title).toBe('T');
   });
 
   it('reorderRowsBefore moves a row', () => {

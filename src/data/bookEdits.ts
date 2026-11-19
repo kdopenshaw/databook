@@ -205,6 +205,12 @@ export function addPage(book: BookDocument, label = 'New page'): { book: BookDoc
   };
 }
 
+export function renameBookTitle(book: BookDocument, title: string): BookDocument {
+  const trimmed = title.trim();
+  if (!trimmed) return book;
+  return { ...book, title: trimmed };
+}
+
 export function renameTab(book: BookDocument, tabId: string, label: string): BookDocument {
   const tabs = book.tabs.map((t) => (t.id === tabId ? { ...t, label } : t));
   return { ...book, tabs };

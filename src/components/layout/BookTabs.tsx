@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { TabSection } from '../../data/types';
+import { ChevronRightIcon, PlusIcon } from './icons';
 import { RenamableNavItem } from './RenamableNavItem';
 
 type Props = {
@@ -124,9 +125,7 @@ export function BookTabs({
                   aria-label="Add tab"
                   title="Add tab"
                 >
-                  <span className="dbk-insert-gap-plus" aria-hidden="true">
-                    +
-                  </span>
+                  <PlusIcon />
                 </button>
               </div>
             ) : null}
@@ -134,7 +133,7 @@ export function BookTabs({
         </div>
         {overflow.right ? (
           <span className="dbk-tabs-scroll-cue" aria-hidden="true">
-            ›
+            <ChevronRightIcon />
           </span>
         ) : null}
       </div>

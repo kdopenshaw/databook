@@ -1,17 +1,23 @@
 import { useEffect, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react';
-import type { BookDocument, BookRow, Table } from '../../data/types';
+import type { BookDocument, BookRow, PromptRow as PromptRowModel, Table } from '../../data/types';
 import { InsertGap } from './InsertGap';
 import { MarkdownRow } from './MarkdownRow';
 import { ComponentRow } from './ComponentRow';
+import { PromptRow, type CodexModel } from './PromptRow';
 
 type Props = {
   rows: BookRow[];
   table: Table;
   book: BookDocument;
   onInsertMarkdown?: (afterRowId: string | null) => void;
+  onInsertPrompt?: (afterRowId: string | null) => void;
   onSaveMarkdown?: (rowId: string, body: string) => void;
   onFinishMarkdown?: () => void;
   onCancelMarkdown?: (rowId: string, originalBody: string) => void;
+  onChangePrompt?: (rowId: string, patch: Partial<PromptRowModel>) => void;
+  onSendPrompt?: (rowId: string) => Promise<void> | void;
+  onOpenPromptSession?: (rowId: string) => Promise<void> | void;
+  promptModels?: CodexModel[];
   editingRowId?: string | null;
   onReorderRows?: (movedId: string, beforeId: string) => void;
   onDeleteRow?: (rowId: string) => void;
@@ -19,6 +25,7 @@ type Props = {
 
 function rowLabel(row: BookRow, index: number): string {
   if (row.type === 'markdown') return row.body.trim().slice(0, 40) || `Note ${index + 1}`;
+  if (row.type === 'prompt') return row.prompt.trim().slice(0, 40) || `Prompt ${index + 1}`;
   return `Chart row ${index + 1}`;
 }
 
@@ -27,9 +34,14 @@ export function RowRenderer({
   table,
   book,
   onInsertMarkdown,
+  onInsertPrompt,
   onSaveMarkdown,
   onFinishMarkdown,
   onCancelMarkdown,
+  onChangePrompt,
+  onSendPrompt,
+  onOpenPromptSession,
+  promptModels,
   editingRowId = null,
   onReorderRows,
   onDeleteRow,
@@ -61,7 +73,7 @@ export function RowRenderer({
       if (e.key !== 'Backspace' && e.key !== 'Delete') return;
       if (editingRowId === selectedId) return;
       const t = e.target as HTMLElement | null;
-      if (t?.closest('[contenteditable="true"], input, textarea')) return;
+      if (t?.closest('[contenteditable="true"], input, textarea, select')) return;
       e.preventDefault();
       onDeleteRow(selectedId);
       setSelectedId(null);
@@ -106,9 +118,19 @@ export function RowRenderer({
     setSelectedId(rowId);
   };
 
+  const gap = (afterRowId: string | null, labelSuffix: string) =>
+    canInsert ? (
+      <InsertGap
+        onInsertMarkdown={() => onInsertMarkdown!(afterRowId)}
+        onInsertPrompt={onInsertPrompt ? () => onInsertPrompt(afterRowId) : undefined}
+        markdownLabel={`Insert markdown ${labelSuffix}`}
+        promptLabel={`Insert chart prompt ${labelSuffix}`}
+      />
+    ) : null;
+
   return (
     <>
-      {canInsert ? <InsertGap onInsert={() => onInsertMarkdown!(null)} label="Insert markdown at start" /> : null}
+      {gap(null, 'at start')}
       {sorted.map((row, index) => (
         <div
           key={row.id}
@@ -152,19 +174,23 @@ export function RowRenderer({
                   onCancel={onCancelMarkdown ? (original) => onCancelMarkdown(row.id, original) : undefined}
                   startEditing={editingRowId === row.id}
                 />
+              ) : row.type === 'prompt' ? (
+                <PromptRow
+                  row={row}
+                  models={promptModels}
+                  onChange={onChangePrompt ? (patch) => onChangePrompt(row.id, patch) : undefined}
+                  onSend={onSendPrompt ? () => onSendPrompt(row.id) : undefined}
+                  onOpenSession={onOpenPromptSession ? () => onOpenPromptSession(row.id) : undefined}
+                />
               ) : (
                 <ComponentRow row={row} table={table} book={book} />
               )}
             </div>
-            {canInsert ? (
-              <InsertGap onInsert={() => onInsertMarkdown!(row.id)} label={`Insert markdown after block ${index + 1}`} />
-            ) : null}
+            {gap(row.id, `after block ${index + 1}`)}
           </div>
         </div>
       ))}
-      {!sorted.length && canInsert ? (
-        <InsertGap onInsert={() => onInsertMarkdown!(null)} label="Insert markdown" />
-      ) : null}
+      {!sorted.length && gap(null, '')}
     </>
   );
 }

@@ -42,13 +42,23 @@ export function ThemeToggle() {
       title={`Switch to ${next} theme`}
     >
       {dark ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="8" cy="8" r="2.6" stroke="currentColor" strokeWidth="1.25" />
+          <path
+            d="M8 1.75v1.5M8 12.75v1.5M1.75 8h1.5M12.75 8h1.5M3.4 3.4l1.06 1.06M11.54 11.54l1.06 1.06M3.4 12.6l1.06-1.06M11.54 4.46l1.06-1.06"
+            stroke="currentColor"
+            strokeWidth="1.25"
+            strokeLinecap="round"
+          />
         </svg>
       ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path
+            d="M13.5 8.7A5.75 5.75 0 1 1 7.3 2.5 4.5 4.5 0 0 0 13.5 8.7z"
+            stroke="currentColor"
+            strokeWidth="1.25"
+            strokeLinejoin="round"
+          />
         </svg>
       )}
     </button>

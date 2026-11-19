@@ -120,7 +120,23 @@ export type ComponentRow = RowBase & {
   };
 };
 
-export type BookRow = MarkdownRow | ComponentRow;
+export type CodexJobStatus = 'draft' | 'running' | 'needs_input' | 'done' | 'error';
+
+export type PromptRow = RowBase & {
+  type: 'prompt';
+  prompt: string;
+  model?: string;
+  effort?: string;
+  jobId?: string;
+  sessionId?: string;
+  status?: CodexJobStatus;
+  startedAt?: string;
+  finishedAt?: string;
+  lastMessage?: string;
+  error?: string;
+};
+
+export type BookRow = MarkdownRow | ComponentRow | PromptRow;
 
 export type TabSection = {
   id: string;
