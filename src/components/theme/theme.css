@@ -177,7 +177,9 @@ button {
 button.dbk-title:focus-visible,
 .dbk-btn:focus-visible,
 .dbk-select:focus-visible,
-.dbk-prompt-text:focus-visible {
+.dbk-prompt-text:focus-visible,
+.dbk-mdx-popover button:focus-visible,
+.dbk-mdx-popover [role='combobox']:focus-visible {
   outline: 2px solid var(--dbk-accent);
   outline-offset: 2px;
 }
@@ -768,27 +770,62 @@ input.dbk-title {
   background: transparent;
   font-family: var(--dbk-font-sans);
   color: var(--dbk-fg);
+  /* MDX editor ships light slate tokens and a hardcoded --basePageBg: white.
+     Remap so the selection bar, dropdowns, and active toggles follow the book. */
+  --basePageBg: var(--dbk-surface);
+  --baseBase: var(--dbk-bg);
+  --baseBgSubtle: var(--dbk-surface);
+  --baseBg: var(--dbk-code-bg);
+  --baseBgHover: var(--dbk-hover);
+  --baseBgActive: var(--dbk-hover);
+  --baseLine: var(--dbk-border);
+  --baseBorder: var(--dbk-border);
+  --baseBorderHover: var(--dbk-muted);
+  --baseSolid: var(--dbk-muted);
+  --baseSolidHover: var(--dbk-fg);
+  --baseText: var(--dbk-fg);
+  --baseTextContrast: var(--dbk-fg);
+  --accentText: var(--dbk-accent);
+  --accentBg: color-mix(in srgb, var(--dbk-accent) 16%, var(--dbk-surface));
 }
 
 .dbk-mdx-popover {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 4px 6px;
+  gap: var(--dbk-space-1);
+  padding: var(--dbk-space-1) var(--dbk-space-2);
+  max-width: min(100vw - 16px, 100%);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
   border: 1px solid var(--dbk-border);
   border-radius: var(--dbk-radius);
   background: var(--dbk-surface);
-  color: var(--dbk-muted);
+  color: var(--dbk-fg);
+  box-shadow: 0 8px 24px color-mix(in srgb, #000 22%, transparent);
+}
+
+.dbk-mdx-popover [role='separator'] {
+  flex: none;
+  align-self: stretch;
+  width: 1px;
+  height: auto;
+  min-height: 18px;
+  margin: 2px 2px;
+  background: var(--dbk-border);
 }
 
 .dbk-mdx-popover button,
 .dbk-mdx-popover [role='combobox'] {
-  color: var(--dbk-muted);
+  color: var(--dbk-fg);
   background: transparent;
   border-color: var(--dbk-border);
 }
 
 .dbk-mdx-popover [role='combobox'] {
+  width: auto;
+  min-width: 0;
+  max-width: 9.5rem;
   color: var(--dbk-fg);
   background: var(--dbk-bg);
   border: 1px solid var(--dbk-border);
@@ -801,12 +838,57 @@ input.dbk-title {
   background: var(--dbk-hover);
 }
 
-.dbk-markdown {
+.dbk-mdx-popover button[data-state='on'],
+.dbk-mdx-popover button[aria-checked='true'] {
+  color: var(--dbk-fg);
+  background: var(--dbk-hover);
+}
+
+.dbk-mdx-editor [role='listbox'] {
+  background: var(--dbk-surface);
+  color: var(--dbk-fg);
+  border: 1px solid var(--dbk-border);
+  border-radius: var(--dbk-radius);
+  box-shadow: 0 8px 24px color-mix(in srgb, #000 22%, transparent);
+}
+
+.dbk-mdx-editor [role='option'] {
+  color: var(--dbk-fg);
+}
+
+.dbk-mdx-editor [role='option'][data-highlighted],
+.dbk-mdx-editor [role='option'][data-state='checked'] {
+  background: var(--dbk-hover);
+  color: var(--dbk-fg);
+}
+
+@media (pointer: coarse) {
+  .dbk-mdx-popover button:not([role='combobox']) {
+    min-width: 36px;
+    min-height: 36px;
+  }
+}
+
+@media (max-width: 800px) {
+  .dbk-mdx-popover [role='combobox'] {
+    max-width: 7.25rem;
+    padding-inline: var(--dbk-space-2);
+  }
+}
+
+.dbk-mdx-editor .dbk-markdown {
   caret-color: var(--dbk-fg);
   outline: none;
   font-family: var(--dbk-font-sans);
   color: var(--dbk-fg);
   cursor: text;
+  /* Beat MDX `_contentEditable { padding: var(--spacing-3) }` which loads after this file. */
+  padding: 0;
+}
+
+.dbk-mdx-editor [class*='_placeholder_'] {
+  padding: 0;
+  color: var(--dbk-muted);
 }
 
 /* Jupyter-style (+) insert between rows */
@@ -1048,28 +1130,74 @@ input.dbk-title {
 .dbk-markdown blockquote {
   margin: 0 0 1em;
   padding: 0.25em 0 0.25em 1em;
-  border-left: 3px solid var(--dbk-border);
+  border-left: 2px solid var(--dbk-border);
   color: var(--dbk-muted);
 }
 
 .dbk-markdown table {
   width: 100%;
+  table-layout: auto;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
   font-size: 13px;
   margin: 0 0 1em;
 }
 
-.dbk-markdown th,
-.dbk-markdown td {
+.dbk-mdx-editor .dbk-markdown th,
+.dbk-mdx-editor .dbk-markdown td {
   border: 1px solid var(--dbk-border);
   padding: 6px 10px;
   text-align: left;
 }
 
-.dbk-markdown th {
+.dbk-mdx-editor .dbk-markdown th {
   background: var(--dbk-code-bg);
   font-weight: 600;
+}
+
+/* MDX table plugin paints tool rows as <th> and leaves add/delete chrome always on. */
+.dbk-mdx-editor .dbk-markdown [class*='toolCell'],
+.dbk-mdx-editor .dbk-markdown [class*='tableToolsColumn'] {
+  background: transparent;
+  border-color: transparent;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  color: var(--dbk-muted);
+}
+
+.dbk-mdx-editor .dbk-markdown table:not(:hover):not(:focus-within) thead tr:first-child,
+.dbk-mdx-editor .dbk-markdown table:not(:hover):not(:focus-within) tr:has([class*='addRowButton']),
+.dbk-mdx-editor .dbk-markdown table:not(:hover):not(:focus-within) [class*='toolCell'],
+.dbk-mdx-editor .dbk-markdown table:not(:hover):not(:focus-within) [class*='tableToolsColumn'],
+.dbk-mdx-editor .dbk-markdown table:not(:hover):not(:focus-within) :is(th, td):has([class*='addColumnButton']),
+.dbk-mdx-editor .dbk-markdown table:not(:hover):not(:focus-within) tr > :last-child:empty {
+  display: none;
+}
+
+.dbk-mdx-editor .dbk-markdown table:hover [class*='toolCell'],
+.dbk-mdx-editor .dbk-markdown table:focus-within [class*='toolCell'],
+.dbk-mdx-editor .dbk-markdown table:hover [class*='tableToolsColumn'],
+.dbk-mdx-editor .dbk-markdown table:focus-within [class*='tableToolsColumn'] {
+  width: 28px;
+  min-width: 28px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dbk-mdx-editor [class*='linkDialogAnchor'] {
+  background: color-mix(in srgb, var(--dbk-accent) 28%, transparent);
+}
+
+.dbk-mdx-editor [class*='linkDialogPopoverContent'],
+.dbk-mdx-editor [class*='tableColumnEditorPopoverContent'],
+.dbk-mdx-editor [class*='dialogContent'] {
+  background: var(--dbk-surface);
+  border: 1px solid var(--dbk-border);
+  color: var(--dbk-fg);
+  box-shadow: 0 8px 24px color-mix(in srgb, #000 22%, transparent);
+  filter: none;
 }
 
 .dbk-markdown p,
@@ -1078,13 +1206,27 @@ input.dbk-title {
   margin: 0 0 1em;
 }
 
+.dbk-markdown li {
+  margin: 0.15em 0;
+}
+
 .dbk-markdown a {
   color: var(--dbk-accent);
   text-decoration: none;
+  text-underline-offset: 0.12em;
 }
 
 .dbk-markdown a:hover {
   text-decoration: underline;
+}
+
+.dbk-markdown hr {
+  border: 0;
+  height: 0;
+  margin: 1.5em 0;
+  border-top: 1px solid var(--dbk-border);
+  color: inherit;
+  background: none;
 }
 
 .dbk-markdown code {
