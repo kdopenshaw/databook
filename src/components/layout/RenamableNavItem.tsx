@@ -1,5 +1,5 @@
-import { useState, type ButtonHTMLAttributes, type KeyboardEvent, type ReactNode } from 'react';
-import { CloseIcon } from './icons';
+import { useId, useRef, useState, type ButtonHTMLAttributes, type KeyboardEvent, type ReactNode } from 'react';
+import { MoreIcon } from './icons';
 import { RenameInput } from './InlineRename';
 
 type Props = {
@@ -36,6 +36,9 @@ export function RenamableNavItem({
   children,
 }: Props) {
   const [editing, setEditing] = useState(false);
+  const actionsId = useId();
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const deleteRef = useRef<HTMLButtonElement>(null);
 
   const startRename = () => {
     if (onCommit) setEditing(true);
@@ -68,7 +71,7 @@ export function RenamableNavItem({
           <button
             type="button"
             {...selectButtonProps}
-            className={`${className}${onDelete ? ' dbk-nav-has-close' : ''}`}
+            className={`${className}${onDelete ? ' dbk-nav-has-actions' : ''}`}
             aria-current={active ? 'page' : undefined}
             onClick={() => {
               if (active && onCommit) startRename();
@@ -89,15 +92,38 @@ export function RenamableNavItem({
             <span className="dbk-nav-label">{children ?? label}</span>
           </button>
           {onDelete ? (
-            <button
-              type="button"
-              className="dbk-nav-delete"
-              aria-label={deleteLabel}
-              title={deleteLabel}
-              onClick={onDelete}
-            >
-              <CloseIcon />
-            </button>
+            <>
+              <button
+                type="button"
+                className="dbk-nav-actions-trigger"
+                aria-label={`Actions for ${label}`}
+                popoverTarget={actionsId}
+                onClick={(event) => event.currentTarget.focus()}
+              >
+                <MoreIcon />
+              </button>
+              <div
+                ref={actionsRef}
+                id={actionsId}
+                popover="auto"
+                className="dbk-nav-actions"
+                onToggle={(event) => {
+                  if (event.newState === 'open') deleteRef.current?.focus();
+                }}
+              >
+                <button
+                  ref={deleteRef}
+                  type="button"
+                  aria-label={deleteLabel === 'Delete' ? `Delete ${label}` : deleteLabel}
+                  onClick={() => {
+                    actionsRef.current?.hidePopover();
+                    onDelete();
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </>
           ) : null}
         </>
       )}

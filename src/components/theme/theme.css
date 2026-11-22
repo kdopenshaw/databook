@@ -163,7 +163,7 @@ button {
   cursor: pointer;
 }
 
-.dbk-sidebar-item.dbk-nav-has-close {
+.dbk-sidebar-item.dbk-nav-has-actions {
   padding-right: var(--dbk-space-6);
 }
 
@@ -172,7 +172,8 @@ button {
 .dbk-theme-toggle:focus-visible,
 .dbk-tabs-trigger:focus-visible,
 .dbk-tabs-add-btn:focus-visible,
-.dbk-nav-delete:focus-visible,
+.dbk-nav-actions-trigger:focus-visible,
+.dbk-nav-actions button:focus-visible,
 .dbk-page-chip:focus-visible,
 button.dbk-title:focus-visible,
 .dbk-btn:focus-visible,
@@ -356,7 +357,7 @@ input.dbk-title {
   white-space: nowrap;
 }
 
-.dbk-page-chip.dbk-nav-has-close {
+.dbk-page-chip.dbk-nav-has-actions {
   padding-right: var(--dbk-space-6);
 }
 
@@ -438,7 +439,7 @@ input.dbk-title {
   white-space: nowrap;
 }
 
-.dbk-tabs-trigger.dbk-nav-has-close {
+.dbk-tabs-trigger.dbk-nav-has-actions {
   padding-right: var(--dbk-space-6);
 }
 
@@ -488,7 +489,7 @@ input.dbk-title {
   gap: var(--dbk-space-2);
 }
 
-.dbk-nav-delete {
+.dbk-nav-actions-trigger {
   position: absolute;
   top: 50%;
   right: 2px;
@@ -510,29 +511,56 @@ input.dbk-title {
   transition: opacity 0.12s ease;
 }
 
-.dbk-nav-item-active .dbk-nav-delete {
-  opacity: 0.45;
-  pointer-events: auto;
-}
-
-.dbk-sidebar-row:hover .dbk-nav-delete,
-.dbk-sidebar-row:focus-within .dbk-nav-delete,
-.dbk-tabs-trigger-wrap:hover .dbk-nav-delete,
-.dbk-tabs-trigger-wrap:focus-within .dbk-nav-delete,
-.dbk-page-chip-wrap:hover .dbk-nav-delete,
-.dbk-page-chip-wrap:focus-within .dbk-nav-delete {
+.dbk-sidebar-row:hover .dbk-nav-actions-trigger,
+.dbk-tabs-trigger-wrap:hover .dbk-nav-actions-trigger,
+.dbk-page-chip-wrap:hover .dbk-nav-actions-trigger,
+.dbk-nav-actions-trigger:focus-visible,
+:has(> .dbk-nav-actions:popover-open) > .dbk-nav-actions-trigger {
   opacity: 1;
   pointer-events: auto;
 }
 
-.dbk-nav-delete:hover,
-.dbk-nav-delete:focus-visible {
+.dbk-nav-actions-trigger:hover,
+.dbk-nav-actions-trigger:focus-visible,
+:has(> .dbk-nav-actions:popover-open) > .dbk-nav-actions-trigger {
+  color: var(--dbk-fg);
+  background: var(--dbk-hover);
+}
+
+.dbk-nav-actions {
+  position: fixed;
+  inset: auto;
+  position-area: block-end span-inline-start;
+  position-try-fallbacks: flip-inline, flip-block, flip-block flip-inline;
+  margin: var(--dbk-space-1) 0;
+  min-width: 112px;
+  padding: var(--dbk-space-1);
+  border: 1px solid var(--dbk-border);
+  border-radius: var(--dbk-radius);
+  background: var(--dbk-surface);
+  color: var(--dbk-fg);
+  font-family: var(--dbk-font-sans);
+}
+
+.dbk-nav-actions button {
+  width: 100%;
+  border: 0;
+  border-radius: var(--dbk-radius);
+  padding: var(--dbk-space-2) var(--dbk-space-3);
+  background: transparent;
   color: var(--dbk-error);
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.dbk-nav-actions button:hover,
+.dbk-nav-actions button:focus-visible {
   background: var(--dbk-hover);
 }
 
 @media (hover: none), (pointer: coarse) {
-  .dbk-nav-delete,
   .dbk-insert-gap-inner,
   .dbk-row-drag {
     opacity: 1;
