@@ -114,6 +114,7 @@ Rules:
 - Insert the new chart in tab \`${opts.tabId}\` at the position of prompt row \`${opts.rowId}\`. Replace that prompt row with a \`component\` row, or insert the component row immediately after it and remove the prompt row.
 - One-shot: implement without asking unless a serious unknown would make the chart wrong. If blocked, ask one concise question and stop.
 - Follow existing chart style (ResponsiveFrame, chartColors, BookTooltip).
+- Use Recharts by default. Use an alternative only when Recharts cannot produce the required visualization and the alternative is clearly better suited to the task.
 - Do not dump experiment data into the skill install. Do not run \`npm install\`.
 
 User request:

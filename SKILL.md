@@ -15,6 +15,8 @@ description: >
 2. One runtime table `src/data/canonical.json` (+ `understanding.md`).
 3. Charts = `src/charts/<Name>.tsx` default export receiving `{ data }` from an inlined `query`.
 
+Use Recharts by default for DataBook visualizations. Use an alternative only when Recharts cannot produce the required visualization and the alternative is clearly better suited to the task.
+
 ```json
 {
   "id": "exponential-curve",
