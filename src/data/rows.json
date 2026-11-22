@@ -17,7 +17,11 @@
       "label": "Sample DataBook",
       "order": 1,
       "tabIds": [
-        "compare"
+        "compare",
+        "landscape",
+        "base-stats",
+        "speed",
+        "method"
       ]
     }
   ],
@@ -45,7 +49,7 @@
     },
     {
       "id": "compare",
-      "label": "Pokémon dataset",
+      "label": "Matchups",
       "order": 1,
       "rows": [
         {
@@ -96,18 +100,54 @@
               "notes": "The six axes share a 0–250 point scale. The dashed line represents Pokémon B."
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "landscape",
+      "label": "Stat map",
+      "order": 2,
+      "rows": [
+        {
+          "id": "md-landscape",
+          "type": "markdown",
+          "createdBy": "skill",
+          "body": "## Speed is only one way to spend a stat budget\n\nEach point represents a Pokémon. Filter by primary type to see how much Speed varies among Pokémon with similar totals.",
+          "order": 0
         },
+        {
+          "id": "row-landscape",
+          "type": "component",
+          "createdBy": "skill",
+          "components": [
+            {
+              "id": "stat-landscape",
+              "title": "Base stat total vs. Speed",
+              "subtitle": "721 species across Generations I–VI",
+              "component": "StatLandscape",
+              "query": {}
+            }
+          ],
+          "order": 1
+        }
+      ]
+    },
+    {
+      "id": "base-stats",
+      "label": "Base stats",
+      "order": 3,
+      "rows": [
         {
           "id": "md-base",
           "type": "markdown",
-          "order": 2,
+          "order": 0,
           "createdBy": "skill",
           "body": "## Legendary Pokémon have higher totals, with some overlap\n\nThe median base stat total is **600** for the 46 Pokémon flagged as legendary and **410** for the other 675. The groups overlap from 580 to 670 points."
         },
         {
           "id": "row-distribution",
           "type": "component",
-          "order": 3,
+          "order": 1,
           "createdBy": "skill",
           "components": [
             {
@@ -152,18 +192,25 @@
               "notes": "Each group sums to 100%. Hover or use the arrow keys on the focused chart for exact counts."
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "id": "speed",
+      "label": "Speed",
+      "order": 4,
+      "rows": [
         {
           "id": "md-speed",
           "type": "markdown",
-          "order": 4,
+          "order": 0,
           "createdBy": "skill",
           "body": "## Electric averages 83.5 Speed across 36 species\n\nFlying ranks first at **96.3**, based on just three primary-Flying Pokémon. Electric leads among types with at least ten species. Fairy averages **48.6** across 17."
         },
         {
           "id": "row-speed",
           "type": "component",
-          "order": 5,
+          "order": 1,
           "createdBy": "skill",
           "components": [
             {
@@ -196,13 +243,20 @@
               "notes": "A dual-type Pokémon counts once, under its first listed type. Point to a bar for its sample size."
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "id": "method",
+      "label": "Method",
+      "order": 5,
+      "rows": [
         {
           "id": "md-method",
           "type": "markdown",
-          "order": 6,
+          "order": 0,
           "createdBy": "skill",
-          "body": "## From Pokédex to chart\n\n[Pokémon with stats](https://www.kaggle.com/datasets/abcsds/pokemon) contains 800 rows for 721 National Dex numbers across Generations I–VI. This analysis keeps the first row for each number to avoid counting alternate forms as extra species. Legendary status comes from the dataset. Base stats are game parameters and do not measure battle outcomes.\n\nAll three charts use a single [canonical table](https://github.com/kdopenshaw/databook/blob/main/src/data/canonical.json). In [the book definition](https://github.com/kdopenshaw/databook/blob/main/src/data/rows.json), the distribution query bins stat totals and counts each group per bin. The Speed query groups by primary type and returns the mean Speed and species count. The radar query selects twelve species. DataBook passes those results to React chart components."
+          "body": "## From Pokédex to chart\n\n[Pokémon with stats](https://www.kaggle.com/datasets/abcsds/pokemon) contains 800 rows for 721 National Dex numbers across Generations I–VI. This analysis keeps the first row for each number to avoid counting alternate forms as extra species. Legendary status comes from the dataset. Base stats are game parameters and do not measure battle outcomes.\n\nAll four charts use a single [canonical table](https://github.com/kdopenshaw/databook/blob/main/src/data/canonical.json). In [the book definition](https://github.com/kdopenshaw/databook/blob/main/src/data/rows.json), the distribution query bins stat totals and counts each group per bin. The Speed query groups by primary type and returns the mean Speed and species count. The radar query selects twelve species. The scatter plot shows all species and lets you filter by primary type. DataBook passes those results to React chart components."
         }
       ]
     }

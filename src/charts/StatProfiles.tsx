@@ -13,6 +13,12 @@ const stats = [
   ['speed', 'Speed', 'Speed'],
 ] as const;
 
+const matchups = [
+  { label: 'Speed vs. defense', first: 'Alakazam', second: 'Shuckle' },
+  { label: 'Sprint vs. shell', first: 'Ninjask', second: 'Shuckle' },
+  { label: 'Kanto rivals', first: 'Charizard', second: 'Blastoise' },
+];
+
 export default function StatProfiles({ data }: BookChartProps) {
   const [first, setFirst] = useState('Alakazam');
   const [second, setSecond] = useState('Shuckle');
@@ -32,6 +38,19 @@ export default function StatProfiles({ data }: BookChartProps) {
 
   return (
     <div className="dbk-stat-profiles">
+      <div className="dbk-pokemon-presets" role="group" aria-label="Featured matchups">
+        {matchups.filter((match) => data.some((row) => row.name === match.first)
+          && data.some((row) => row.name === match.second)).map((match) => (
+          <button key={match.label} type="button"
+            aria-pressed={firstName === match.first && secondName === match.second}
+            onClick={() => {
+              setFirst(match.first);
+              setSecond(match.second);
+            }}>
+            {match.label}
+          </button>
+        ))}
+      </div>
       <div className="dbk-profile-controls">
         <label>
           Pokémon A
@@ -69,6 +88,9 @@ export default function StatProfiles({ data }: BookChartProps) {
                 <td>{stat.second}</td>
               </tr>
             ))}
+            <tr>
+              <th scope="row">Total</th><td>{String(a.total)}</td><td>{String(b.total)}</td>
+            </tr>
           </tbody>
         </table>
       </div>
