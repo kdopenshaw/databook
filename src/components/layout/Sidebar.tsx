@@ -1,9 +1,11 @@
+import type { ReactNode } from 'react';
 import type { BookPage } from '../../data/types';
 import { PlusIcon } from './icons';
 import { PanelToggle } from './PanelToggle';
 import { RenamableNavItem } from './RenamableNavItem';
 
 type Props = {
+  returnLink?: ReactNode;
   pages: BookPage[];
   activePageId: string;
   onSelectPage: (pageId: string) => void;
@@ -14,6 +16,7 @@ type Props = {
 };
 
 export function Sidebar({
+  returnLink,
   pages,
   activePageId,
   onSelectPage,
@@ -26,6 +29,7 @@ export function Sidebar({
   return (
     <aside className="dbk-sidebar" aria-label="Book pages">
       <div className="dbk-sidebar-head">
+        {returnLink}
         {onHide ? <PanelToggle expanded onClick={onHide} /> : null}
       </div>
       <nav className="dbk-sidebar-nav">

@@ -7,6 +7,8 @@ import { PanelToggle } from './PanelToggle';
 import type { BookPage, TabSection } from '../../data/types';
 import { RenamableNavItem } from './RenamableNavItem';
 
+const siteUrl = import.meta.env.VITE_DATABOOK_SITE_URL;
+
 const SIDEBAR_STORAGE_KEY = 'databook:sidebar-open';
 
 function readSidebarOpen(fallback: boolean): boolean {
@@ -72,6 +74,7 @@ export function PageLayout({
   const pageNav = Boolean(onAddPage);
   const [sidebarOpen, setSidebarOpen] = useState(() => readSidebarOpen(true));
   const showSidebar = pageNav && sidebarOpen;
+  const returnLink = siteUrl ? <a className="dbk-return-link" href={siteUrl}>Back to site</a> : null;
   const sortedPages = [...pages].sort((a, b) => a.order - b.order);
   const showMobileSwitcher = hasPages && pages.length > 1;
 
@@ -110,6 +113,7 @@ export function PageLayout({
             onClick={() => setSidebarOpen(false)}
           />
           <Sidebar
+            returnLink={returnLink}
             pages={pages}
             activePageId={activePageId}
             onSelectPage={(id) => {
@@ -126,6 +130,7 @@ export function PageLayout({
       <div className="dbk-main-column">
         {banner}
         <header className="dbk-header">
+          {!showSidebar ? returnLink : null}
           {pageNav && !showSidebar ? (
             <PanelToggle expanded={false} onClick={() => setSidebarOpen(true)} />
           ) : null}

@@ -169,6 +169,7 @@ button {
 
 .dbk-sidebar-item:focus-visible,
 .dbk-panel-toggle:focus-visible,
+.dbk-return-link:focus-visible,
 .dbk-theme-toggle:focus-visible,
 .dbk-tabs-trigger:focus-visible,
 .dbk-tabs-add-btn:focus-visible,
@@ -263,6 +264,28 @@ input.dbk-title {
   background: transparent;
   color: var(--dbk-muted);
   cursor: pointer;
+}
+
+.dbk-return-link {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-height: var(--dbk-space-6);
+  padding-inline: var(--dbk-space-2);
+  border: 1px solid var(--dbk-border);
+  border-radius: var(--dbk-radius);
+  color: var(--dbk-fg);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.dbk-return-link:hover {
+  background: var(--dbk-hover);
+}
+
+.dbk-sidebar-head .dbk-return-link {
+  margin-inline-end: auto;
 }
 
 .dbk-panel-toggle:hover {
