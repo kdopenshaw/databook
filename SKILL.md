@@ -19,13 +19,11 @@ Use Recharts by default for DataBook visualizations. Use an alternative only whe
 
 ```json
 {
-  "id": "speed-by-type",
-  "title": "Average base Speed by primary type",
-  "component": "SpeedByType",
+  "id": "exponential-curve",
+  "title": "Exponential curve",
+  "component": "ExponentialCurve",
   "query": {
-    "groupBy": ["type"],
-    "aggregate": [{ "fn": "mean", "column": "speed", "as": "mean_speed" }],
-    "orderBy": [{ "column": "mean_speed", "direction": "desc" }]
+    "orderBy": [{ "column": "x", "direction": "asc" }]
   }
 }
 ```
@@ -34,21 +32,19 @@ Use Recharts by default for DataBook visualizations. Use an alternative only whe
 
 Copy scaffold into the **target** (never write experiment data into the skill install; never `npm install` there).
 
-| No book yet | Init sample, then replace with your data/charts |
+| No book yet | Init sample, then replace with real data/charts |
 | Book exists | Extend: read understanding → edit transforms/charts/rows → `mergeUserRows` → `npm run ok` |
 
 Init copies: `src/`, `public/`, `scripts/`, `index.html`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `vitest.ok.config.ts`, `.nvmrc`, `.gitignore`. No README in foreign targets.
 
-The scaffold includes a compact Pokémon dataset with Markdown, a comparison
-chart, a binned distribution, and a grouped Speed chart. Replace the sample content and
-update the title and description in `index.html`.
+The copied book is the **init sample**: one Overview tab (tabs + sidebar still mount), a **hello world** markdown row, and an **exponential curve** (`ExponentialCurve`) over tiny synthetic points in `canonical.json`. Set `index.html` `<title>` from `BookDocument.title`. Then replace sample data/charts with the experiment.
 
 ## Data
 
 Runtime still loads one `canonical.json`. That file is **not** what you author for a real experiment.
 
 | Size | What to commit |
-| Small (e.g., the compact Pokémon sample or fixtures) | `canonical.json` in git, compact JSON |
+| Tiny (init, fixtures, a handful of points) | `canonical.json` in git, compact JSON |
 | Real extract | Short **transform** under `src/data/transforms/` that emits `canonical.json`. Commit the transform + `understanding.md` + schema notes. Do **not** paste thousands of pretty-printed objects. |
 | Built table ≳ 100KB or a few thousand rows | Gitignore `canonical.json` **in the target book**. Rebuild before `npm run dev` / `ok`. Clone without the transform output should fail honestly, not ship an 800KB dump. |
 

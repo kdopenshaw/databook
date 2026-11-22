@@ -4,9 +4,7 @@ DataBook is a React starter and coding-agent skill for interactive data reports.
 A book brings the analysis, charts, and source data together so readers can
 follow a finding back to the rows that support it.
 
-The included Pokémon book compares six-stat profiles, legendary base stat
-distributions, and Speed by primary type from one Gen I–VI table.
-[Explore the live DataBook demo](https://my-site-five-mu.vercel.app/projects/databook).
+[Explore the sample Pokémon DataBook](https://my-site-five-mu.vercel.app/projects/databook).
 
 ## Run locally
 
@@ -43,7 +41,7 @@ the terminal uses Ghostty on macOS.
 ```sh
 npm test
 npm run ok
-npm run print-block -- stat-distribution
+npm run print-block -- exponential-curve
 npm run build
 ```
 

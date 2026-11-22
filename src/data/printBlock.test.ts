@@ -30,20 +30,19 @@ describe('printBlock', () => {
     expect(out).toContain('bb    10');
   });
 
-  it('prints the stat distribution and covers all retained Pokémon', () => {
-    const result = printChartBlock(book, table, 'stat-distribution');
-    expect(result.rowCount).toBe(12);
-    expect(result.body.split('\n')[0]).toBe('total_bin,total_bin_end,other_count,legendary_count');
-    expect(result.rows.reduce((sum, row) => sum + Number(row.legendary_count), 0)).toBe(46);
-    expect(result.rows.reduce((sum, row) => sum + Number(row.other_count), 0)).toBe(675);
+  it('prints exponential-curve via runQuery', () => {
+    const result = printChartBlock(book, table, 'exponential-curve');
+    expect(result.rowCount).toBe(9);
+    expect(result.columns).toEqual(expect.arrayContaining(['x', 'y']));
+    expect(result.body.split('\n')[0]).toBe('x,y');
+    expect(result.summary).toMatch(/^exponential-curve\s+Exponential curve/);
   });
 
   it('supports table format and limit', () => {
-    const result = printChartBlock(book, table, 'speed-by-type', { format: 'table', limit: 2 });
+    const result = printChartBlock(book, table, 'exponential-curve', { format: 'table', limit: 2 });
     expect(result.rows).toHaveLength(2);
-    expect(result.rows.map((row) => row.type)).toEqual(['Flying', 'Electric']);
-    expect(result.body).toMatch(/^type\s+mean_speed\s+count/);
-    expect(result.summary).toContain('2/18 rows');
+    expect(result.body).toMatch(/^x\s+y/);
+    expect(result.summary).toContain('2/9 rows');
   });
 
   it('throws for unknown chart id', () => {
