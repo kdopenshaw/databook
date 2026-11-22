@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
-import { parseCodexJsonl, resolveJobStatus, type CodexJobStatus } from './codexJsonl';
+import { parseCodexJsonl, resolveJobStatus, type CodexJobStatus } from './codexJsonl.ts';
 
 type Job = {
   id: string;
@@ -202,16 +202,14 @@ function startJob(
 
 function openGhostty(projectRoot: string, job: Job): void {
   const session = job.sessionId ?? parseCodexJsonl(job.log).sessionId;
-  const inner = session
-    ? `codex resume ${session} --include-non-interactive`
-    : `echo 'Codex session is not ready yet (job ${job.id}).'; exec zsh`;
-  const script = `cd ${JSON.stringify(projectRoot)} && ${inner}`;
-  spawn('open', ['-na', 'Ghostty.app', '--args', `--working-directory=${projectRoot}`, '-e', '/bin/zsh', '-lic', script], {
+  if (!session) throw new Error('The Codex session is not ready yet.');
+  const command = ['codex', 'resume', '--include-non-interactive', '--', session];
+  spawn('open', ['-na', 'Ghostty.app', '--args', `--working-directory=${projectRoot}`, '-e', ...command], {
     cwd: projectRoot,
     env: process.env,
     detached: true,
     stdio: 'ignore',
-  }).unref();
+  }).on('error', (error) => console.error('Unable to open Ghostty:', error.message)).unref();
 }
 
 export function codexJobsPlugin(projectRoot: string): Plugin {

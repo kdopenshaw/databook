@@ -88,9 +88,9 @@ if (artifactsOnly) {
 }
 
 const live = spawnSync(
-  'npx',
-  ['vitest', 'run', '--config', 'vitest.ok.config.ts'],
-  { cwd: root, stdio: 'inherit', shell: true },
+  process.execPath,
+  [path.join(root, 'node_modules/vitest/vitest.mjs'), 'run', '--config', 'vitest.ok.config.ts'],
+  { cwd: root, stdio: 'inherit' },
 );
 if (live.status !== 0) {
   process.exit(live.status ?? 1);

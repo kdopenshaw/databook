@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
-import { codexJobsPlugin } from './scripts/codexJobsPlugin';
+import { codexJobsPlugin } from './scripts/codexJobsPlugin.ts';
 
 const projectRoot = fileURLToPath(new URL('.', import.meta.url));
 const rowsJsonPath = path.join(projectRoot, 'src/data/rows.json');

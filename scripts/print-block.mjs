@@ -76,8 +76,8 @@ const book = JSON.parse(readFileSync(rowsPath, 'utf8'));
 
 const server = await createServer({
   root,
-  configFile: path.join(root, 'vite.config.ts'),
-  server: { middlewareMode: true },
+  configFile: false,
+  server: { middlewareMode: true, ws: false, watch: null },
   appType: 'custom',
   clearScreen: false,
   logLevel: 'error',

@@ -32,12 +32,14 @@ Use Recharts by default for DataBook visualizations. Use an alternative only whe
 
 Copy scaffold into the **target** (never write experiment data into the skill install; never `npm install` there).
 
-| No book yet | Init sample, then replace with real data/charts |
+| No book yet | Init sample, then replace with your data/charts |
 | Book exists | Extend: read understanding → edit transforms/charts/rows → `mergeUserRows` → `npm run ok` |
 
-Init copies: `src/`, `public/`, `scripts/`, `index.html`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `vitest.ok.config.ts`, `.gitignore`. No README in foreign targets.
+Init copies: `src/`, `public/`, `scripts/`, `index.html`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `vitest.ok.config.ts`, `.nvmrc`, `.gitignore`. No README in foreign targets.
 
-The copied book is the **init sample**: one Overview tab (tabs + sidebar still mount), a **hello world** markdown row, and an **exponential curve** (`ExponentialCurve`) over tiny synthetic points in `canonical.json`. Set `index.html` `<title>` from `BookDocument.title`. Then replace sample data/charts with the experiment.
+The scaffold includes a compact doubling example with synthetic data, Markdown,
+a filtered chart, and a reused chart block. Replace the sample content and
+update the title and description in `index.html`.
 
 ## Data
 

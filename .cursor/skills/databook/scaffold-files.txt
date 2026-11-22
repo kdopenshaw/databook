@@ -7,8 +7,9 @@ package-lock.json
 tsconfig.json
 vite.config.ts
 vitest.ok.config.ts
+.nvmrc
 public/
 src/
 scripts/                 # ok-book.mjs + print-block.mjs — required for `npm run ok` / `print-block`; check-book.mjs for optional visual
-.gitignore               # scaffold gitignore (node_modules, dist, …)
+.gitignore               # copy from the source clone
 # After copy: set index.html <title> from BookDocument.title; replace sample data.

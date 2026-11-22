@@ -3,14 +3,14 @@
 # Hosts discover databook/SKILL.md. The skill folder links that file plus
 # references and scaffold so router paths resolve beside the entrypoint.
 #
-# Prerequisite: Node.js 20+ (for Vite / vitest when running a book).
+# Prerequisite: Node.js 24 (for Vite / vitest when running a book).
 # Never run `npm install` inside the skill install folder — copy the scaffold
 # into your target project first, then install there.
 set -eu
 
-root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd -P)
 # --project installs into the caller's cwd (target project), not the product clone.
-cwd=$(pwd)
+cwd=$(pwd -P)
 
 usage() {
   cat <<'EOF'
@@ -18,7 +18,7 @@ Usage: ./scripts/install-skill.sh [options]
 
 Link the DataBook skill package so Cursor (and optionally Codex) can discover it.
 
-Prerequisite: Node.js 20+ on PATH (books use Vite + vitest).
+Prerequisite: Node.js 24 on PATH (books use Vite + vitest).
 
 Options:
   --project       Install into $PWD/.cursor/skills/databook with relative
@@ -36,7 +36,7 @@ Default (no flags): personal install to both
 
 Do NOT run `npm install` in the skill install directory. That would write
 node_modules into this product clone via symlinks. Copy the scaffold into
-your databook target, then `npm install` there.
+your databook target, then `npm ci` there.
 EOF
 }
 
@@ -77,13 +77,13 @@ done
 relpath_to() {
   from_dir=$1
   to=$2
-  from_dir=$(CDPATH= cd -- "$from_dir" && pwd)
+  from_dir=$(CDPATH= cd -- "$from_dir" && pwd -P)
 
   if [ -d "$to" ]; then
-    to_dir=$(CDPATH= cd -- "$to" && pwd)
+    to_dir=$(CDPATH= cd -- "$to" && pwd -P)
     to_base=
   else
-    to_dir=$(CDPATH= cd -- "$(dirname -- "$to")" && pwd)
+    to_dir=$(CDPATH= cd -- "$(dirname -- "$to")" && pwd -P)
     to_base=$(basename -- "$to")
   fi
 
@@ -106,12 +106,17 @@ relpath_to() {
 }
 
 link_one() {
-  dest=$1
-  target=$2
-  link_path=$3
+  target=$1
+  link_path=$2
 
-  mkdir -p "$(dirname "$link_path")"
-  ln -sfn "$target" "$link_path"
+  if [ -L "$link_path" ] && [ "$(readlink "$link_path")" = "$target" ]; then
+    return
+  fi
+  if [ -e "$link_path" ] || [ -L "$link_path" ]; then
+    printf 'Keeping existing %s; expected a link to %s\n' "$link_path" "$target" >&2
+    return
+  fi
+  ln -s "$target" "$link_path"
 }
 
 write_skill_readme() {
@@ -140,22 +145,21 @@ package.json
 package-lock.json
 tsconfig.json
 vite.config.ts
+vitest.ok.config.ts
+.nvmrc
 public/
 src/
 scripts/                 # ok-book.mjs + print-block.mjs — required for `npm run ok` / `print-block`; check-book.mjs for optional visual
-.gitignore               # scaffold gitignore (node_modules, dist, …)
+.gitignore               # copy from the source clone (or the scripts/ link’s parent)
 # After copy: set index.html <title> from BookDocument.title; replace sample data.
 EOF
 }
 
 # Populate $dest with links into $root. When relative=1, use paths relative to each link.
-# Intentionally omits package-lock from being *required* for discovery; still linked
-# so agents can copy the scaffold. A real README.md (not a symlink) warns against npm install here.
 link_skill() {
   dest=$1
   relative=${2:-0}
 
-  rm -rf "$dest"
   mkdir -p "$dest"
 
   # Top-level paths (scaffold + docs). package.json is linked for *copy*, not for install-in-place.
@@ -170,6 +174,8 @@ link_skill() {
     package-lock.json \
     index.html \
     vite.config.ts \
+    vitest.ok.config.ts \
+    .nvmrc \
     tsconfig.json \
     public
   do
@@ -181,7 +187,7 @@ link_skill() {
     else
       target="$root/$name"
     fi
-    link_one "$dest" "$target" "$dest/$name"
+    link_one "$target" "$dest/$name"
   done
 
   # Nested agents/openai.yaml (keep agents/ dir structure for Codex)
@@ -191,10 +197,10 @@ link_skill() {
   else
     target="$root/agents/openai.yaml"
   fi
-  link_one "$dest" "$target" "$dest/agents/openai.yaml"
+  link_one "$target" "$dest/agents/openai.yaml"
 
-  write_skill_readme "$dest"
-  write_scaffold_manifest "$dest"
+  [ -e "$dest/README.md" ] || write_skill_readme "$dest"
+  [ -e "$dest/scaffold-files.txt" ] || write_scaffold_manifest "$dest"
 }
 
 linked=
