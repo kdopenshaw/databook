@@ -36,7 +36,7 @@ html.dbk-embed #root {
 }
 
 .dbk-reader .dbk-markdown h2 {
-  max-width: 31ch;
+  max-width: 46ch;
   margin-bottom: var(--dbk-space-2);
   font-size: 1.25rem;
   line-height: 1.3;
