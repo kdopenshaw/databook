@@ -54,6 +54,8 @@ export function BookTabs({
   }, [sorted.length, activeTabId]);
 
   useEffect(() => {
+    const scroller = scrollRef.current;
+    if (!scroller || scroller.scrollWidth <= scroller.clientWidth) return;
     const btn = listRef.current?.querySelector<HTMLElement>(`#tab-${activeTabId}`);
     btn?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
   }, [activeTabId]);

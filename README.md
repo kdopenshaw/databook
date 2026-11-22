@@ -4,8 +4,8 @@ DataBook is a React starter and coding-agent skill for interactive data reports.
 A book brings the analysis, charts, and source data together so readers can
 follow a finding back to the rows that support it.
 
-The included example uses a tiny synthetic dataset to show how the same table
-and chart component can support a full view and a filtered view.
+The included Pokémon book compares six-stat profiles, legendary base stat
+distributions, and Speed by primary type from one Gen I–VI table.
 [Explore the live DataBook demo](https://my-site-five-mu.vercel.app/projects/databook).
 
 ## Run locally
@@ -43,7 +43,7 @@ the terminal uses Ghostty on macOS.
 ```sh
 npm test
 npm run ok
-npm run print-block -- early-steps
+npm run print-block -- stat-distribution
 npm run build
 ```
 
@@ -51,4 +51,4 @@ npm run build
 the rows for a specific chart. Publish the `dist/` directory on any static
 host. For a deployment under a subpath, pass it to Vite with
 `npm run build -- --base=/your-path/`. Edits on a static deployment are stored
-in the visitor's browser.
+in the visitor's browser. Embed the reader view with `?embed=1`.

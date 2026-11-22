@@ -19,11 +19,13 @@ Use Recharts by default for DataBook visualizations. Use an alternative only whe
 
 ```json
 {
-  "id": "exponential-curve",
-  "title": "Exponential curve",
-  "component": "ExponentialCurve",
+  "id": "speed-by-type",
+  "title": "Average base Speed by primary type",
+  "component": "SpeedByType",
   "query": {
-    "orderBy": [{ "column": "x", "direction": "asc" }]
+    "groupBy": ["type"],
+    "aggregate": [{ "fn": "mean", "column": "speed", "as": "mean_speed" }],
+    "orderBy": [{ "column": "mean_speed", "direction": "desc" }]
   }
 }
 ```
@@ -37,8 +39,8 @@ Copy scaffold into the **target** (never write experiment data into the skill in
 
 Init copies: `src/`, `public/`, `scripts/`, `index.html`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `vitest.ok.config.ts`, `.nvmrc`, `.gitignore`. No README in foreign targets.
 
-The scaffold includes a compact doubling example with synthetic data, Markdown,
-a filtered chart, and a reused chart block. Replace the sample content and
+The scaffold includes a compact Pokémon dataset with Markdown, a comparison
+chart, a binned distribution, and a grouped Speed chart. Replace the sample content and
 update the title and description in `index.html`.
 
 ## Data
@@ -46,7 +48,7 @@ update the title and description in `index.html`.
 Runtime still loads one `canonical.json`. That file is **not** what you author for a real experiment.
 
 | Size | What to commit |
-| Tiny (init, fixtures, a handful of points) | `canonical.json` in git, compact JSON |
+| Small (e.g., the compact Pokémon sample or fixtures) | `canonical.json` in git, compact JSON |
 | Real extract | Short **transform** under `src/data/transforms/` that emits `canonical.json`. Commit the transform + `understanding.md` + schema notes. Do **not** paste thousands of pretty-printed objects. |
 | Built table ≳ 100KB or a few thousand rows | Gitignore `canonical.json` **in the target book**. Rebuild before `npm run dev` / `ok`. Clone without the transform output should fail honestly, not ship an 800KB dump. |
 
