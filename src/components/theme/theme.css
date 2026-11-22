@@ -1250,6 +1250,17 @@ input.dbk-title {
   text-underline-offset: 0.12em;
 }
 
+.dbk-markdown a[href="https://github.com/kdopenshaw/databook"]::before {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-inline-end: var(--dbk-space-2);
+  vertical-align: -0.125em;
+  background: currentColor;
+  mask: url("./github.svg") center / contain no-repeat;
+}
+
 .dbk-markdown a:hover {
   text-decoration: underline;
 }
